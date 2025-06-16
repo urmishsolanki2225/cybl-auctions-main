@@ -1,0 +1,92 @@
+/* :: Slider CSS */
+
+.owl-carousel.full-width .owl-nav {
+    position: absolute;
+    top: 50%;
+    @include transform(translateX(-50%));
+    width: 100%;
+    margin-top: 0;
+    left: 0;
+}
+
+.owl-carousel.full-width .owl-nav .owl-prev {
+    left: 0;
+    right: auto;
+}
+
+.owl-carousel.full-width .owl-nav .owl-next {
+    right: 0;
+    left: auto;
+}
+
+.owl-dots {
+    margin-top: 10px;
+}
+
+.range-slider-area {
+    .demo__buttons {
+        @include display-flex(flex);
+        @include justify-content-between;
+        @include flex-wrap(wrap);
+
+        .button {
+            @include display-flex(flex);
+            @include align-items-center;
+            @include justify-content-center;
+            height: 50px;
+            padding: 0 1.5rem;
+            margin: 0 5px;
+            box-sizing: border-box;
+            border-radius: 3px;
+            @include box-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+            -webkit-transition: background-color 190ms linear;
+            -o-transition: background-color 190ms linear;
+            transition: background-color 190ms linear;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button.small {
+            height: 2.5rem;
+            padding: 0 .5rem;
+            margin: 0;
+        }
+    }
+
+    .irs--big .irs-bar {
+        top: 33px;
+        height: 12px;
+        background-color: #1de9b6;
+        border: 1px solid #1de9b6;
+        background: -webkit-linear-gradient(225deg, #1de9b6 0, #1dc4e9 100%);
+        background: -o-linear-gradient(225deg, #1de9b6 0, #1dc4e9 100%);
+        background: linear-gradient(-135deg, #1de9b6 0, #1dc4e9 100%);
+        -webkit-box-shadow: inset 0 0 1px 1px rgba(255, 255, 255, 0.5);
+        box-shadow: inset 0 0 1px 1px rgba(255, 255, 255, 0.5);
+    }
+
+    .irs--big .irs-handle {
+        border: none;
+        background-color: #cbcfd5;
+        background: -webkit-gradient(linear, left top, left bottom, from(#1de9b6), color-stop(30%, #1de9b6), to(#1de9b6));
+        background: -webkit-linear-gradient(top, #1de9b6 0%, #1de9b6 30%, #1de9b6 100%);
+        background: -o-linear-gradient(top, #1de9b6 0%, #1de9b6 30%, #1de9b6 100%);
+        background: linear-gradient(to bottom, #1de9b6 0%, #1de9b6 30%, #1de9b6 100%);
+    }
+
+    .irs--big .irs-from,
+    .irs--big .irs-to,
+    .irs--big .irs-single {
+        background-color: #1de9b6;
+        background: -webkit-gradient(linear, left top, left bottom, from(#1de9b6), to(#1de9b6));
+        background: -webkit-linear-gradient(top, #1de9b6 0%, #1de9b6 100%);
+        background: -o-linear-gradient(top, #1de9b6 0%, #1de9b6 100%);
+        background: linear-gradient(to bottom, #1de9b6 0%, #1de9b6 100%);
+    }
+
+    .irs--big .irs-min,
+    .irs--big .irs-max {
+        background-color: #1de9b6;
+    }
+
+}

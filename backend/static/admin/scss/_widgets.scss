@@ -1,0 +1,200 @@
+/* :: Widget CSS */
+
+.widget-icon {
+    color: #727cf5;
+    font-size: 16px;
+    background-color: rgba(114, 124, 245, .25);
+    height: 30px;
+    width: 30px;
+    text-align: center;
+    line-height: 30px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.rounded-circle {
+    border-radius: 50% !important;
+}
+
+.conversation-list .odd .chat-avatar {
+    float: right !important;
+}
+
+.conversation-list .odd .ctext-wrap {
+    background-color: #fef5e4;
+}
+
+.conversation-list .odd .conversation-text {
+    float: right !important;
+    margin-right: 12px;
+    text-align: right;
+    width: 70% !important;
+}
+
+.inbox-widget .inbox-item {
+    border-bottom: 1px solid #fff;
+    overflow: hidden;
+    padding: .625rem 0;
+    position: relative;
+}
+
+.inbox-widget .inbox-item .inbox-item-img {
+    display: block;
+    float: left;
+    margin-right: 15px;
+    width: 40px;
+}
+
+.inbox-widget .inbox-item .inbox-item-author {
+    color: #343a40;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.inbox-widget .inbox-item .inbox-item-text {
+    color: $text-color;
+    display: block;
+    font-size: .8125rem;
+    margin: 0;
+}
+
+.inbox-widget .inbox-item .inbox-item-date {
+    color: #98a6ad;
+    font-size: .6875rem;
+    position: absolute;
+    right: 5px;
+    top: 10px;
+}
+
+.timeline-alt {
+    .timeline-item {
+        position: relative;
+
+        &::before {
+            background-color: #f1f3fa;
+            bottom: 0;
+            content: "";
+            left: 9px;
+            position: absolute;
+            top: 20px;
+            width: 2px;
+            z-index: 0;
+        }
+
+        .icon {
+            float: left;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            font-size: 10px;
+            text-align: center;
+            line-height: 16px;
+            background-color: rgba(77, 92, 242, 0.19) !important;
+        }
+
+        .timeline-item-info {
+            margin-left: 35px;
+        }
+    }
+}
+
+.toll-free-box i {
+    position: absolute;
+    left: 0;
+    bottom: -15px;
+    font-size: 4rem;
+    opacity: .4;
+    -webkit-transform: rotate(30deg);
+    transform: rotate(30deg);
+}
+
+.tilebox-one i {
+    position: absolute;
+    right: 1.5rem;
+    font-size: 2rem;
+    opacity: .3;
+}
+
+.message-box .message-widget a .user-thumb img {
+    width: 100%;
+}
+
+.total-earnings-list {
+    position: relative;
+    z-index: 1;
+
+    li {
+        position: relative;
+        z-index: 1;
+        @include transition-duration(350ms);
+        @include display-flex(flex);
+        @include justify-content-between;
+        @include align-items-center;
+        margin-bottom: 25px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+
+        &::after {
+            @include transition-duration(600ms);
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 100%;
+            background-color: $primary;
+            top: 0;
+            left: -20px;
+            z-index: 1;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        &:hover {
+            &::after {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .author-text h6 {
+                color: $primary;
+            }
+        }
+    }
+
+    .author-info {
+        .author-img {
+            max-width: 35px;
+
+            img {
+                border-radius: 50%;
+            }
+        }
+    }
+
+    .author-text h6 {
+        font-size: 14px;
+        @include transition-duration(500ms);
+
+        @media #{$breakpoint-xs} {
+            font-size: 12px;
+        }
+    }
+
+    .author-text p {
+        font-size: 12px;
+    }
+}
+
+.client-media-content .client-thumb {
+    width: 40px;
+}
+
+.user--media-body h6 {
+    font-size: 14px;
+}
+
+.user--media-body span {
+    font-size: 12px;
+}

@@ -1,0 +1,76 @@
+/* :: Pricing Table CSS */
+
+.our-ticket-pricing-table-area {
+    background-color: $bg-gray;
+}
+
+.single-ticket-pricing-table {
+    background-color: $white-color;
+    padding: 0 40px 40px 40px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    @include transition-duration(500ms);
+    border: 1px solid $border-color;
+
+    &.active {
+        @include transform(scale(1.1));
+    }
+
+    .ticket-plan {
+        background-color: $primary;
+        padding: 10px 25px;
+        display: block;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: $white-color;
+        border-radius: 0 0 5px 5px;
+        margin-bottom: 25px;
+        line-height: 1;
+    }
+
+    .ticket-icon {
+        font-size: 18px;
+        color: $primary;
+        height: 50px;
+        width: 50px;
+        line-height: 48px;
+        display: inline-block;
+        border: 1px solid $primary;
+        border-radius: 50%;
+        @include transition-duration(500ms);
+    }
+
+    .ticket-price {
+        font-size: 60px;
+        color: $text-color;
+        font-weight: 600;
+        letter-spacing: 1px;
+        line-height: 1;
+        margin-top: 25px;
+        margin-bottom: 15px;
+        @include transition-duration(500ms);
+
+        span {
+            font-size: 30px;
+            font-weight: 600;
+            position: relative;
+            top: -20px;
+        }
+    }
+
+    .ticket-pricing-table-details {
+        p {
+            color: $text-color;
+            margin-bottom: 8px;
+
+            i {
+                color: $primary;
+                margin-right: 5px;
+            }
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+}

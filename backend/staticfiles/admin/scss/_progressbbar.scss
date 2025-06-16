@@ -1,0 +1,27 @@
+/* :: Progressbar CSS */
+
+.progress-vertical {
+    min-height: 250px;
+    height: 250px;
+    width: 10px;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0;
+    margin-right: 20px;
+}
+
+.progress-vertical-bottom {
+    min-height: 250px;
+    height: 250px;
+    position: relative;
+    width: 10px;
+    display: inline-block;
+    margin-bottom: 0;
+    margin-right: 20px;
+}
+
+.progress-vertical-bottom .progress-bar {
+    width: 100%;
+    bottom: 0;
+    position: absolute;
+}

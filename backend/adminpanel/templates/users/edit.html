@@ -1,0 +1,423 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<script src="{% static 'admin-custom/user.js' %}"></script>
+<link rel="stylesheet" href="{% static 'admin/css/dropzone.min.css' %}">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 box-margin">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0">Edit User</h4>
+                        <a href="{% url 'allusers' 1 %}" class="btn btn-outline-secondary">
+                            <i class="fa fa-arrow-left"></i> Back to Users
+                        </a>
+                    </div>
+                    <form id="userForm" enctype="multipart/form-data" method="POST" action="{% url 'editusers' user.id %}">
+                        {% csrf_token %}
+                        <!-- ==================== -->
+                        <!-- Personal Information -->
+                        <!-- ==================== -->
+                        <fieldset>
+                            <legend>Personal Information</legend>
+                            <div class="row">
+                                <!-- Title -->
+                                <div class="col-md-4 form-group">
+                                    <label for="title">Title <span class="text-danger">*</span></label>
+                                    <select id="title" class="form-control" name="title">
+                                        <option value="">Choose Title</option>
+                                        <option value="mr" {% if form.title.value == "mr" %}selected{% endif %}>Mr.</option>
+                                        <option value="ms" {% if form.title.value == "ms" %}selected{% endif %}>Ms.</option>
+                                        <option value="other" {% if form.title.value == "other" %}selected{% endif %}>Other</option>
+                                    </select>
+                                    <div class="text-danger" id="error_title"></div>
+                                </div>
+                    
+                                <!-- First Name -->
+                                <div class="col-md-4 form-group">
+                                    <label for="first_name">First Name<span class="text-danger">*</span></label>
+                                    <input id="first_name" class="form-control" name="first_name" type="text" placeholder="Type First Name.." value="{{ form.first_name.value|default:'' }}">
+                                    <div class="text-danger" id="error_first_name"></div>
+                                </div>
+                    
+                                <!-- Last Name -->
+                                <div class="col-md-4 form-group">
+                                    <label for="last_name">Last Name<span class="text-danger">*</span></label>
+                                    <input id="last_name" class="form-control" name="last_name" type="text" placeholder="Type Last Name.." value="{{ form.last_name.value|default:'' }}">
+                                    <div class="text-danger" id="error_last_name"></div>
+                                </div>
+                    
+                                <!-- Gender -->
+                                <div class="col-md-4 form-group">
+                                    <label for="gender">Gender<span class="text-danger">*</span></label>
+                                    <select id="gender" class="form-control" name="gender">
+                                        <option value="">Select Gender</option>
+                                        <option value="male" {% if form.gender.value == "male" %}selected{% endif %}>Male</option>
+                                        <option value="female" {% if form.gender.value == "female" %}selected{% endif %}>Female</option>
+                                        <option value="other" {% if form.gender.value == "other" %}selected{% endif %}>Other</option>
+                                    </select>
+                                    <div class="text-danger" id="error_gender"></div>
+                                </div>
+                    
+                                <!-- Email -->
+                                <div class="col-md-4 form-group">
+                                    <label for="email">Email Address<span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fa fa-envelope"></i></span>
+                                        </div>
+                                        <input id="email" class="form-control" name="email" type="email" placeholder="Type Email Address.." value="{{ form.email.value|default:'' }}">
+                                    </div>
+                                    <div class="text-danger" id="error_email"></div>
+                                </div>
+                    
+                                <!-- Phone Number -->
+                                <div class="col-md-4 form-group">
+                                    <label for="phone_no">Phone Number<span class="text-danger">*</span></label>
+                                    <input id="phone_no" class="form-control" name="phone_no" type="tel" placeholder="Type Phone Number.." value="{{ form.phone_no.value|default:'' }}">
+                                    <div class="text-danger" id="error_phone_no"></div>
+                                </div>
+                    
+                                <!-- Image Upload -->
+                                <div class="col-md-12 form-group">
+                                    <label for="image">Upload Image (JPG/PNG Only)</label>
+                                    <div class="dropzone" id="myAwesomeDropzone"></div>
+                                    {% if form.photo.value %}
+                                        <small class="text-muted">Current: {{ form.photo.value }}</small>
+                                    {% endif %}
+                                    <div class="text-danger fields" id="error_photo"></div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    
+                        <!-- ================ -->
+                        <!-- Address Information -->
+                        <!-- ================ -->
+                        <fieldset>
+                            <legend>Address Information</legend>
+                            <div class="row">
+                                <!-- Address -->
+                                <div class="col-md-6 form-group">
+                                    <label for="address">Address<span class="text-danger">*</span></label>
+                                    <textarea id="address" class="form-control" name="address" placeholder="Type Address..">{{ form.address.value|default:'' }}</textarea>
+                                    <div class="text-danger fields" id="error_address"></div>
+                                </div>
+                    
+                                <!-- Country -->
+                                <div class="col-md-6 form-group">
+                                    <label for="country">Country<span class="text-danger">*</span></label>
+                                    <select id="country" name="country" class="form-control">
+                                        <option value="">Choose Country</option>
+                                        {% for country in countries %}
+                                            <option value="{{ country.id }}" {% if form.country.value|stringformat:"s" == country.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ country.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>    
+                                    <div class="text-danger fields" id="error_country"></div>
+                                </div>
+                    
+                                <!-- State/Province -->
+                                <div class="col-md-6 form-group">
+                                    <label for="state">State/Province<span class="text-danger">*</span></label>
+                                    <select id="state" name="state" class="form-control">
+                                        <option value="">Choose State</option>
+                                        {% if form.state.value %}
+                                            <option value="{{ form.state.value }}" selected>{{ form.state.value }}</option>
+                                        {% endif %}
+                                    </select>
+                                    <div class="text-danger fields" id="error_state"></div>
+                                </div>
+                    
+                                <!-- City -->
+                                <div class="col-md-6 form-group">
+                                    <label for="city">City<span class="text-danger">*</span></label>
+                                    <input id="city" class="form-control" name="city" type="text" placeholder="City" value="{{ form.city.value|default:'' }}">
+                                    <div class="text-danger fields" id="error_city"></div>
+                                </div>
+                    
+                                <!-- Postal/Zip Code -->
+                                <div class="col-md-6 form-group">
+                                    <label for="zipcode">Postal/Zip Code<span class="text-danger">*</span></label>
+                                    <input id="zipcode" class="form-control" name="zipcode" type="text" placeholder="Postal/Zip Code" value="{{ form.zipcode.value|default:'' }}">
+                                    <div class="text-danger fields" id="error_zipcode"></div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    
+                        <!-- Role Info Section -->
+                        <fieldset>
+                            <legend>Role & Permissions</legend>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label for="group">Role<span class="text-danger">*</span></label>
+                                    <select id="group" class="form-control" name="group" onchange="checkRole(this.value)">
+                                        <optgroup label="All Roles">
+                                            {% for r in all_roles %}
+                                                <option value="{{ r.id }}" {% if form.group.value == r.id %}selected{% endif %}>{{ r.name }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    </select>
+                                </div>
+                    
+                                <!-- Seller Type (Visible when Role ID is 3) -->
+                                <div id="sellerTypeFields" class="col-md-6 form-group" style="{% if form.group.value == 3 %}display: block;{% else %}display: none;{% endif %}">
+                                    <label for="seller_type">Seller Type <span class="text-danger">*</span></label>
+                                    <select id="seller_type" class="form-control" name="seller_type" onchange="checkSellerType(this.value)">
+                                        <option value="">Select Seller Type</option>
+                                        <option value="Individual" {% if form.seller_type.value == "Individual" %}selected{% endif %}>Individual Seller</option>
+                                        <option value="Company" {% if form.seller_type.value == "Company" %}selected{% endif %}>Company Seller</option>
+                                    </select>
+                                    <div class="text-danger fields" id="error_seller_type"></div>
+                                </div>
+                    
+                                <!-- Company Info (Visible when Seller Type is Company) -->
+                                <div id="companySellerFields" style="{% if form.seller_type.value == 'Company' %}display: block;{% else %}display: none;{% endif %}" class="ml-3">
+                                    <fieldset>
+                                        <legend>Company Information</legend>
+                                        <div class="row">
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_name">Company Name<span class="text-danger">*</span></label>
+                                                <input id="company_name" class="form-control" name="company_name" type="text" placeholder="Type Company Name.." value="{{ form.company_name.value|default:'' }}">
+                                                <div class="text-danger fields" id="error_company_name"></div>
+                                            </div>
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_phone">Company Phone<span class="text-danger">*</span></label>
+                                                <input id="company_phone" class="form-control" name="company_phone" type="text" placeholder="Type Company Phone.." value="{{ form.company_phone.value|default:'' }}">
+                                                <div class="text-danger fields" id="error_company_phone"></div>
+                                            </div>
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_address">Company Address<span class="text-danger">*</span></label>
+                                                <textarea id="company_address" class="form-control" name="company_address" placeholder="Type Company Address..">{{ form.company_address.value|default:'' }}</textarea>
+                                                <div class="text-danger fields" id="error_company_address"></div>
+                                            </div>  
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_country">Company Country<span class="text-danger">*</span></label>
+                                                <select id="company_country" name="company_country" class="form-control">
+                                                    <option value="">Choose Country</option>
+                                                    {% for country in countries %}
+                                                        <option value="{{ country.id }}" {% if form.company_country.value|stringformat:"s" == country.id|stringformat:"s" %}selected{% endif %}>
+                                                            {{ country.name }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="text-danger fields" id="error_company_country"></div>
+                                            </div>
+
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_state">Company State/Province<span class="text-danger">*</span></label>
+                                                <select id="company_state" name="company_state" class="form-control">
+                                                    <option value="">Choose State</option>
+                                                    {% if form.company_state.value %}
+                                                        <option value="{{ form.company_state.value }}" selected>{{ form.company_state.value }}</option>
+                                                    {% endif %}
+                                                </select>
+                                                <div class="text-danger fields" id="error_company_state"></div>
+                                            </div>
+
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_city">Company City<span class="text-danger">*</span></label>
+                                                <input id="company_city" class="form-control" name="company_city" type="text" placeholder="Company City" value="{{ form.company_city.value|default:'' }}">
+                                                <div class="text-danger fields" id="error_company_city"></div>
+                                            </div>
+
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_zipcode">Company Postal/Zip Code<span class="text-danger">*</span></label>
+                                                <input id="company_zipcode" class="form-control" name="company_zipcode" type="text" placeholder="Company Postal/Zip Code" value="{{ form.company_zipcode.value|default:'' }}">
+                                                <div class="text-danger fields" id="error_company_zipcode"></div>
+                                            </div>
+
+                                            <div class="col-md-6 form-group">
+                                                <label for="company_logo">Company Logo</label>
+                                                <div class="dropzone" id="myCompanyDropzone"></div>
+                                                {% if form.company_logo.value %}
+                                                    <small class="text-muted">Current: {{ form.company_logo.value }}</small>
+                                                {% endif %}
+                                                <div class="text-danger fields" id="error_company_logo"></div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <!-- Submit Button -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>                        
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'admin/js/dropzone.min.js' %}"></script>
+
+<script>
+// Initialize Dropzone for user image
+Dropzone.options.myAwesomeDropzone = {
+    url: "#",
+    autoProcessQueue: false,
+    uploadMultiple: false,
+    maxFilesize: 1,
+    maxFiles: 1,
+    acceptedFiles: ".jpeg,.jpg,.png",
+    addRemoveLinks: true,
+    dictRemoveFile: "<i class='fa fa-times'></i>",
+    dictCancelUpload: "<i class='fa fa-times'></i>",
+    init: function() {
+        this.on("addedfile", function(file) {
+            if (this.files.length > 1) {
+                this.removeFile(this.files[0]);
+            }
+        });
+        {% if form.photo.value %}
+            var mockFile = { name: "{{ form.photo.value }}", size: 12345 };
+            var imageUrl = "{{ MEDIA_URL }}{{ form.photo.value }}";
+            this.emit("addedfile", mockFile);
+            this.emit("thumbnail", mockFile, imageUrl);
+            this.emit("complete", mockFile);
+            this.files.push(mockFile);
+        {% endif %}
+    }
+};
+
+// Initialize Dropzone for company logo
+Dropzone.options.myCompanyDropzone = {
+    url: "#",
+    autoProcessQueue: false,
+    uploadMultiple: false,
+    maxFilesize: 1,
+    maxFiles: 1,
+    acceptedFiles: ".jpeg,.jpg,.png",
+    addRemoveLinks: true,
+    dictRemoveFile: "<i class='fa fa-times'></i>",
+    dictCancelUpload: "<i class='fa fa-times'></i>",
+    init: function() {
+        this.on("addedfile", function(file) {
+            if (this.files.length > 1) {
+                this.removeFile(this.files[0]);
+            }
+        });
+        {% if form.company_logo.value %}
+            var mockFile = { name: "{{ form.company_logo.value }}", size: 12345 };
+            var imageUrl = "{{ MEDIA_URL }}{{ form.company_logo.value }}";
+            this.emit("addedfile", mockFile);
+            this.emit("thumbnail", mockFile, imageUrl);
+            this.emit("complete", mockFile);
+            this.files.push(mockFile);
+        {% endif %}
+    }
+};
+
+// Form submission handler
+$( "#userForm" ).on( "submit", function( event ) {
+    event.preventDefault();
+    var formData = new FormData(this);    
+    var myDropzone = Dropzone.forElement("#myAwesomeDropzone");
+    var myCompanyDropzone = Dropzone.forElement("#myCompanyDropzone");
+    
+    if (myDropzone.files.length > 0 && myDropzone.files[0].name !== "{{ form.photo.value }}") {
+        formData.append("photo", myDropzone.files[0]);
+    }
+    
+    if (myCompanyDropzone.files.length > 0 && myCompanyDropzone.files[0].name !== "{{ form.company_logo.value }}") {
+        formData.append("company_logo", myCompanyDropzone.files[0]);
+    }
+    
+    $.ajax({
+        url: $(this).attr("action"),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        success: function(response) {
+            $(".text-danger").text("");
+            if(response.success) {               
+                showToast("success", response.message);             
+            } else {
+                const errors = response.errors;
+                for (const key in errors) {
+                    $("#error_" + key).text(errors[key].join(", "));
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            showToast("error", "An error occurred. Please try again.");    
+        }
+    });
+});
+
+// Role and seller type visibility functions
+function checkRole(value) {
+    const sellerTypeFields = document.getElementById("sellerTypeFields");
+    sellerTypeFields.style.display = value === '3' ? 'block' : 'none';
+
+    if (value !== '3') {
+        document.getElementById("seller_type").value = '';
+        document.getElementById("companySellerFields").style.display = 'none';
+    }
+}
+
+function checkSellerType(value) {
+    const companySellerFields = document.getElementById("companySellerFields");
+    companySellerFields.style.display = value === 'Company' ? 'block' : 'none';
+}
+
+// Initialize state dropdowns
+function fetchStates(countryId, selectedStateId, targetDropdownId) {
+    if (countryId) {
+        $.ajax({
+            url: "{% url 'fetch_states' %}",
+            type: "GET",
+            data: { country_id: countryId },
+            success: function(data) {
+                var stateDropdown = $('#' + targetDropdownId);
+                stateDropdown.empty();
+                stateDropdown.append('<option value="">Choose State</option>');
+                $.each(data.states, function(index, state) {
+                    var selected = (state.id == selectedStateId) ? 'selected' : '';
+                    stateDropdown.append('<option value="' + state.id + '" ' + selected + '>' + state.name + '</option>');
+                });
+            }
+        });
+    } else {
+        $('#' + targetDropdownId).empty().append('<option value="">Choose State</option>');
+    }
+}
+
+// Initialize on page load
+$(document).ready(function() {
+    // Check role and seller type visibility
+    checkRole($("#group").val());
+    checkSellerType($("#seller_type").val());
+    
+    // Initialize user country/state
+    var selectedCountryId = $('#country').val();
+    var selectedStateId = '{{ form.state.value|default_if_none:"" }}';
+    if (selectedCountryId) {
+        fetchStates(selectedCountryId, selectedStateId, 'state');
+    }
+    
+    // Initialize company country/state if exists
+    var companyCountryId = $('#company_country').val();
+    var companyStateId = '{{ form.company_state.value|default_if_none:"" }}';
+    if (companyCountryId) {
+        fetchStates(companyCountryId, companyStateId, 'company_state');
+    }
+    
+    // Country change handlers
+    $('#country').change(function() {
+        fetchStates($(this).val(), null, 'state');
+    });
+    
+    $('#company_country').change(function() {
+        fetchStates($(this).val(), null, 'company_state');
+    });
+});
+</script>
+{% endblock %}

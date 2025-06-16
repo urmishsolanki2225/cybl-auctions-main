@@ -1,0 +1,40 @@
+{% load static %}
+<table id="user_table_{{ active_tab }}" class="table table-striped">
+    <thead>
+        <tr>
+            <th>User Info</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr id="user_row_{{ user.id }}">
+            <td>
+                <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
+                    <img class="thumb-xl rounded mr-2" 
+                         src="{% if user.profile.photo %}{{ user.profile.photo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}" 
+                         alt="user" style="width: 50px; height: 50px;"> <!-- Adjust size as needed -->
+            
+                    <div class="ml-2"> 
+                        <a href="{% url 'editusers' user.id %}" class="btn btn-link" style="color: #480c57;"> <strong>{{ user.first_name }} {{ user.last_name }}</strong></a> 
+                    </div>
+                </div>     
+           
+
+            </td>
+            <td>
+                {{ user.email }}
+            </td>
+            <td>
+                {{ user.groups.all|join:", " }}
+            </td>
+            <td class="d-flex align-items-center">
+                <a href="{% url 'editusers' user.id %}" class="btn btn-info btn-sm mr-2">Edit</a>
+                <a href="#" class="btn btn-danger btn-sm mr-2" onclick="confirmDelete({{ user.id }})">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

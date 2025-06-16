@@ -1,0 +1,129 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 box-margin">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Users</h6>
+                        <a class="btn btn-primary waves-effect waves-light float-right mb-3"
+                           href="{% url 'createusers' %}">Add Users</a>
+                    </div>
+                    {% if messages %}
+                    <div class="alert alert-success" role="alert">
+                        {% for message in messages %}
+                        {{ message }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <!-- Tabs -->
+                    <ul class="nav nav-tabs nav-bordered">
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_tab == 'buyers' %}active{% endif %}" 
+                               href="{% url 'allusers' 1 %}">Buyers</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_tab == 'sellers' %}active{% endif %}" 
+                               href="{% url 'allusers' 2 %}">Sellers</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if active_tab == 'super_admins' %}active{% endif %}" 
+                               href="{% url 'allusers' 3 %}">Super Admins</a>
+                        </li>
+                    </ul>
+
+                    <!-- Tab content -->
+                    <div class="tab-content">
+                        <div class="tab-pane {% if active_tab == 'buyers' %}active{% endif %}" id="buyers">
+                            {% include 'users/partials/user_table.html' with users=buyers %}
+                        </div>
+                        <div class="tab-pane {% if active_tab == 'sellers' %}active{% endif %}" id="sellers">
+                            {% include 'users/partials/user_table.html' with users=sellers %}
+                        </div>
+                        <div class="tab-pane {% if active_tab == 'super_admins' %}active{% endif %}" id="super_admins">
+                            {% include 'users/partials/user_table.html' with users=super_admins %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fade out alerts after a timeout
+setTimeout(function () {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        alert.style.transition = 'opacity 0.5s';
+        alert.style.opacity = 0;
+        setTimeout(() => alert.remove(), 500); // Remove from DOM after fade out
+    });
+}, 3000);
+$(document).ready(function () {    
+    $('#user_table_buyers, #user_table_sellers, #user_table_super_admins').DataTable({
+        ordering: false, 
+        lengthChange: true,
+        language: {
+            paginate: {
+                previous: "<i class='arrow_carrot-left'></i>",
+                next: "<i class='arrow_carrot-right'></i>"
+            }
+        },
+        pageLength: 10,
+        drawCallback: function() {
+            $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+        }
+    });
+
+    // Fade out alert message after 1 second
+    setTimeout(function(){
+        $('.alert').fadeOut('slow');
+    }, 1000);
+});
+
+// Confirmation dialog for delete action
+function confirmDelete(userId) {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You want to delete this User!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: '#1a83bf',
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "No, keep it!",
+        customClass: {
+            confirmButton: 'btn-sm',  // Apply custom small button class
+            cancelButton: 'btn-sm'
+        }
+    }).then((result) => {
+        if (result.value) {
+            deleteUser(userId);
+        }
+    });
+}
+
+// Function to delete user
+function deleteUser(userId) {
+    $.post('{% url "deleteuser" %}', {
+        'userId': userId,
+        'csrfmiddlewaretoken': '{{ csrf_token }}'
+    }, function (response) {
+        if (response.status === 'success') {
+            $('#user_row_' + userId).fadeOut(300, function () {
+                $(this).remove();
+            });
+
+            Swal.fire('Deleted!', 'User has been deleted.', 'success');
+        } else {
+            Swal.fire('Error!', 'Error deleting the User.', 'error');
+        }
+    }).fail(function () {
+        Swal.fire('Error!', 'There was an error deleting the field.', 'error');
+    });
+}
+</script>
+{% endblock %}

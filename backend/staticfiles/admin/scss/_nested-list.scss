@@ -1,0 +1,12 @@
+/* :: Nested List CSS */
+
+.dd-handle {
+    border: 1px solid $primary;
+    cursor: pointer;
+}
+
+#nestable2 .dd-handle {
+	color: #fff;
+	border: none;
+	background-color: $primary !important;
+}

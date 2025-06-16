@@ -1,0 +1,25 @@
+/* :: Sidebar Gradient CSS */
+
+.ecaps-page-wrapper.sidebar-gradient {
+    .ecaps-sidemenu-area {
+        .slimScrollDiv {
+            background: #0f0c29;
+            background: -webkit-linear-gradient(to left, #302b63, #0f0c29);
+            background: -webkit-gradient(linear, right top, left top, from(#302b63), to(#0f0c29));
+            background: -webkit-linear-gradient(right, #302b63, #0f0c29);
+            background: -o-linear-gradient(right, #302b63, #0f0c29);
+            background: linear-gradient(to left, #302b63, #0f0c29);
+        }
+
+        .sidebar-menu li a {
+            color: rgba(255, 255, 255, .6);
+        }
+
+        .sidebar-menu > li > a:hover,
+        .sidebar-menu > li.active > a,
+        .sidebar-menu > li.menu-open > a {
+            background-color: rgba(18, 18, 27, 0.1);
+            color: rgba(255, 255, 255, 1);
+        }
+    }
+}

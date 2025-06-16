@@ -1,0 +1,28 @@
+/* :: Lock CSS */
+
+.lock-screen-area {
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+.middle-box {
+    &.lock-screen {
+        padding: 15px;
+
+        .lock-text {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .lock-profile-thumb {
+            width: 70px;
+            border-radius: 50%;
+        }
+
+        .form-control {
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.50);
+        }
+    }
+}

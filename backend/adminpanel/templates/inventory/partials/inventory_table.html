@@ -1,0 +1,66 @@
+{% load static %}
+<table class="table table-striped itemsTable" id="{{ table_id }}">
+    <thead>
+        <tr>
+            {% if current_tab == 1 or current_tab == 4 %}
+                <th>
+                    <input type="checkbox" id="select-all-{{ table_id }}" />
+                </th>
+            {% endif %}
+            <th>Inventory Info</th>
+            <th>Price</th>
+            <th>Category</th>
+            {% if current_tab != 1 %}
+            <th>Company Details</th>
+            {% endif %}
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for inventory in inventorys %}
+        <tr id="field-{{ inventory.id }}"> 
+            {% if current_tab == 1 or current_tab == 4 %}
+                <td>
+                    <input type="checkbox" class="item-checkbox" data-item-id="{{ inventory.id }}" />                    
+                </td>
+            {% endif %}          
+            <td>
+                <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
+                    {% if inventory.media_items.first %}
+                    <img class="thumb-xl rounded mr-2" 
+                        src="{{ MEDIA_URL }}{{ inventory.media_items.first.path }}" 
+                        alt="{{inventory.title}}" style="width: 50px; height: 50px;">
+                    {% else %}
+                    <img src="{% static 'admin/img/member-img/contact-2.jpg' %}" alt="default-profile" style="width: 50px; height: 50px;">
+                    
+                    {% endif %}
+               
+               
+                    <div class="ml-2"> 
+                        <a href="{% url 'editinventory' inventory.id %}" class="btn btn-link" style="color: #480c57;"> <strong>{{ inventory.title }}</strong></a> 
+                    </div>
+                </div>                                            
+            </td> 
+            <td>
+                <div class="d-flex flex-column align-items-start">
+                    <strong> Start Bid: </strong>
+                    {{ inventory.starting_bid|floatformat:2 }} <br>
+                    <strong>Reserve Price: </strong>
+                    {{ inventory.reserve_price|floatformat:2 }}
+                </div>
+            </td>
+            <td>{{ inventory.category.name }}</td>
+            {% if current_tab != 1 %}
+            <td>{{ inventory.auction.user.profile.company.name }}</td>
+            {% endif %}        
+            <td class="d-flex align-items-center">                
+                {% if current_tab == 2 %}
+                <a href="#" class="btn btn-primary btn-sm mr-2" onclick="showBiddingHistory({{ inventory.id }}, '{{inventory.title}}')">Bids</a>
+                {% endif %}       
+                <a href="{% url 'editinventory' inventory.id %}" class="btn btn-info btn-sm mr-2">Edit</a>
+                <a href="#" class="btn btn-danger btn-sm mr-2" onclick="confirmDelete({{ inventory.id }})">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

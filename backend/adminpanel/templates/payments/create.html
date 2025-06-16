@@ -1,0 +1,346 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<script src="{% static 'admin-custom/payment.js' %}"></script>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 box-margin">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0">
+                            <i class="fa fa-plus-circle text-primary mr-2"></i>
+                            Add New Payment History
+                        </h4>                       
+                        <a href="{% url 'payment_history' %}" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                    
+                    <form id="createPaymentForm" method="POST" action="{% url 'createpaymenthistory' %}">
+                        {% csrf_token %}
+                        
+                        <!-- ==================== -->
+                        <!-- Payment Information -->
+                        <!-- ==================== -->
+                        <fieldset class="border p-3 mb-4">
+                            <legend class="w-auto px-3"><i class="fa fa-credit-card mr-2 text-primary"></i>Payment Information</legend>
+                            <div class="row">
+                                <!-- Transaction ID -->
+                                <div class="col-md-6 form-group">
+                                    <label for="transaction_id">Transaction ID</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fa fa-hashtag"></i></span>
+                                        </div>
+                                        <input id="transaction_id" class="form-control" name="transaction_id" 
+                                               type="text" placeholder="Enter Transaction ID (Optional)" 
+                                               value="">
+                                    </div>
+                                    <small class="form-text text-muted">Leave empty for auto-generation (TXN + timestamp)</small>
+                                    <div class="text-danger" id="error_transaction_id"></div>
+                                </div>
+
+                                <!-- Amount -->
+                                <div class="col-md-6 form-group">
+                                    <label for="amount">Amount <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fa fa-dollar-sign"></i></span>
+                                        </div>
+                                        <input id="amount" class="form-control" name="amount" 
+                                               type="number" step="0.01" min="0.01" 
+                                               placeholder="0.00" value="">
+                                    </div>
+                                    <small class="form-text text-muted">Enter amount in USD (minimum $0.01)</small>
+                                    <div class="text-danger" id="error_amount"></div>
+                                </div>
+
+                                <!-- User -->
+                                <div class="col-md-6 form-group">
+                                    <label for="user">Customer/User <span class="text-danger">*</span></label>
+                                    <select id="user" class="form-control" name="user">
+                                        <option value="">-- Select Customer --</option>
+                                        {% for user in users %}
+                                            <option value="{{ user.id }}">
+                                                {{ user.username }} 
+                                                {% if user.first_name or user.last_name %}
+                                                    ({{ user.first_name }} {{ user.last_name }})
+                                                {% endif %}
+                                                - {{ user.email }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="text-danger" id="error_user"></div>
+                                </div>
+
+                                <!-- Inventory -->
+                                <div class="col-md-6 form-group">
+                                    <label for="inventory">Inventory Item <span class="text-danger">*</span></label>
+                                    <select id="inventory" class="form-control" name="inventory">
+                                        <option value="">-- Select Inventory Item --</option>
+                                        {% for inventory in inventories %}
+                                            <option value="{{ inventory.id }}" data-price="{{ inventory.price|default:'0' }}">
+                                                [#{{ inventory.id }}] {{ inventory.title|truncatechars:50 }}
+                                                {% if inventory.price %}
+                                                    - ${{ inventory.price }}
+                                                {% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="form-text text-muted">Select the item being paid for</small>
+                                    <div class="text-danger" id="error_inventory"></div>
+                                </div>
+
+                                <!-- Payment Method -->
+                                <div class="col-md-6 form-group">
+                                    <label for="payment_method">Payment Method <span class="text-danger">*</span></label>
+                                    <select id="payment_method" class="form-control" name="payment_method">
+                                        <option value="">-- Select Payment Method --</option>
+                                        <option value="Online">💳 Online Payment</option>
+                                        <option value="Offline">💵 Offline Payment</option>
+                                    </select>
+                                    <div class="text-danger" id="error_payment_method"></div>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="col-md-6 form-group">
+                                    <label for="status">Payment Status <span class="text-danger">*</span></label>
+                                    <select id="status" class="form-control" name="status">
+                                        <option value="">-- Select Status --</option>
+                                        <option value="Pending" selected>⏳ Pending</option>
+                                        <option value="Completed">✅ Completed</option>
+                                        <option value="Failed">❌ Failed</option>
+                                        <option value="Refunded">🔄 Refunded</option>
+                                    </select>
+                                    <div class="text-danger" id="error_status"></div>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <!-- Submit Buttons -->
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-save"></i> Create Payment Record
+                                    </button>
+                                    <button type="button" class="btn btn-success ml-2" id="saveAndCreateAnother">
+                                        <i class="fa fa-plus"></i> Save & Add Another
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- General Error Display -->
+                        <div class="alert alert-danger" id="error_general" style="display: none;">
+                            <i class="fa fa-exclamation-triangle mr-2"></i>
+                            <span id="error_general_text"></span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-group label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.required {
+    color: #dc3545;
+}
+
+fieldset {
+    border: 1px solid #dee2e6 !important;
+    border-radius: 0.375rem;
+}
+
+fieldset legend {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#paymentPreview {
+    border-left: 4px solid #007bff;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+}
+</style>
+
+<script>
+$(document).ready(function() {
+    let saveAndContinue = false;
+
+    // Handle Save & Add Another button
+    $("#saveAndCreateAnother").on("click", function() {
+        saveAndContinue = true;
+        $("#createPaymentForm").submit();
+    });
+
+    // Form submission
+    $("#createPaymentForm").on("submit", function(event) {
+        event.preventDefault();
+        
+        // Clear previous errors
+        $(".text-danger").empty();
+        $("#error_general").hide();
+        
+        // Show loading state
+        var submitBtn = $(this).find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        submitBtn.html('<i class="fa fa-spinner fa-spin"></i> Creating...').prop('disabled', true);
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: $(this).attr("action"),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+            success: function(response) {
+                if(response.success) {
+                    showToast("success", response.message);
+                    
+                    if (saveAndContinue) {
+                        // Reset form for another entry
+                        resetForm();
+                        saveAndContinue = false;
+                        submitBtn.html(originalText).prop('disabled', false);
+                    } else {
+                        // Redirect to payment history list after 2 seconds
+                        setTimeout(function() {
+                            window.location.href = "{% url 'payment_history' 1 %}";
+                        }, 2000);
+                    }
+                } else {
+                    const errors = response.errors;
+                    for (const key in errors) {
+                        if (key === 'general') {
+                            $("#error_general_text").text(errors[key].join(", "));
+                            $("#error_general").show();
+                        } else {
+                            $("#error_" + key).text(errors[key].join(", "));
+                        }
+                    }
+                    submitBtn.html(originalText).prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                showToast("error", "An error occurred. Please try again.");
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+    
+    // Real-time validation
+    $("#amount").on("input", function() {
+        var amount = parseFloat($(this).val());
+        if (isNaN(amount) || amount <= 0) {
+            $("#error_amount").text("Please enter a valid amount greater than $0.01");
+        } else {
+            $("#error_amount").text("");
+            updatePreview();
+        }
+    });
+    
+    // Clear errors on field change and update preview
+    $("select, input").on("change input", function() {
+        var fieldName = $(this).attr("name");
+        if ($(this).val()) {
+            $("#error_" + fieldName).text("");
+        }
+        updatePreview();
+    });
+    
+    // Auto-suggest amount based on inventory selection
+    $("#inventory").on("change", function() {
+        var selectedOption = $(this).find('option:selected');
+        var price = selectedOption.data('price');
+        if (price && price > 0 && !$("#amount").val()) {
+            $("#amount").val(parseFloat(price).toFixed(2));
+            updatePreview();
+        }
+    });
+    
+    // Auto-generate transaction ID suggestion
+    $("#transaction_id").on("focus", function() {
+        if (!$(this).val()) {
+            var timestamp = new Date().getTime();
+            var suggestion = "TXN" + timestamp;
+            $(this).attr("placeholder", "e.g., " + suggestion);
+        }
+    });
+
+    // Update preview function
+    function updatePreview() {
+        var customer = $("#user option:selected").text().trim();
+        var item = $("#inventory option:selected").text().trim();
+        var amount = $("#amount").val();
+        var method = $("#payment_method option:selected").text().trim();
+        
+        if (customer && customer !== "-- Select Customer --") {
+            $("#preview_customer").text(customer.split(' - ')[0]);
+        } else {
+            $("#preview_customer").text('-');
+        }
+        
+        if (item && item !== "-- Select Inventory Item --") {
+            $("#preview_item").text(item.substring(0, 30) + (item.length > 30 ? '...' : ''));
+        } else {
+            $("#preview_item").text('-');
+        }
+        
+        if (amount) {
+            $("#preview_amount").text('$' + parseFloat(amount).toFixed(2));
+        } else {
+            $("#preview_amount").text('$0.00');
+        }
+        
+        if (method && method !== "-- Select Payment Method --") {
+            $("#preview_method").text(method);
+        } else {
+            $("#preview_method").text('-');
+        }
+        
+        // Show preview if any field is filled
+        if (customer || item || amount || method) {
+            $("#paymentPreview").show();
+        } else {
+            $("#paymentPreview").hide();
+        }
+    }
+});
+
+// Reset form function
+function resetForm() {
+    $("#createPaymentForm")[0].reset();
+    $("#status").val("Pending");
+    $(".text-danger").empty();
+    $("#error_general").hide();
+    $("#paymentPreview").hide();
+    $("#transaction_id").attr("placeholder", "Enter Transaction ID (Optional)");
+}
+
+</script>
+{% endblock %}

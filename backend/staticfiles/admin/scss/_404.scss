@@ -1,0 +1,43 @@
+/* :: 404 CSS */
+
+.error-page-area {
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    @include display-flex(flex);
+    @include align-items-center;
+    @include justify-content-center;
+    height: auto;
+
+    .error-content {
+        h2 {
+            font-size: 36px;
+            margin-bottom: 15px;
+            margin-top: 50px;
+
+            @media #{$breakpoint-xs} {
+                font-size: 26px;
+            }
+        }
+
+        p {
+            font-size: 18px;
+
+            @media #{$breakpoint-md} {
+                font-size: 16px;
+            }
+
+            @media #{$breakpoint-xs} {
+                font-size: 16px;
+            }
+        }
+
+        .error-thumb {
+            position: relative;
+            z-index: 1;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+    }
+}

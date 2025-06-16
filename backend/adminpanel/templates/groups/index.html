@@ -1,0 +1,309 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-sm-6 col-xl">
+            <div class="card box-margin">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="card-title mb-0">Roles</h6>
+                                <div class="float-right">
+                                    <button type="button" class="btn btn-primary waves-effect waves-light mb-3" data-toggle="modal" data-target="#addRoleModal">
+                                        Add Role
+                                    </button>
+                                    <a class="btn btn-primary waves-effect waves-light mb-3" href="{% url 'permissions_management' %}">Manage Permissions</a>
+                                </div>
+                            </div>
+                            <table class="table table-striped" id="groups_table">
+                                <thead>
+                                    <tr>
+                                        <th>Sr.no.</th>
+                                        <th>Role</th>
+                                        <th>View Permissions</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% csrf_token %}
+                                    {% for group in all_groups %}
+                                        <tr id="group_{{ group.id }}">
+                                            <td>{{  group.id }}</td>
+                                            <td>{{ group.name }}</td>
+                                            <td>
+                                                <a href="{% url 'view_permissions' group.id %}">
+                                                    <i class="fa fa-eye"></i> {{ group.permissions.count }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if group.name == 'Super Admin' %}
+                                                    No Action Allowed
+                                                {% else %}
+                                                    <button class="btn btn-info btn-sm mr-2" data-toggle="modal" data-target="#editRoleModal" data-group-id="{{ group.id }}" data-group-name="{{ group.name }}">
+                                                        Edit
+                                                    </button>
+                                                    <!-- <a href="{% url 'editgroup' group.id %}" class="btn btn-info btn-sm mr-2">Edit</a> -->
+                                                    <a href="#" onclick="confirmDelete({{ group.id }})" class="btn btn-danger btn-sm">Delete</a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--Add role model -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" role="dialog" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRoleModalLabel">Add Role</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addRoleForm" method="post" action="{% url 'creategroup' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="name">Name <span class="text-danger">*</span></label>
+                        <input type="text" id="name" name="name" class="form-control" value="{{ form.name.value|default:'' }}" placeholder="Type Name..">
+                        {% if form.name.errors %}
+                        <label id="name-error" class="error mt-2 text-danger" for="name">{{ form.name.errors }}</label>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Add</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1" role="dialog" aria-labelledby="editRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editRoleModalLabel">Edit Role</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editRoleForm" method="post" action="{% url 'editgroup' 0 %}">
+                    {% csrf_token %}
+                    <input type="hidden" id="edit-group-id" name="group_id" value="">
+                    <div class="form-group">
+                        <label for="edit-name">Name <span class="text-danger">*</span></label>
+                        <input type="text" id="edit-name" name="name" class="form-control" placeholder="Type Name..">
+                        <label id="edit-name-error" class="error mt-2 text-danger" for="edit-name"></label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+ 
+<script>
+    $(document).ready(function () {
+
+        setTimeout(() => {
+            $('.alert').hide()
+        }, 3000)
+
+         var table = $('#groups_table').DataTable({
+            lengthChange: true,
+            language: {
+                paginate: {
+                    previous: "<i class='arrow_carrot-left'></i>",
+                    next: "<i class='arrow_carrot-right'></i>"
+                }
+            },
+            pageLength: 10,
+            drawCallback: function() {
+                $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+            }
+        });
+        
+        $('#addRoleForm').on('submit', function(e) {
+        e.preventDefault();
+        $('#name-error').remove();
+        $('.existing-success-message').hide();
+        var formData = $(this).serialize();
+        
+        var name = $('#name').val();
+        if (name.trim() === '') {
+            $('#name').after('<label id="name-error" class="error mt-2 text-danger">This field is required.</label>');
+            return;
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: $(this).attr('action'),  
+            data: formData,
+            success: function(response) {
+                console.log(response); 
+                if (response.id && response.name) {
+                    showToast("success", 'Role created successfully!');  
+                    var viewPermissionsUrlTemplate = "{% url 'view_permissions' 0 %}";
+                    var viewPermissionsUrl = viewPermissionsUrlTemplate.replace('0', response.id);
+                    $('#groups_table tbody').append(`
+                        <tr id="group_${response.id}">
+                            <td>${response.id}</td>
+                            <td>${response.name}</td>
+                            <td>
+                                <a href="${viewPermissionsUrl}">
+                                    <i class="fa fa-eye"></i> ${response.permissions_count || 0}
+                                </a>
+                            </td>
+                            <td>
+                                <button class="btn btn-info btn-sm mr-2" data-toggle="modal" data-target="#editRoleModal" data-group-id="${response.id}" data-group-name="${response.name}">
+                                    Edit
+                                </button>
+                                <a href="#" onclick="confirmDelete(${response.id})" class="btn btn-danger btn-sm">Delete</a>
+                            </td>
+                        </tr>
+                    `);
+
+                    $('#name').val(''); 
+                    $('#addRoleModal').modal('hide');
+                    setTimeout(() => {
+                        $('.alert.alert-success').fadeOut('slow', function() {
+                            $(this).remove();
+                        }); 
+                    }, 3000);
+                } else {
+                    console.error('Unexpected response structure:', response);
+                }
+            },
+            error: function(xhr) {
+                console.log(xhr); 
+                $('#name-error').remove();
+                var errors = xhr.responseJSON || {}; 
+                if (errors.name) {
+                    $('#name').after('<label id="name-error" class="error mt-2 text-danger">' + errors.name[0] + '</label>');
+                } else {
+                    $('#groups_table').before('<div class="alert alert-danger" role="alert">An error occurred. Please try again.</div>');
+                }
+            }
+        });
+    });
+
+
+    $('#editRoleModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var groupId = button.data('group-id');
+        var groupName = button.data('group-name');
+
+        var modal = $(this);
+        modal.find('#edit-group-id').val(groupId);
+        modal.find('#edit-name').val(groupName);
+        modal.find('#edit-name-error').remove(); 
+    });
+
+    $('#editRoleModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var groupId = button.data('group-id');
+    var groupName = button.data('group-name');
+
+    var modal = $(this);
+    modal.find('#edit-group-id').val(groupId);
+    modal.find('#edit-name').val(groupName);
+    modal.find('#edit-name-error').remove(); 
+    console.log("Group Id : ",groupId);
+    });
+
+    $('#editRoleForm').on('submit', function (e) {
+        e.preventDefault();
+        var groupId = $('#edit-group-id').val();
+        var formData = $(this).serialize();
+        var baseUrl = "{% url 'editgroup' 0 %}"; 
+        var editUrl = baseUrl.replace(/0/g, groupId);
+        console.log("groupId ",groupId)
+        console.log("editUrl ", editUrl)
+
+        $.ajax({
+            type: 'POST',
+            url: editUrl,
+            data: formData,
+            success: function (response) {
+                showToast("success", 'Role updated successfully!');  
+                
+                $('#group_' + groupId + ' td:nth-child(2)').text(response.new_name); 
+                $('#group_' + groupId + ' .btn[data-target="#editRoleModal"]').data('group-name', response.new_name);
+
+                setTimeout(() => {
+                    $('.alert').fadeOut(); 
+                }, 3000);
+                $('#editRoleModal').modal('hide'); 
+            },
+            error: function (xhr) {
+                var errors = xhr.responseJSON;
+                $('#edit-name-error').remove();
+                if (errors.name) {
+                    $('#edit-name').after('<label id="edit-name-error" class="error mt-2 text-danger">' + errors.name[0] + '</label>');
+                }
+            }
+        });
+    });
+})
+</script>
+<script>
+    var delete_url = "{% url 'deletegroup' %}"
+    var csrfToken = $('[name=csrfmiddlewaretoken]').val();
+    function confirmDelete(id) {
+        Swal.fire({
+            title: 'Are you sure you want to delete this Role?',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745', 
+            cancelButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, delete it!',
+            backdrop: `rgba(0,0,0,0.5)`,
+            customClass: {
+                popup: 'custom-popup',
+                title: 'custom-title',
+                content: 'custom-content',
+                confirmButton: 'custom-confirm-button',
+                cancelButton: 'custom-cancel-button'
+            }
+        }).then((result) => {
+            if (result.value) {
+                $.ajax({
+                    type: 'POST',
+                    url: delete_url,
+                    data: { 'group_id': id, 'csrfmiddlewaretoken': csrfToken },
+                    success: function (response) {
+                        if (response.status == 'success') {
+                            Swal.fire(
+                                'Deleted!',
+                                'The role has been deleted.',
+                                'success'
+                            )
+                            setTimeout(() => {
+                                location.reload()
+                            }, 3000)
+                        } else {
+                            Swal.fire(
+                                'Error!',
+                                'There was an error deleting the role.',
+                                'error'
+                            );
+                            setTimeout(() => {
+                                location.reload()
+                            }, 3000)
+                        }
+                    }
+                })
+            }
+        })
+    }
+</script>
+{% endblock %}

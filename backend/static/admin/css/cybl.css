@@ -1,0 +1,36 @@
+.dropzone .dz-preview .dz-remove {
+    position: absolute;
+    right: -5px;
+    top: -5px;
+    z-index: 99;
+    background: #2b0738;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    border-radius: 10px;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+.dz-filename{ display: none; }
+.dz-size{ margin-top: 22px; }
+
+fieldset { 
+    margin-bottom: 30px !important;
+    padding: 20px !important;
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 5px !important;
+}
+fieldset legend {
+    width: auto;
+    padding: 0 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.section-header {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}

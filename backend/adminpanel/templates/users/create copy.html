@@ -1,0 +1,492 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<style>
+    .dropzone .dz-preview .dz-remove {
+        position: absolute;
+        right: -5px;
+        top: -5px;
+        z-index: 99;
+        background: #2b0738;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        border-radius: 10px;
+        text-decoration: none !important;
+        cursor: pointer;
+    }
+    .dz-filename{
+        display: none;
+    }
+    .dz-size{
+        margin-top: 22px;
+    }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+
+<link rel="stylesheet" href="{% static 'admin/css/dropzone.min.css' %}">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 box-margin">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Add User</h6>
+                        <a href="{% url 'allusers' 1 %}" class="btn btn-primary">Go back</a>
+                    </div>
+                    <div class="alert alert-success" id="alert-success" role="alert" style="display: none;">
+                    </div>
+                    <form id="userForm" enctype="multipart/form-data" method="POST">
+                        {% csrf_token %}
+                        <!-- General Info Section -->
+                        <fieldset>
+                            <h6>General Info</h6>
+                            <div class="row">
+                                <!-- Title -->
+                                <div class="col-md-4 form-group">
+                                    <label for="title">Title <span class="text-danger">*</span></label>
+                                    <select id="title" class="form-control" name="title">
+                                        <option value="">Choose Title</option>
+                                        <option value="mr">Mr.</option>
+                                        <option value="ms">Ms.</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <div class="text-danger" id="error_title"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- First Name -->
+                                <div class="col-md-4 form-group">
+                                    <label for="first_name">First Name <span class="text-danger">*</span></label>
+                                    <input id="first_name" class="form-control" name="first_name" type="text" placeholder="Type First Name.." value="{{ form.first_name.value|default:'' }}">
+                                    <div class="text-danger" id="error_first_name"></div> <!-- Error message div -->
+                                </div>
+                    
+                                <!-- Last Name -->
+                                <div class="col-md-4 form-group">
+                                    <label for="last_name">Last Name <span class="text-danger">*</span></label>
+                                    <input id="last_name" class="form-control" name="last_name" type="text" placeholder="Type Last Name.." value="{{ form.last_name.value|default:'' }}">
+                                    <div class="text-danger" id="error_last_name"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Gender -->
+                                <div class="col-md-6 form-group">
+                                    <label for="gender">Gender <span class="text-danger">*</span></label>
+                                    <select id="gender" class="form-control" name="gender">
+                                        <option value="">Select Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <div class="text-danger" id="error_gender"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Email -->
+                                <div class="col-md-6 form-group">
+                                    <label for="email">Email Address <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fa fa-envelope"></i></span>
+                                        </div>
+                                        <input id="email" class="form-control" name="email" type="email" placeholder="Type Email Address.." value="{{ form.email.value|default:'' }}">
+                                    </div>
+                                    <div class="text-danger" id="error_email"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Phone Number -->
+                                <div class="col-md-6 form-group">
+                                    <label for="phone_no">Phone Number <span class="text-danger">*</span></label>
+                                    <input id="phone_no" class="form-control" name="phone_no" type="tel" placeholder="Type Phone Number.." value="{{ form.phone_no.value|default:'' }}">
+                                    <div class="text-danger" id="error_phone_no"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Image Upload -->
+                                <div class="col-md-12 form-group">
+                                    <label for="image">Upload Image (JPG/PNG Only) <span class="text-danger">*</span></label>
+                                    <div class="dropzone" id="myAwesomeDropzone">
+                                        <div class="dz-message needsclick">
+                                            <i class="h1 text-muted dripicons-cloud-upload"></i>
+                                            <h3>Drop files here or click to upload.</h3>
+                                            <span class="text-muted font-13">(This is just a demo dropzone. Selected files are <strong>not</strong> actually uploaded.)</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-danger" id="error_photo"></div> <!-- Error message div -->
+
+                                </div>
+                            </div>
+                        </fieldset>
+                    
+                        <!-- Location Info Section -->
+                        <fieldset>
+                            <h6>Location Info</h6>
+                            <div class="row">
+                                <!-- Address -->
+                                <div class="col-md-6 form-group">
+                                    <label for="address">Address <span class="text-danger">*</span></label>
+                                    <textarea id="address" class="form-control" name="address" placeholder="Type Address..">{{ form.address.value|default:'' }}</textarea>
+                                    <div class="text-danger" id="error_address"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Country -->
+                                <div class="col-md-6 form-group">
+                                    <label for="country">Country <span class="text-danger">*</span></label>
+                                    <select id="country" name="country" class="form-control">
+                                        <option value="">Choose Country</option>
+                                        {% for country in countries %}
+                                            <option value="{{ country.id }}" {% if form.country.value|stringformat:"s" == country.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ country.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>    
+                                    <div class="text-danger" id="error_country"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- State/Province -->
+                                <div class="col-md-6 form-group">
+                                    <label for="state">State/Province <span class="text-danger">*</span></label>
+                                    <select id="state" name="state" class="form-control">
+                                        <option value="">Choose State</option>
+                                    </select>
+                                    <div class="text-danger" id="error_state"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- City -->
+                                <div class="col-md-6 form-group">
+                                    <label for="city">City <span class="text-danger">*</span></label>
+                                    <input id="city" class="form-control" name="city" type="text" placeholder="City" value="{{ form.city.value|default:'' }}">
+                                    <div class="text-danger" id="error_city"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Postal/Zip Code -->
+                                <div class="col-md-6 form-group">
+                                    <label for="zipcode">Postal/Zip Code <span class="text-danger">*</span></label>
+                                    <input id="zipcode" class="form-control" name="zipcode" type="text" placeholder="Postal/Zip Code" value="{{ form.zipcode.value|default:'' }}">
+                                    <div class="text-danger" id="error_zipcode"></div> <!-- Error message div -->
+
+                                </div>
+                            </div>
+                        </fieldset>
+                    
+                        <!-- Role Info Section -->
+                        <fieldset>
+                            <h6>Role Info</h6>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label for="group">Role <span class="text-danger">*</span></label>
+                                    <select id="group" class="form-control" name="group" onchange="checkRole(this.value)">
+                                        <optgroup label="All Roles">
+                                            {% for r in all_roles %}
+                                                <option value="{{ r.id }}" {% if form.group.value == r.id %}selected{% endif %}>{{ r.name }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                        
+                                    </select>
+                                </div>
+                    
+                                <!-- Seller Type (Visible when Role ID is 3) -->
+                                <div id="sellerTypeFields" class="col-md-6 form-group" style="display: none;">
+                                    <label for="seller_type">Seller Type <span class="text-danger">*</span></label>
+                                    <select id="seller_type" class="form-control" name="seller_type" onchange="checkSellerType(this.value)">
+                                        <option value="">Select Seller Type</option>
+                                        <option value="Individual">Individual Seller</option>
+                                        <option value="Company">Company Seller</option>
+                                    </select>
+                                    <div class="text-danger" id="error_seller_type"></div> <!-- Error message div -->
+                                </div>
+                    
+                                <!-- Company Info (Visible when Seller Type is Company) -->
+                                <div id="companySellerFields" style="display: none;" class="ml-3">
+                                    <h6>Company Details</h6>
+                                    <div class="row">
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_name">Company Name <span class="text-danger">*</span></label>
+                                            <input id="company_name" class="form-control" name="company_name" type="text" placeholder="Type Company Name..">
+                                            <div class="text-danger" id="error_company_name"></div> <!-- Error message div -->
+                                        </div>
+
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_address">Company Address <span class="text-danger">*</span></label>
+                                            <input id="company_address" class="form-control" name="company_address" placeholder="Type Company Address..">
+                                            <div class="text-danger" id="error_company_address"></div> <!-- Error message div -->
+                                        </div>
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_phone">Company Phone <span class="text-danger">*</span></label>
+                                            <input id="company_phone" class="form-control" name="company_phone" type="text" placeholder="Type Company Phone..">
+                                            <div class="text-danger" id="error_company_phone"></div> <!-- Error message div -->
+                                        </div>
+
+                                        <!-- Inside the "companySellerFields" div -->
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_country">Company Country <span class="text-danger">*</span></label>
+                                            <select id="company_country" name="company_country" class="form-control">
+                                                <option value="">Choose Country</option>
+                                                {% for country in countries %}
+                                                    <option value="{{ country.id }}">{{ country.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="text-danger" id="error_company_country"></div>
+                                        </div>
+
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_state">Company State/Province <span class="text-danger">*</span></label>
+                                            <select id="company_state" name="company_state" class="form-control">
+                                                <option value="">Choose State</option>
+                                            </select>
+                                            <div class="text-danger" id="error_company_state"></div>
+                                        </div>
+
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_city">Company City <span class="text-danger">*</span></label>
+                                            <input id="company_city" class="form-control" name="company_city" type="text" placeholder="Company City">
+                                            <div class="text-danger" id="error_company_city"></div>
+                                        </div>
+
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_zipcode">Company Postal/Zip Code <span class="text-danger">*</span></label>
+                                            <input id="company_zipcode" class="form-control" name="company_zipcode" type="text" placeholder="Company Postal/Zip Code">
+                                            <div class="text-danger" id="error_company_zipcode"></div>
+                                        </div>
+
+                                        <div class="col-md-6 form-group">
+                                            <label for="company_logo">Company Logo <span class="text-danger">*</span></label>
+                                            <div class="dropzone" id="myCompanyDropzone">
+                                                <div class="dz-message needsclick">
+                                                    <i class="h1 text-muted dripicons-cloud-upload"></i>
+                                                    <h3>Drop files here or click to upload.</h3>
+                                                    <span class="text-muted font-13">(This is just a demo dropzone. Selected files are <strong>not</strong> actually uploaded.)</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-danger" id="error_company_logo"></div> <!-- Error message div -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                    
+                            <!-- Submit Button -->
+                            <div class="form-group text-center">
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'admin/js/dropzone.min.js' %}"></script>
+
+<script>
+// Initialize Dropzone for image preview
+Dropzone.options.myAwesomeDropzone = {
+    url: "#",
+    autoProcessQueue: false,
+    uploadMultiple: false,
+    maxFilesize: 1,
+    maxFiles: 1,
+    acceptedFiles: ".jpeg,.jpg,.png",
+    addRemoveLinks: true,
+    dictRemoveFile: "<i class='fa fa-times'></i>",
+    dictCancelUpload: "<i class='fa fa-times'></i>",
+    init: function() {
+        this.on("addedfile", function(file) {
+            if (this.files.length > 1) {
+                this.removeFile(this.files[0]);
+            }
+        });
+    }
+};
+
+// Initialize Dropzone for image preview
+Dropzone.options.myCompanyDropzone = {
+    url: "#",
+    autoProcessQueue: false,
+    uploadMultiple: false,
+    maxFilesize: 1,
+    maxFiles: 1,
+    acceptedFiles: ".jpeg,.jpg,.png",
+    addRemoveLinks: true,
+    dictRemoveFile: "<i class='fa fa-times'></i>",
+    dictCancelUpload: "<i class='fa fa-times'></i>",
+    init: function() {
+        this.on("addedfile", function(file) {
+            if (this.files.length > 1) {
+                this.removeFile(this.files[0]);
+            }
+        });
+    }
+};
+
+// Initialize phone input
+// Select the input fields
+var phone_no = document.querySelector("#phone_no");
+var company_phone = document.querySelector("#company_phone");
+
+// Function to initialize intlTelInput
+function initializeIntlTelInput(inputElement) {
+    return window.intlTelInput(inputElement, {
+        initialCountry: "auto",
+        geoIpLookup: function(callback) {
+            fetch('https://ipapi.co/json')
+                .then(res => res.json())
+                .then(data => callback(data.country_code))
+                .catch(() => callback("us"));
+        },
+        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"
+    });
+}
+
+// Initialize intlTelInput for both fields
+var itiPhoneNo = initializeIntlTelInput(phone_no);
+var itiCompanyPhone = initializeIntlTelInput(company_phone);
+
+$( "#userForm" ).on( "submit", function( event ) {
+    event.preventDefault();
+    var formData = new FormData(this);    
+    var myDropzone = Dropzone.forElement("#myAwesomeDropzone");
+    var myCompany = Dropzone.forElement("#myCompanyDropzone");
+    if (myDropzone.files.length > 0) {
+        formData.append("photo", myDropzone.files[0]);
+    }
+    if(myCompany.files.length > 0){
+        formData.append("company_logo", myCompany.files[0]);
+    }
+
+    formData.set("phone_no", itiPhoneNo.getNumber());
+    
+    if($("#company_phone").val()){
+        formData.set("company_phone", itiCompanyPhone.getNumber());
+    }
+    $.ajax({
+        url: "{% url 'createusers' %}",
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        success: function(response) {
+            $(".text-danger").text("");
+            if(response.success) {
+                $("#userForm")[0].reset(); 
+                myDropzone.removeAllFiles(); 
+                myCompany.removeAllFiles(); 
+                $("#alert-success").text(response.message).show();
+                setTimeout(function() {
+                    $("#alert-success").fadeOut();
+                }, 5000);
+                
+            } else {
+                const errors = response.errors;
+                for (const key in errors) {
+                    $("#error_" + key).text(errors[key].join(", "));
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            $("#alert-success").text("An error occurred. Please try again.").show();
+        }
+    });
+});
+
+
+function checkRole(value) {
+    document.getElementById("sellerTypeFields").style.display = value === '3' ? 'block' : 'none';
+    if (value !== '3') {
+        document.getElementById("seller_type").value = '';
+        document.getElementById("companySellerFields").style.display = 'none';
+    }
+}
+
+function checkSellerType(value) {
+    document.getElementById("companySellerFields").style.display = value === 'Company' ? 'block' : 'none';
+}
+function fetchStates(countryId, selectedStateId) {
+    if (countryId) {
+        $.ajax({
+            url: "{% url 'fetch_states' %}",
+            type: "GET",
+            data: { country_id: countryId },
+            success: function(data) {
+                var stateDropdown = $('#state');
+                stateDropdown.empty();
+                stateDropdown.append('<option value="">Choose State</option>');
+                $.each(data.states, function(index, state) {
+                    console.log("selected", state.id)
+                    var selected = (state.id == selectedStateId) ? 'selected' : '';
+                    
+                    stateDropdown.append('<option value="' + state.id + '" ' + selected + '>' + state.name + '</option>');
+                });
+            }
+        });
+    } else {
+        $('#state').empty().append('<option value="">Choose State</option>');
+    }
+}
+
+function fetchCompanyStates(countryId, selectedStateId) {
+    if (countryId) {
+        $.ajax({
+            url: "{% url 'fetch_states' %}",
+            type: "GET",
+            data: { country_id: countryId },
+            success: function(data) {
+                var stateDropdown = $('#company_state');
+                stateDropdown.empty();
+                stateDropdown.append('<option value="">Choose State</option>');
+                $.each(data.states, function(index, state) {
+                    var selected = (state.id == selectedStateId) ? 'selected' : '';
+                    stateDropdown.append('<option value="' + state.id + '" ' + selected + '>' + state.name + '</option>');
+                });
+            }
+        });
+    } else {
+        $('#company_state').empty().append('<option value="">Choose State</option>');
+    }
+}
+
+$('#country, #company_country').change(function() {
+    var countryId = $(this).val();
+    if ($(this).attr('id') === 'country') {
+        fetchStates(countryId);
+    } else {
+        fetchCompanyStates(countryId);
+    }
+});
+
+// At the end of your script, add this to set the current user's state
+$(document).ready(function() {
+    // Fetch current user's state (you'll need to pass this from your backend)
+    var currentUserStateId = '{{ request.user.state.id|default_if_none:"" }}';
+    var currentUserCountryId = '{{ request.user.country.id|default_if_none:"" }}';
+    
+    if (currentUserCountryId) {
+        $('#country').val(currentUserCountryId).trigger('change');        
+        // After a small delay to ensure states are loaded       
+        if (currentUserStateId) {
+            $('#state').val(currentUserStateId);
+        }
+    }    
+    // Similarly for company fields if you want to pre-fill them
+    $('#company_country').val(currentUserCountryId).trigger('change');  
+    if (currentUserStateId) {
+        $('#company_state').val(currentUserStateId);
+    }
+});
+
+</script>
+{% endblock %}

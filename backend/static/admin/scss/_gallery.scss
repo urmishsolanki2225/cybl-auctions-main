@@ -1,0 +1,30 @@
+/* :: Gallery CSS */
+
+.gallery--single-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    overflow: hidden;
+
+    .gallery--image {
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        border-radius: 3px;
+
+        img {
+            width: 100%;
+            @include transition-duration(1500ms);
+            border-radius: 3px;
+        }
+    }
+
+    .gallery_service_text {
+        padding: 25px 30px 30px;
+
+        h6 {
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+    }
+}

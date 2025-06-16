@@ -1,0 +1,223 @@
+/* :: Pagination CSS */
+
+.pagination {
+    &.singel-page {
+        .page-item {
+            .page-link {
+                padding: 10px 15px;
+                @include transition-duration(400ms);
+                border-color: transparent;
+
+                i {
+                    font-size: 14px;
+                }
+
+                @media #{$breakpoint-xs} {
+                    padding: 4px 8px;
+                }
+
+                &:focus,
+                &:hover {
+                    background-color: $primary-color;
+                    color: $white-color;
+                    border-color: transparent;
+                }
+            }
+        }
+    }
+
+    &.pagination-flat {
+        .page-item {
+            margin-right: 3px;
+
+            .page-link {
+                padding: 10px 15px;
+                @include transition-duration(400ms);
+                border: none;
+                border-radius: 3px;
+
+                i {
+                    font-size: 14px;
+                }
+
+                @media #{$breakpoint-xs} {
+                    padding: 4px 8px;
+                }
+
+                &:focus,
+                &:hover {
+                    background-color: $green-color;
+                    color: $white-color;
+                    border-color: transparent;
+                }
+            }
+
+            &.active {
+                .page-link {
+                    background-color: $green-color;
+                }
+
+            }
+        }
+    }
+
+    &.pagination-separated {
+        .page-item {
+            margin-right: 5px;
+
+            .page-link {
+                padding: 10px 15px;
+                @include transition-duration(400ms);
+                border-radius: 2px;
+
+                @media #{$breakpoint-xs} {
+                    padding: 4px 8px;
+                }
+
+                i {
+                    font-size: 14px;
+                }
+
+                &:focus,
+                &:hover {
+                    background-color: $danger-color;
+                    color: $white-color;
+                    border-color: transparent;
+                }
+            }
+
+            &.active {
+                .page-link {
+                    background-color: $danger-color;
+                    border-color: $danger-color;
+                }
+
+            }
+        }
+    }
+
+    &.pagination-rounded {
+        .page-item {
+            &:first-child {
+                .page-link {
+                    border-radius: 25px 0 0 25px;
+                }
+            }
+
+            &:last-child {
+                .page-link {
+                    border-radius: 0 25px 25px 0;
+                }
+            }
+
+            .page-link {
+                padding: 8px 15px;
+                @include transition-duration(400ms);
+
+                i {
+                    font-size: 14px;
+                }
+
+                @media #{$breakpoint-xs} {
+                    padding: 4px 8px;
+                }
+
+                &:focus,
+                &:hover {
+                    background-color: $primary-color;
+                    color: $white-color;
+                    border-color: transparent;
+                }
+            }
+
+            &.active {
+                .page-link {
+                    background-color: $primary-color;
+                    border-color: $primary-color;
+                }
+
+            }
+        }
+    }
+
+    &.pagination-rounded-flat {
+        .page-item {
+            margin-right: 5px;
+            border-radius: 50%;
+
+            .page-link {
+                @include transition-duration(400ms);
+                border: none;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                text-align: center;
+                line-height: 40px;
+                padding: 0;
+
+                i {
+                    font-size: 14px;
+                }
+
+                @media #{$breakpoint-xs} {
+                    width: 30px;
+                    height: 30px;
+                    line-height: 30px;
+                }
+
+                &:focus,
+                &:hover {
+                    background-color: $green-color;
+                    color: $white-color;
+                    border-color: transparent;
+                }
+            }
+
+            &.active {
+                .page-link {
+                    background-color: $green-color;
+                }
+
+            }
+        }
+    }
+
+    &.next-pre-separated {
+        .page-item {
+
+            .page-link {
+                padding: 15px 30px;
+                @include transition-duration(400ms);
+                border-radius: 2px;
+
+                i {
+                    font-size: 14px;
+                }
+
+                @media #{$breakpoint-xs} {
+                    padding: 3px 5px;
+                }
+
+                &:focus,
+                &:hover {
+                    background-color: $green-color;
+                    color: $white-color;
+                    border-color: transparent;
+                }
+            }
+
+            &.active {
+                .page-link {
+                    background-color: $green-color;
+                    padding: 15px 30px;
+                    font-size: 16px;
+                    border-color: $green-color;
+
+                    @media #{$breakpoint-xs} {
+                        padding: 3px 5px;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,482 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<style>
+.auction-time {
+    display: flex;
+    flex-direction: column; /* Stack the labels, dates, and times vertically */
+}
+
+.auction-time-labels, .auction-time-values, .auction-time-times {
+    display: flex;
+    justify-content: space-between; /* Distribute space evenly between items */
+}
+
+.auction-time-labels div, .auction-time-values div, .auction-time-times div {
+    width: 48%; /* Ensure each item takes roughly half the space */
+}
+.avatar-area {
+    display: flex;
+    align-items: center; /* Center align items */
+}
+
+.avatar-area img {
+    width: 50px; /* Set desired width */
+    height: 50px; /* Set desired height */
+    margin-right: 10px; /* Space between image and text */
+}
+
+.avatar-area .edit-link {
+    display: inline-block; /* Make the link inline */
+    margin-top: 5px; /* Space above the link */
+}
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 height-card box-margin">
+            <div class="card">
+                <div class="card-body pb-0">
+                    <div id="general_messages" style="display: none;"></div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">  Auctions</h6>
+                        <a href="{% url 'createauction' %}" class="btn btn-primary">Add Auction</a>
+                    </div>
+                    <ul class="nav nav-tabs nav-bordered">
+                        <li class="nav-item">
+                            <a href="{% url 'allauctions' 1 %}" aria-expanded="false" class="nav-link {% if tabId == 1 %}active{% endif %}">
+                                Running
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'allauctions' 2 %}" aria-expanded="true" class="nav-link {% if tabId == 2 %}active{% endif %}">
+                                Next
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'allauctions' 3 %}" aria-expanded="false" class="nav-link {% if tabId == 3 %}active{% endif %}">
+                                Closed
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane {% if tabId == 1 %} show active {% endif %}" id="running-auctions">
+                            <table id="running-items-datatable" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Auction Info</th>
+                                        <th>Auction Time</th>
+                                        <th>Lot Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for auction in running_auctions %}
+                                    <tr id="auction-{{ auction.id }}">   
+                                        <td>
+                                            <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
+                                                <img class="thumb-xl rounded mr-2" 
+                                                     src="{% if auction.user.profile.company and auction.user.profile.company.company_logo %}{{ auction.user.profile.company.company_logo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}" 
+                                                     alt="user" style="width: 50px; height: 50px;"> <!-- Adjust size as needed -->
+                                        
+                                                <div class="ml-2"> 
+                                                    <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-link" style="color: #480c57;"> <strong>{{ auction.name }}</strong></a> 
+                                                </div>
+                                            </div>                                            
+                                        </td>                                                                                    
+                                        <td>
+                                            <div class="auction-time">
+                                                <div class="auction-time-labels">
+                                                    <div><strong>Bidding Start Time:</strong></div>
+                                                    <div><strong>End Date Time:</strong></div>
+                                                </div>
+                                                <div class="auction-time-values">
+                                                    <div>
+                                                        {% if auction.prebid_start_date %}
+                                                            {{ auction.prebid_start_date|date:"j F Y" }}
+                                                        {% else %}
+                                                            {{ auction.start_date|date:"j F Y" }}
+                                                        {% endif %}
+                                                    </div>
+                                                    <div>{{ auction.end_date|date:"j F Y" }}</div>
+                                                </div>
+                                                <div class="auction-time-times">
+                                                    <div>
+                                                        {% if auction.prebid_start_date %}
+                                                            {{ auction.prebid_start_date|date:"g:i A" }}
+                                                        {% else %}
+                                                            {{ auction.start_date|date:"g:i A" }}
+                                                        {% endif %}
+                                                    </div>
+                                                    <div>{{ auction.end_date|date:"g:i A" }}</div>
+                                                </div>
+                                            </div>
+
+                                        </td>  
+                                        <td>
+                                            <div class="auction-time-labels">
+                                                <div><strong>{{ auction.lot_count }}</strong></div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
+                                            <button type="button" class="btn btn-info btn-sm" onclick="showInventory({{ auction.id }})">View Inventory</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane {% if tabId == 2 %}show active{% endif %}" id="upcoming-auctions">
+                            <table id="upcoming-items-datatable" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Auction Info</th>
+                                        <th>Auction Time</th>
+                                        <th>Lot Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for auction in upcoming_auctions %}
+                                    <tr id="auction-{{ auction.id }}">   
+                                        <td>
+                                            <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
+                                                <img class="thumb-xl rounded mr-2" 
+                                                     src="{% if auction.user.profile.company and auction.user.profile.company.company_logo %}{{ auction.user.profile.company.company_logo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}" 
+                                                     alt="user" style="width: 50px; height: 50px;"> <!-- Adjust size as needed -->
+                                        
+                                                <div class="ml-2"> 
+                                                    <a href="{% url 'editauction' auction.id %}" class="btn btn-link" style="color: #480c57;"> <strong>{{ auction.name }}</strong></a> 
+                                                </div>
+                                            </div>                                            
+                                        </td>                                                                                    
+                                        <td>
+                                            <div class="auction-time">
+                                                <div class="auction-time-labels">
+                                                    <div><strong>Bidding Start Time:</strong></div>
+                                                    <div><strong>End Date Time:</strong></div>
+                                                </div>
+                                                <div class="auction-time-values">
+                                                    <div>{{ auction.start_date|date:"j F Y" }}</div>
+                                                    <div>{{ auction.end_date|date:"j F Y" }}</div>
+                                                </div>
+                                                <div class="auction-time-times">
+                                                    <div>{{ auction.start_date|date:"g:i A" }}</div>
+                                                    <div>{{ auction.end_date|date:"g:i A" }}</div>
+                                                </div>
+                                            </div>
+                                        </td>  
+                                        <td>
+                                            <div class="auction-time-labels">
+                                                <div><strong>{{ auction.lot_count }}</strong></div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
+                                            <button type="button" class="btn btn-info btn-sm" onclick="showInventory({{ auction.id }})">View Inventory</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="tab-pane {% if tabId == 3 %}show active{% endif %}" id="closed-auctions">
+                            <table id="closed-items-datatable" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Auction Info</th>
+                                        <th>Auction Time</th>
+                                        <th>Lot Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for auction in closed_auctions %}
+                                    <tr id="auction-{{ auction.id }}">   
+                                        <td>
+                                            <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
+                                                <img class="thumb-xl rounded mr-2" 
+                                                     src="{% if auction.user.profile.company and auction.user.profile.company.company_logo %}{{ auction.user.profile.company.company_logo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}" 
+                                                     alt="user" style="width: 50px; height: 50px;"> <!-- Adjust size as needed -->
+                                        
+                                                <div class="ml-2"> 
+                                                    <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-link" style="color: #480c57;"> <strong>{{ auction.name }}</strong></a> 
+                                                </div>
+                                            </div>                                            
+                                        </td>                                                                                    
+                                        <td>
+                                            <div class="auction-time">
+                                                <div class="auction-time-labels">
+                                                    <div><strong>Bidding Start Time:</strong></div>
+                                                    <div><strong>End Date Time:</strong></div>
+                                                </div>
+                                                <div class="auction-time-values">
+                                                    <div>{{ auction.start_date|date:"j F Y" }}</div>
+                                                    <div>{{ auction.end_date|date:"j F Y" }}</div>
+                                                </div>
+                                                <div class="auction-time-times">
+                                                    <div>{{ auction.start_date|date:"g:i A" }}</div>
+                                                    <div>{{ auction.end_date|date:"g:i A" }}</div>
+                                                </div>
+                                            </div>
+                                        </td>  
+                                        <td>
+                                            <div class="auction-time-labels">
+                                                <div><strong>{{ auction.lot_count }}</strong></div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
+                                            <button type="button" class="btn btn-primary btn-sm" onclick="showInventory({{ auction.id }})">View Inventory</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Auction Items Modal -->
+<div class="modal fade" id="auctionItemsModal" tabindex="-1" role="dialog" aria-labelledby="auctionItemsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="auctionItemsModalLabel">Auction Items</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Auction items will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Initialize DataTables for each tab
+        $('#running-items-datatable, #upcoming-items-datatable, #closed-items-datatable').DataTable({
+            lengthChange: true,
+            ordering: false,
+            language: {
+                paginate: {
+                    previous: "<i class='arrow_carrot-left'></i>",
+                    next: "<i class='arrow_carrot-right'></i>"
+                }
+            },
+            pageLength: 10,
+            drawCallback: function() {
+                $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+            }
+        });
+
+        // Fade out alert message after 1 second
+        setTimeout(function(){
+            $('.alert').fadeOut('slow');
+        }, 1000);
+    });
+
+    // Function to confirm auction deletion
+    function confirmDelete(auctionId) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You want to delete this auction!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.value) {
+                deleteAuction(auctionId);
+            }
+        });
+    }
+
+
+    // Function to delete auction via AJAX
+    function deleteAuction(auctionId) {
+        $.ajax({
+            url: '{% url "deleteauction" %}',
+            type: 'POST',
+            data: {
+                'auctionId': auctionId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    Swal.fire(
+                        'Deleted!',
+                        'Your auction has been deleted.',
+                        'success'
+                    );
+                    $('#auction-' + auctionId).remove();
+                } else {
+                    Swal.fire(
+                        'Error!',
+                        'There was an error deleting the auction.',
+                        'error'
+                    );
+                }
+            },
+            error: function() {
+                Swal.fire(
+                    'Error!',
+                    'There was an error deleting the auction.',
+                    'error'
+                );
+            }
+        });
+    }
+
+    ///   Function to show auction items in a modal
+    function showInventory(auctionId) {
+        $.ajax({
+            url: '{% url "auction-inventory" %}',  // Ensure this URL exists in Django's urls.py
+            type: 'GET',
+            data: {
+                'auctionId': auctionId
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    console.log(response);  // Debugging to ensure correct response
+
+                    // Setting media and static image paths
+                    var MEDIA_URL = "{{ MEDIA_URL|escapejs }}";
+                    var staticImageFallback = "{% static 'admin/img/member-img/contact-2.jpg' %}";
+                    var items = response.inventory_list;  // Backend should return this correctly
+
+                    // Constructing table for items
+                    var modalBody = `
+                        <table class="table table-striped" id="AuctionItem">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Image</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Starting Bid Amount</th>
+                                    <th>Reserve Price</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    items.forEach(item => {
+                        // Check for image URL, if not present use fallback
+                        let imageUrl = item.first_image_url ? `${MEDIA_URL}${item.first_image_url}` : staticImageFallback;
+
+                        modalBody += `
+                            <tr id="row_${item.id}">
+                                <td>${item.id}</td>
+                                <td>
+                                    <img src="${imageUrl}" alt="${item.name}" class="chat-img mr-2 border-radius-50" style="width: 50px; height: 50px;">
+                                </td>
+                                <td>${item.name}</td>
+                                <td>${item.status}</td>
+                                <td>${item.starting_bid_amount}</td>
+                                <td>${item.reserve_price}</td>
+                                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeInventory(${item.id})">Remove</button></td>
+                            </tr>
+                        `;
+                    });
+
+                    modalBody += `
+                            </tbody>
+                        </table>
+                    `;
+
+                    // Set modal content and show modal
+                    $('#auctionItemsModal .modal-body').html(modalBody);
+                    $('#auctionItemsModal').modal('show');
+
+                    // Initialize DataTable after modal is fully shown
+                    let auctionTable;
+
+                    $('#auctionItemsModal').on('shown.bs.modal', function () {
+                        if (!$.fn.DataTable.isDataTable('#AuctionItem')) {
+                            auctionTable = $('#AuctionItem').DataTable({
+                                lengthChange: true,
+                                language: {
+                                    paginate: {
+                                        previous: "<i class='arrow_carrot-left'></i>",
+                                        next: "<i class='arrow_carrot-right'></i>"
+                                    }
+                                },
+                                pageLength: 10,
+                                drawCallback: function () {
+                                    $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+                                }
+                            });
+                        } else {
+                            auctionTable.clear().draw();
+                        }
+                    });
+                } else {
+                    // Handle error in response
+                    Swal.fire(
+                        'Error!',
+                        'There was an error fetching the auction items.',
+                        'error'
+                    );
+                }
+            },
+            error: function() {
+                // Handle AJAX errors
+                Swal.fire(
+                    'Error!',
+                    'There was an error fetching the auction items.',
+                    'error'
+                );
+            }
+        });
+    }
+
+    // Function to remove item via AJAX
+    function removeInventory(InventoryId) {
+        $.ajax({
+            url: '{% url "remove_inventory_from_auction" %}',
+            type: 'POST',
+            data: {
+                'InventoryId': InventoryId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    Swal.fire(
+                        'Removed!',
+                        'The item has been removed.',
+                        'success'
+                    );
+                    $('#row_' + InventoryId).remove();
+                    $('#AuctionItem').DataTable().reload();
+                } else {
+                    Swal.fire(
+                        'Error!',
+                        'There was an error removing the item.',
+                        'error'
+                    );
+                }
+            },
+            error: function() {
+                Swal.fire(
+                    'Error!',
+                    'There was an error removing the item.',
+                    'error'
+                );
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 box-margin">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Add Item</h6>
+                        <a class="btn btn-primary waves-effect waves-light float-right mb-3" href="">Go back</a>
+                    </div>
+                    <form id="InventoryForm" method="post" action="{% url 'createinventory' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            <!-- Category / Subcategory -->
+                            <div class="col-md-6 form-group">
+                                <label for="category">Category / Subcategory <span class="text-danger">*</span></label>
+                                <select id="category" class="form-control" name="category" onchange="updateFields()">
+                                    <option value="" selected>Choose Category</option>
+                                    {% for category in categories %}
+                                        {% if not category.parent %}
+                                            <optgroup label="{{ category.name }}">
+                                                {% for subcategory in categories %}
+                                                    {% if subcategory.parent and subcategory.parent.id == category.id %}
+                                                        <option value="{{ subcategory.id }}" {% if form.category.value == subcategory.id %}selected{% endif %}>
+                                                            &nbsp;&nbsp;&nbsp;{{ subcategory.name }}
+                                                        </option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </optgroup>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <div class="text-danger" id="error_category"></div>
+                            </div>
+
+                            <!-- Title -->
+                            <div class="col-md-6 form-group">
+                                <label for="title">Title <span class="text-danger">*</span></label>
+                                <input id="title" class="form-control" name="title" type="text" placeholder="Type Title Name.." value="{{ form.title.value|default:'' }}">
+                                <div class="text-danger" id="error_title"></div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="col-md-12 form-group">
+                                <label for="description">Description <span class="text-danger">*</span></label>
+                                <textarea name="description" id="editor" placeholder="Add Description Here">{{ form.description.value|default:'' }}</textarea>
+                                <div class="text-danger" id="error_description"></div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-4 form-group">
+                                <label for="status">Status <span class="text-danger">*</span></label>
+                                <select id="status" class="form-control" name="status">
+                                    <option value="">Select Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="in_transit">In Transit</option>
+                                    <option value="auction">In Auction</option>
+                                </select>
+                                <div class="text-danger" id="error_status"></div>
+                            </div>
+
+                            <!-- In Transit Status -->
+                            <div class="col-md-4 form-group" id="inTransitStatusDiv" style="display:none;">
+                                <label for="in_transit_status">In Transit Status <span class="text-danger">*</span></label>
+                                <select id="in_transit_status" class="form-control" name="in_transit_status">
+                                    <option value="">Select In Transit Status</option>
+                                    <option value="awaiting_dispatch">Awaiting Dispatch</option>
+                                    <option value="awaiting_pickup">Awaiting Pick Up</option>
+                                    <option value="awaiting_arrival">Awaiting Arrival</option>
+                                </select>
+                                <div class="text-danger" id="error_in_transit_status"></div>
+                            </div>
+
+                            <!-- Auction Name -->
+                            <div class="col-md-4 form-group auctionDiv" style="display:none;">
+                                <label for="auction">Auction Name <span class="text-danger">*</span></label>
+                                <select id="auction" class="form-control" name="auction">
+                                    <option value="">Select Auction</option>
+                                    {% for auction in auctions %}
+                                        <option value="{{ auction.id }}">{{ auction.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="text-danger" id="error_auction"></div>
+                            </div>
+
+                            <!-- Condition -->
+                            <div class="col-md-4 form-group">
+                                <label for="condition">Condition <span class="text-danger">*</span></label>
+                                <select id="condition" class="form-control" name="condition">
+                                    <option value="">Select Condition</option>
+                                    <option value="new">New</option>
+                                    <option value="old">Old</option>
+                                </select>
+                                <div class="text-danger" id="error_condition"></div>
+                            </div>
+
+                            <!-- Starting Bid Amount -->
+                            <div class="col-md-4 form-group">
+                                <label for="starting_bid">Starting Bid Amount <span class="text-danger">*</span></label>
+                                <select id="starting_bid" class="form-control" name="starting_bid">
+                                    <option value="">Select Starting Bid</option>
+                                    {% for amount in starting_bid_amounts %}
+                                        <option value="{{ amount }}">$ {{ amount }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="text-danger" id="error_starting_bid"></div>
+                            </div>
+
+                            <!-- Reserve Price -->
+                            <div class="col-md-4 form-group">
+                                <label for="reserve_price">Reserve Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-dollar-sign" aria-hidden="true"></i></span>
+                                    </div>
+                                    <input id="reserve_price" class="form-control" name="reserve_price" type="text" placeholder="Enter Reserve Price" min="50">
+                                </div>
+                                <div class="text-danger" id="error_reserve_price"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Next</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include FontAwesome for Dollar Icon -->
+<script src="https://kit.fontawesome.com/a076d05399.js"></script>
+<!-- Include CKEditor 5 CDN -->
+<script src="https://cdn.ckeditor.com/ckeditor5/12.0.0/classic/ckeditor.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Initialize CKEditor
+        ClassicEditor
+            .create(document.querySelector('#editor'), {
+                toolbar: [
+                    'heading',
+                    '|',
+                    'bold',
+                    'italic',
+                    'blockQuote',
+                    'insertTable',
+                    'undo',
+                    'redo'
+                ],
+            })
+            .catch(error => {
+                console.error(error);
+            });
+
+        $("#status").change(function() {
+            if ($(this).val() == "in_transit") {
+                $("#inTransitStatusDiv").show();
+                $(".auctionDiv").hide();  // Hide auction dropdown
+            } else if ($(this).val() == "auction") {
+                $(".auctionDiv").show();  // Show auction dropdown
+                $("#inTransitStatusDiv").hide();  // Hide in transit dropdown
+            } else {
+                $("#inTransitStatusDiv").hide();
+                $(".auctionDiv").hide();  // Hide auction dropdown
+                $("#in_transit_status").val(""); // Reset value if hidden
+            }
+        });
+
+        $("#reserve_price").on('input', function() {
+            var value = $(this).val().replace(/,/g, ''); // Remove commas
+            if (!isNaN(value) && value.length > 0) {
+                $(this).val(value.replace(/\B(?=(\d{3})+(?!\d))/g, ",")); // Add commas
+            }
+        });
+
+        $("#InventoryForm").on('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+            $('.text-danger').text('')
+            // Initialize validation flag
+            var isValid = true;
+            var reservePrice = $("#reserve_price").val(); // Get the formatted value
+
+            // Remove commas for validation and submission
+            reservePrice = reservePrice.replace(/,/g, ''); 
+
+            // Proceed with AJAX submission if valid
+            if (isValid) {                
+                var formData = new FormData(this);
+                formData.append('reserve_price', reservePrice); 
+                $.ajax({
+                    type: 'POST',
+                    url: "{% url 'createinventory' %}",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function(response) {
+                        if (response.success) {
+                            var editUrl = "{% url 'editinventory' 0 %}".replace('0', response.inventory_id) + "?step=2";
+                            // Redirect to the edit inventory page
+                            window.location.href = editUrl;
+
+                        } else {
+                            $.each(response.errors, function(key, value) {
+                                $("#error_" + key).text(value[0]); // Assuming the input's error message div ID follows this convention
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX error:", error);
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

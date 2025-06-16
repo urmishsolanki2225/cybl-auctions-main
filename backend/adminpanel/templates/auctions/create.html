@@ -1,0 +1,413 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<script src="{% static 'admin-custom/auction_validation.js' %}"></script>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 box-margin">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0">Add Auction</h4>
+                        <a href="{% url 'allauctions' 1 %}" class="btn btn-outline-secondary">
+                            <i class="fa fa-arrow-left"></i> Back to Auctions
+                        </a>
+                    </div>
+                    
+                    <!-- Success Message Alert -->
+                    <div id="alert-success" class="alert alert-success alert-dismissible fade show" style="display: none;" role="alert">
+                        <span id="success-message"></span>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    
+                    <form class="auction-form" id="auction-form" method="post" action="{% url 'createauction' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            <!-- Featured Auction Toggle -->
+                            <div class="col-md-12 form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" name="is_featured" id="is_featured">
+                                    <label class="custom-control-label" for="is_featured">Featured Auction</label>
+                                </div>
+                            </div>
+                            
+                            <!-- Auction Name -->
+                            <div class="col-md-12 form-group">
+                                <label for="name">Name<span class="text-danger">*</span></label>
+                                <input id="name" class="form-control" name="name" type="text" placeholder="Auction Name" value="{{ form.name.value|default:'' }}">
+                                <div class="text-danger" id="error_name"></div> 
+                            </div>
+                            
+                            <!-- Description -->
+                            <div class="col-md-12 form-group">
+                                <label for="description">Description<span class="text-danger">*</span></label>
+                                <textarea id="description" class="form-control" name="description" placeholder="Auction Description" rows="4">{{ form.description.value|default:'' }}</textarea>
+                                <div class="text-danger" id="error_description"></div> 
+                            </div>
+                            
+                            <!-- Date & Time Section -->
+                            <div class="col-md-4 form-group">
+                                <label for="prebid_start_date">Prebid Start Datetime (Optional)</label>
+                                <input id="prebid_start_date" class="form-control" name="prebid_start_date" type="datetime-local" value="{{ form.prebid_start_date.value|default:'' }}">
+                                <div class="text-danger" id="error_prebid_start_date"></div>
+                            </div>
+                            
+                            <div class="col-md-4 form-group">
+                                <label for="start_date">Start Datetime<span class="text-danger">*</span></label>
+                                <input id="start_date" class="form-control" name="start_date" type="datetime-local" value="{{ form.start_date.value|default:'' }}">
+                                <div class="text-danger" id="error_start_date"></div>
+                            </div>
+                            
+                            <div class="col-md-4 form-group">
+                                <label for="lots_time_duration">Lots Time Duration<span class="text-danger">*</span></label>
+                                <select id="lots_time_duration" class="form-control" name="lots_time_duration">
+                                    <option value="" disabled selected>Select Duration</option>
+                                    <option value="5" {% if form.lots_time_duration.value == "5" %}selected{% endif %}>5 Seconds</option>
+                                    <option value="10" {% if form.lots_time_duration.value == "10" %}selected{% endif %}>10 Seconds</option>
+                                    <option value="20" {% if form.lots_time_duration.value == "20" %}selected{% endif %}>20 Seconds</option>
+                                    <option value="30" {% if form.lots_time_duration.value == "30" %}selected{% endif %}>30 Seconds</option>
+                                    <option value="40" {% if form.lots_time_duration.value == "40" %}selected{% endif %}>40 Seconds</option>
+                                    <option value="50" {% if form.lots_time_duration.value == "50" %}selected{% endif %}>50 Seconds</option>
+                                    <option value="60" {% if form.lots_time_duration.value == "60" %}selected{% endif %}>1 Minute</option>
+                                    <option value="120" {% if form.lots_time_duration.value == "120" %}selected{% endif %}>2 Minutes</option>
+                                    <option value="180" {% if form.lots_time_duration.value == "180" %}selected{% endif %}>3 Minutes</option>
+                                    <option value="240" {% if form.lots_time_duration.value == "240" %}selected{% endif %}>4 Minutes</option>
+                                    <option value="300" {% if form.lots_time_duration.value == "300" %}selected{% endif %}>5 Minutes</option>
+                                </select>                                    
+                                <div class="text-danger" id="error_lots_time_duration"></div>
+                            </div>
+                            
+                            <!-- Auto Extend Options -->
+                            <div class="col-md-6 form-group">
+                                <label for="auto_extend_time">Auto Extend Time</label>
+                                <select id="auto_extend_time" name="auto_extend_time" class="form-control">
+                                    <option value="False" {% if form.auto_extend_time.value == 'False' %}selected{% endif %}>No</option>
+                                    <option value="True" {% if form.auto_extend_time.value == 'True' %}selected{% endif %}>Yes</option>
+                                </select>
+                                <div class="text-danger" id="error_auto_extend_time"></div>
+                            </div>
+                            
+                            <div class="col-md-6 form-group" id="auto-extend-duration-container" style="display: none;">
+                                <label for="auto_extend_duration">Auto Extend Duration</label>
+                                <select id="auto_extend_duration" class="form-control" name="auto_extend_duration">
+                                    <option value="" disabled selected>Select Duration</option>
+                                    <option value="5" {% if form.auto_extend_duration.value == "5" %}selected{% endif %}>5 Seconds</option>
+                                    <option value="10" {% if form.auto_extend_duration.value == "10" %}selected{% endif %}>10 Seconds</option>
+                                    <option value="20" {% if form.auto_extend_duration.value == "20" %}selected{% endif %}>20 Seconds</option>
+                                    <option value="30" {% if form.auto_extend_duration.value == "30" %}selected{% endif %}>30 Seconds</option>
+                                    <option value="40" {% if form.auto_extend_duration.value == "40" %}selected{% endif %}>40 Seconds</option>
+                                    <option value="50" {% if form.auto_extend_duration.value == "50" %}selected{% endif %}>50 Seconds</option>
+                                    <option value="60" {% if form.auto_extend_duration.value == "60" %}selected{% endif %}>1 Minute</option>
+                                    <option value="120" {% if form.auto_extend_duration.value == "120" %}selected{% endif %}>2 Minutes</option>
+                                    <option value="180" {% if form.auto_extend_duration.value == "180" %}selected{% endif %}>3 Minutes</option>
+                                    <option value="240" {% if form.auto_extend_duration.value == "240" %}selected{% endif %}>4 Minutes</option>
+                                    <option value="300" {% if form.auto_extend_duration.value == "300" %}selected{% endif %}>5 Minutes</option>
+                                </select>                                    
+                                <div class="text-danger" id="error_auto_extend_duration"></div>
+                            </div>
+                            
+                            <!-- Buyers Premium -->
+                            <div class="col-md-6 form-group">
+                                <label for="buyers_premium">Buyers Premium (Optional)</label>
+                                <div class="input-group">
+                                    <input id="buyers_premium" class="form-control" name="buyers_premium" type="number" min="0" max="100" step="0.01" value="{{ form.buyers_premium.value|default:'' }}" placeholder="0.00">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">Enter percentage (e.g., 15.5 for 15.5%)</small>
+                                <div class="text-danger" id="error_buyers_premium"></div>
+                            </div>
+                            
+                            <!-- Seller Selection -->
+                            <div class="col-md-6 form-group">
+                                <label for="user">Seller <span class="text-danger">*</span></label>                                 
+                                <select id="user" class="form-control" name="user">
+                                    <option value="" selected disabled>Select Seller</option>
+                                    {% for user in users %}
+                                        <option value="{{ user.id }}" {% if form.user.value == user.id %}selected{% endif %}>{{ user.first_name }} {{ user.last_name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="text-danger" id="error_user"></div> 
+                            </div>
+                            
+                            <!-- Seller Type Options -->
+                            <div class="col-md-12 form-group" id="seller-type-options" style="display: none;">
+                                <label class="d-block">Seller Location</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="seller_location" id="onsite" value="onsite">
+                                    <label class="form-check-label" for="onsite">Onsite</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="seller_location" id="offsite" value="offsite">
+                                    <label class="form-check-label" for="offsite">Offsite</label>
+                                </div>
+                                <div class="text-danger" id="error_seller_location"></div>
+                            </div>
+                            
+                            <!-- Company Details (Onsite) -->
+                            <div id="company-details" class="col-md-12 mt-3 mb-3" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Seller Company Information</h5>
+                                    </div>
+                                    <div class="card-body" id="company-info">
+                                        <!-- Company details will be loaded here via AJAX -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Offsite Seller Form -->
+                            <div id="offsite-details" class="col-md-12 mt-3" style="display: none;">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">Offsite Address Information</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <!-- Address -->
+                                            <div class="col-md-12 form-group">
+                                                <label for="address">Address<span class="text-danger">*</span></label>
+                                                <input id="address" class="form-control" name="address" type="text" placeholder="Type Address.." value="{{ form.address.value|default:'' }}">
+                                                <div class="text-danger" id="error_address"></div> <!-- Error message div -->
+                                            </div>
+                                
+                                            <!-- Country -->
+                                            <div class="col-md-6 form-group">
+                                                <label for="country">Country<span class="text-danger">*</span></label>
+                                                <select id="country" name="country" class="form-control">
+                                                    <option value="">Choose Country</option>
+                                                    {% for country in countries %}
+                                                        <option value="{{ country.id }}" {% if form.country.value|stringformat:"s" == country.id|stringformat:"s" %}selected{% endif %}>
+                                                            {{ country.name }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>    
+                                                <div class="text-danger" id="error_country"></div> <!-- Error message div -->
+                                            </div>
+                                
+                                            <!-- State/Province -->
+                                            <div class="col-md-6 form-group">
+                                                <label for="state">State/Province<span class="text-danger">*</span></label>
+                                                <select id="state" name="state" class="form-control">
+                                                    <option value="">Choose State</option>
+                                                </select>
+                                                <div class="text-danger" id="error_state"></div> <!-- Error message div -->
+                                            </div>
+                                
+                                            <!-- City -->
+                                            <div class="col-md-6 form-group">
+                                                <label for="city">City <span class="text-danger">*</span></label>
+                                                <input id="city" class="form-control" name="city" type="text" placeholder="City" value="{{ form.city.value|default:'' }}">
+                                                <div class="text-danger" id="error_city"></div> <!-- Error message div -->
+                                            </div>
+                                
+                                            <!-- Postal/Zip Code -->
+                                            <div class="col-md-6 form-group">
+                                                <label for="zipcode">Postal/Zip Code<span class="text-danger">*</span></label>
+                                                <input id="zipcode" class="form-control" name="zipcode" type="text" placeholder="Postal/Zip Code" value="{{ form.zipcode.value|default:'' }}">
+                                                <div class="text-danger" id="error_zipcode"></div> <!-- Error message div -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Submit Button -->
+                            <div class="col-md-12 form-group mt-4">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="fa fa-save mr-2"></i> Save Auction
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Cache selectors
+    const $country = $('#country');
+    const $state = $('#state');
+    
+    // Fetch states when country changes
+    $country.on('change', function() {
+        const countryId = $(this).val();
+        updateStates(countryId);
+    });
+    
+    // Initialize if country is preselected
+    if ($country.val()) {
+        updateStates($country.val(), '{{ form.state.value|default_if_none:"" }}');
+    }
+    
+    function updateStates(countryId, selectedStateId = null) {
+        if (!countryId) {
+            $state.html('<option value="">Choose State</option>');
+            return;
+        }
+        
+        $.get("{% url 'fetch_states' %}", { country_id: countryId })
+            .done(data => {
+                const options = data.states.map(state => 
+                    `<option value="${state.id}" ${selectedStateId == state.id ? 'selected' : ''}>
+                        ${state.name}
+                    </option>`
+                );
+                $state.html('<option value="">Choose State</option>' + options.join(''));
+            })
+            .fail(xhr => console.error("Error fetching states:", xhr));
+    }
+});
+$(document).ready(function() {
+    // Toggle auto extend duration based on selection
+    function toggleAutoExtendDuration() {
+        if ($('#auto_extend_time').val() === 'True') {
+            $('#auto-extend-duration-container').slideDown();
+        } else {
+            $('#auto-extend-duration-container').slideUp();
+        }
+    }
+    
+    // Initialize and watch for changes
+    toggleAutoExtendDuration();
+    $('#auto_extend_time').change(toggleAutoExtendDuration);
+    
+    // Seller selection change handler
+    $('#user').on('change', function() {
+        const userId = $(this).val();
+        
+        if (userId) {
+            $('#seller-type-options').slideDown();
+            $('#company-details, #offsite-details').slideUp();
+            $('input[name="seller_location"]').prop('checked', false);
+            $('#company-info').html('');
+        } else {
+            $('#seller-type-options, #company-details, #offsite-details').slideUp();
+        }
+    });
+    $('input[name="seller_location"]').on('change', function() {
+        const selected = $(this).val();
+        const userId = $('#user').val();
+        
+        if (selected === 'onsite' && userId) {
+            // Show loading state
+            $('#company-info').html(`
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading company details...</p>
+                </div>
+            `);
+            $('#company-details').slideDown();
+            $('#offsite-details').slideUp();
+            
+            // Fetch company details via AJAX
+            $.ajax({
+                url: '{% url "get_company_details" %}',
+                type: 'GET',
+                data: { user_id: userId },
+                success: function(response) {
+                    // Check if we got a valid response
+                    if(response && response.company_name) {
+                        $('#company-info').html(`
+                            <div class="row">
+                                <div class="col-md-3 text-center">
+                                    <img src="${response.company_logo_url || '{% static 'images/default-company.png' %}'}" 
+                                        alt="${response.company_name}" 
+                                        class="img-fluid rounded mb-3" 
+                                        style="max-height: 120px; width: auto;">
+                                </div>
+                                <div class="col-md-9">
+                                    <h5 class="mb-2">${response.company_name}</h5>
+                                    <p class="mb-1"><strong><i class="fas fa-map-marker-alt mr-2"></i>Address:</strong> 
+                                        ${response.address || 'N/A'}, ${response.city || ''}, ${response.state || ''}, ${response.country || ''} ${response.zipcode ? '- ' + response.zipcode : ''}
+                                    </p>
+                                    <p class="mb-1"><strong><i class="fas fa-phone mr-2"></i>Phone:</strong> ${response.phone_no || 'N/A'}</p>
+                                </div>
+                            </div>
+                        `);
+                    } else {
+                        $('#company-info').html(`
+                            <div class="alert alert-warning">
+                                No company details available for this seller
+                            </div>
+                        `);
+                    }
+                },
+                error: function(xhr) {
+                    $('#company-info').html(`
+                        <div class="alert alert-danger">
+                            Failed to load company details. Please try again.
+                        </div>
+                    `);
+                    console.error('Error fetching company details:', xhr.responseText);
+                }
+            });
+        } else if (selected === 'offsite') {
+            $('#company-details').slideUp();
+            $('#offsite-details').slideDown();
+        }
+    });
+    
+    // Form submission handler
+    $('#auction-form').on('submit', function(event) {
+        event.preventDefault();
+        var formData = $(this).serialize();
+        
+        // Clear previous errors
+        $('.text-danger').text('');
+        $('#alert-success').hide();
+        
+        $.ajax({
+            type: 'POST',
+            url: $(this).attr('action'),
+            data: formData,
+            success: function(response) {
+                if(response.success) {
+                    showToast("success", response.message);             
+                    $("#auction-form")[0].reset();
+                    $('#company-details, #offsite-details, #seller-type-options').hide();
+                    
+                }
+            },
+            error: function(xhr) {
+                if(xhr.status === 400) {
+                    var errors = xhr.responseJSON.errors;
+                    
+                    // Display errors for each field
+                    $.each(errors, function(key, value) {
+                        $('#error_' + key).text(value.join(', '));
+                    });
+                    
+                    // Scroll to first error
+                    $('html, body').animate({
+                        scrollTop: $('.text-danger:visible').first().offset().top - 100
+                    }, 'slow');
+                } else {
+                    alert('An unexpected error occurred. Please try again.');
+                }
+            }
+        });
+    });
+    
+    // Date/time validation
+    $('#start_date, #prebid_start_date').on('change', function() {
+        const startDate = new Date($('#start_date').val());
+        const prebidDate = new Date($('#prebid_start_date').val());
+        
+        if(startDate && prebidDate && prebidDate >= startDate) {
+            $('#error_prebid_start_date').text('Prebid must start before the auction start time');
+        } else {
+            $('#error_prebid_start_date').text('');
+        }
+    });
+});
+</script>
+{% endblock %}

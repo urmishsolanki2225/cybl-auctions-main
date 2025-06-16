@@ -1,0 +1,76 @@
+/* :: Dashboard CSS */
+
+.dash-item-overlay {
+    position: absolute;
+    left: 8%;
+    max-width: 350px;
+    padding: 20px;
+    z-index: 1;
+}
+
+.progress-w-percent {
+    min-height: 20px;
+    margin-bottom: 15px;
+}
+
+.progress-w-percent .progress-value {
+    width: 40px;
+    float: right;
+    text-align: right;
+    line-height: 20px;
+}
+
+.progress-w-percent .progress {
+    width: calc(100% - 50px);
+    float: left;
+    margin-top: 8px;
+}
+
+.progress-bar {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    background-color: $primary;
+    -webkit-transition: width .6s ease;
+    transition: width .6s ease;
+}
+
+.chartjs-chart {
+    margin: auto;
+}
+
+.thumb-sm {
+    height: 36px !important;
+    width: 36px !important;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.order-inline li {
+    display: inline-block;
+    margin: 0 10px;
+
+    h4 {
+        font-size: 18px;
+    }
+
+    h5 {
+        font-size: 16px;
+    }
+}
+
+.badge{
+    font-weight: 500;
+}

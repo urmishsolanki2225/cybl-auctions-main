@@ -1,0 +1,142 @@
+/* :: Calendar CSS */
+
+.fc-event.draging-button {
+    padding: 8px 10px;
+    border-radius: 3px;
+    margin-bottom: 10px;
+    color: $white-color;
+    border: none;
+    cursor: pointer;
+
+}
+
+.fc-button {
+    border: 1px solid transparent;
+    padding: 5px 15px;
+    font-size: 14px;
+    border-radius: 2px;
+}
+
+[type="button"]:not(:disabled),
+[type="reset"]:not(:disabled),
+[type="submit"]:not(:disabled),
+button:not(:disabled) {
+    margin-right: 4px;
+}
+
+#calendar-container {
+
+    a:not([href]):not([tabindex]):focus,
+    a:not([href]):not([tabindex]):hover {
+        color: #fff;
+    }
+}
+
+
+.fc-button-primary {
+    color: $text-color;
+    background-color: transparent;
+    border-color: $border-color;
+    @include transition-duration(500ms);
+
+
+    &:hover {
+        color: $white-color;
+        border-color: $primary;
+        box-shadow: none;
+        background-color: $primary;
+        -webkit-box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .6);
+        box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .6);
+    }
+}
+
+.fc-button-primary:disabled {
+    color: $text-color;
+    background-color: transparent;
+    border-color: $border-color;
+}
+
+.fc-button-primary:not(:disabled).fc-button-active,
+.fc-button-primary:not(:disabled):active {
+    color: $white-color;
+    background-color: $primary-color;
+    border-color: $primary-color;
+    -webkit-box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .6);
+    box-shadow: 0 2px 6px 0 rgba(114, 124, 245, .6);
+}
+
+.fc-button-primary:not(:disabled).fc-button-active:focus,
+.fc-button-primary:not(:disabled):active:focus {
+    box-shadow: none;
+}
+
+.fc-day-grid-event.fc-h-event.fc-event {
+    padding: 8px 12px;
+    border: none;
+    background-color: $primary !important;
+    border-radius: 0;
+    color: $white-color;
+}
+
+.fc-day-grid-event.fc-h-event.fc-event.fc-event-warning {
+    background-color: #f39c12 !important;
+}
+
+a:not([href]):not([tabindex]):focus,
+a:not([href]):not([tabindex]):hover {
+    text-decoration: none;
+}
+
+.fc-day-header.fc-widget-header {
+    padding: 5px 10px;
+    background-color: $bg-gray;
+}
+
+.fc-day-header.fc-widget-header span {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.fc-day-number {
+    font-size: 14px;
+    color: #555;
+}
+
+.fc-dayGrid-view .fc-day-number,
+.fc-dayGrid-view .fc-week-number {
+    padding: 10px;
+}
+
+.fc-toolbar h2 {
+    font-size: 18px;
+
+    @media #{$breakpoint-xs} {
+        margin-bottom: 15px;
+    }
+}
+
+.fc-toolbar {
+    @media #{$breakpoint-xs} {
+        display: block;
+    }
+}
+
+.fc-left {
+    @media #{$breakpoint-xs} {
+        margin-bottom: 15px;
+    }
+}
+
+.fc-unthemed .fc-content,
+.fc-unthemed .fc-divider,
+.fc-unthemed .fc-list-heading td,
+.fc-unthemed .fc-list-view,
+.fc-unthemed .fc-popover,
+.fc-unthemed .fc-row,
+.fc-unthemed tbody,
+.fc-unthemed td,
+.fc-unthemed th,
+.fc-unthemed thead {
+    border-color: $border-color;
+}

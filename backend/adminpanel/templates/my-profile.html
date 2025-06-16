@@ -1,0 +1,297 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<script src="{% static 'admin-custom/myprofile.js' %}"></script>
+<link rel="stylesheet" href="{% static 'admin/css/dropzone.min.css' %}">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 box-margin">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="card-title mb-0">Account Profile</h4>
+                    </div>
+                    <form id="userForm" enctype="multipart/form-data" method="POST" action="{% url 'myprofile' %}">
+                        {% csrf_token %}
+                        <!-- ==================== -->
+                        <!-- Personal Information -->
+                        <!-- ==================== -->
+                        <fieldset>
+                            <legend>Personal Information</legend>
+                            <div class="row">
+                                <!-- Title -->
+                                <div class="col-md-4 form-group">
+                                    <label for="title">Title<span class="text-danger">*</span></label>
+                                    <select id="title" class="form-control" name="title">
+                                        <option value="">Choose Title</option>
+                                        <option value="mr" {% if form.title.value == "mr" %}selected{% endif %}>Mr.</option>
+                                        <option value="ms" {% if form.title.value == "ms" %}selected{% endif %}>Ms.</option>
+                                        <option value="other" {% if form.title.value == "other" %}selected{% endif %}>Other</option>
+                                    </select>
+                                    <div class="text-danger" id="error_title"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- First Name -->
+                                <div class="col-md-4 form-group">
+                                    <label for="first_name">First Name<span class="text-danger">*</span></label>
+                                    <input id="first_name" class="form-control" name="first_name" type="text" placeholder="Type First Name.." value="{{ form.first_name.value|default:'' }}">
+                                    <div class="text-danger" id="error_first_name"></div> <!-- Error message div -->
+                                </div>
+                    
+                                <!-- Last Name -->
+                                <div class="col-md-4 form-group">
+                                    <label for="last_name">Last Name<span class="text-danger">*</span></label>
+                                    <input id="last_name" class="form-control" name="last_name" type="text" placeholder="Type Last Name.." value="{{ form.last_name.value|default:'' }}">
+                                    <div class="text-danger" id="error_last_name"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Gender -->
+                                <div class="col-md-4 form-group">
+                                    <label for="gender">Gender<span class="text-danger">*</span></label>
+                                    <select id="gender" class="form-control" name="gender">
+                                        <option value="">Select Gender</option>
+                                        <option value="male" {% if form.gender.value == "male" %}selected{% endif %}>Male</option>
+                                        <option value="female" {% if form.gender.value == "female" %}selected{% endif %}>Female</option>
+                                        <option value="other" {% if form.gender.value == "other" %}selected{% endif %}>Other</option>
+                                    </select>
+                                    <div class="text-danger" id="error_gender"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Email -->
+                                <div class="col-md-4 form-group">
+                                    <label for="email">Email Address<span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text"><i class="fa fa-envelope"></i></span>
+                                        </div>
+                                        <input id="email" class="form-control" name="email" type="email" placeholder="Type Email Address.." value="{{ form.email.value|default:'' }}">
+                                    </div>
+                                    <div class="text-danger" id="error_email"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Phone Number -->
+                                <div class="col-md-4 form-group">
+                                    <label for="phone_no">Phone Number<span class="text-danger">*</span></label>
+                                    <input id="phone_no" class="form-control" name="phone_no" type="tel" placeholder="Type Phone Number.." value="{{ form.phone_no.value|default:'' }}">
+                                    <div class="text-danger" id="error_phone_no"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Image Upload -->
+                                <div class="col-md-12 form-group">
+                                    <label for="image">Upload Image (JPG/PNG Only) <span class="text-danger">*</span></label>
+                                    <div class="dropzone" id="myAwesomeDropzone"></div>
+                                    <div class="text-danger fields" id="error_image"></div> <!-- Error message div -->
+
+                                </div>
+                            </div>
+                        </fieldset>
+                    
+                        <!-- Location Info Section -->
+                        <fieldset>
+                            <legend>Address Information</legend>
+                            <div class="row">
+                                <!-- Address -->
+                                <div class="col-md-6 form-group">
+                                    <label for="address">Address<span class="text-danger">*</span></label>
+                                    <textarea id="address" class="form-control" name="address" placeholder="Type Address..">{{ form.address.value|default:'' }}</textarea>
+                                    <div class="text-danger fields" id="error_address"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Country -->
+                                <div class="col-md-6 form-group">
+                                    <label for="country">Country<span class="text-danger">*</span></label>
+                                    <select id="country" name="country" class="form-control">
+                                        <option value="">Choose Country</option>
+                                        {% for country in countries %}
+                                            <option value="{{ country.id }}" {% if form.country.value|stringformat:"s" == country.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ country.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>    
+                                    <div class="text-danger fields" id="error_country"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- State/Province -->
+                                <div class="col-md-6 form-group">
+                                    <label for="state">State/Province<span class="text-danger">*</span></label>
+                                    <select id="state" name="state" class="form-control">
+                                        <option value="">Choose State</option>
+                                    </select>
+                                    <div class="text-danger fields" id="error_state"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- City -->
+                                <div class="col-md-6 form-group">
+                                    <label for="city">City<span class="text-danger">*</span></label>
+                                    <input id="city" class="form-control" name="city" type="text" placeholder="City" value="{{ form.city.value|default:'' }}">
+                                    <div class="text-danger fields" id="error_city"></div> <!-- Error message div -->
+
+                                </div>
+                    
+                                <!-- Postal/Zip Code -->
+                                <div class="col-md-6 form-group">
+                                    <label for="zipcode">Postal/Zip Code<span class="text-danger">*</span></label>
+                                    <input id="zipcode" class="form-control" name="zipcode" type="text" placeholder="Postal/Zip Code" value="{{ form.zipcode.value|default:'' }}">
+                                    <div class="text-danger fields" id="error_zipcode"></div> <!-- Error message div -->
+
+                                </div>
+                            </div>
+                        </fieldset>
+                    
+                        <!-- Role Info Section -->
+                        <fieldset>
+                            <legend>Role & Permissions</legend>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label for="group">Role<span class="text-danger">*</span></label>
+                                    <select id="group" class="form-control" name="group" disabled>
+                                        <optgroup label="All Roles" disabled>
+                                            {% for r in all_roles %}
+                                                <option value="{{ r.id }}" {% if form.group.value == r.id %}selected{% endif %}>{{ r.name }}</option>
+                                            {% endfor %}
+                                        </optgroup>                                        
+                                    </select>
+                                    <input type="hidden" name="group" id="group" value="{{ form.group.value }}">
+                                </div>
+                            </div>
+                        </fieldset>                    
+                        <!-- Submit Button -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                        </div>                        
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'admin/js/dropzone.min.js' %}"></script>
+
+<script>
+// Initialize Dropzone for image preview
+Dropzone.options.myAwesomeDropzone = {
+    url: "#",
+    autoProcessQueue: false,
+    uploadMultiple: false,
+    maxFilesize: 1,
+    maxFiles: 1,
+    acceptedFiles: ".jpeg,.jpg,.png",
+    addRemoveLinks: true,
+    autoProcessQueue: true, // Automatically process the queue as soon as files are added
+    dictRemoveFile: "<i class='fa fa-times'></i>",
+    dictCancelUpload: "<i class='fa fa-times'></i>",
+    init: function() {
+        this.on("addedfile", function(file) {
+            if (this.files.length > 1) {
+                this.removeFile(this.files[0]);
+            }
+        });
+    }
+};
+
+$(document).ready(function() {
+    // Check if the file URL exists
+    {% if form.photo.value %}
+        var imageUrl = "{{ MEDIA_URL }}{{ form.photo.value }}"; 
+        console.log("Preloading image:", imageUrl); // Debug log
+
+        // Initialize Dropzone
+        var myDropzone = Dropzone.forElement("#myAwesomeDropzone");
+        if (myDropzone) {
+            var mockFile = { 
+                name: "{{ form.photo.value }}", 
+                size: 12345, // Adjust size
+                accepted: true 
+            };
+
+            // Add file to Dropzone
+            myDropzone.emit("addedfile", mockFile);
+            myDropzone.emit("thumbnail", mockFile, imageUrl);
+            myDropzone.emit("complete", mockFile);
+            myDropzone.files.push(mockFile);
+        }
+    {% endif %}
+});
+
+
+$( "#userForm" ).on( "submit", function( event ) {
+    event.preventDefault();
+    var formData = new FormData(this);    
+    var myDropzone = Dropzone.forElement("#myAwesomeDropzone");
+    if (myDropzone.files.length > 0) {
+        formData.append("photo", myDropzone.files[0]);
+    }
+
+    $.ajax({
+        url:  $(this).attr("action"),
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        success: function(response) {
+            $(".fields").text("");
+
+            if(response.success) {
+                showToast("success", response.message);                 
+                // Reload the page after 2 seconds (2000 milliseconds)
+                setTimeout(function() {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                const errors = response.errors;
+                for (const key in errors) {
+                    $("#error_" + key).text(errors[key].join(", "));
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            showToast("error", "An error occurred. Please try again.");                 
+        }
+    });
+});
+
+
+function fetchStates(countryId, selectedStateId) {
+    if (countryId) {
+        $.ajax({
+            url: "{% url 'fetch_states' %}",
+            type: "GET",
+            data: { country_id: countryId },
+            success: function(data) {
+                var stateDropdown = $('#state');
+                stateDropdown.empty();
+                stateDropdown.append('<option value="">Choose State</option>');
+                $.each(data.states, function(index, state) {                   
+                    var selected = (state.id == selectedStateId) ? 'selected' : '';
+                    
+                    stateDropdown.append('<option value="' + state.id + '" ' + selected + '>' + state.name + '</option>');
+                });
+            }
+        });
+    } else {
+        $('#state').empty().append('<option value="">Choose State</option>');
+    }
+}
+var selectedCountryId = $('#country').val();
+var selectedStateId = '{{ form.state.value|default_if_none:"" }}';
+if (selectedCountryId) {
+    fetchStates(selectedCountryId, selectedStateId);
+}
+$('#country').change(function() {
+    var countryId = $(this).val();
+    fetchStates(countryId);
+});
+</script>
+{% endblock %}

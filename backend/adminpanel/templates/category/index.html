@@ -1,0 +1,362 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'admin/css/default-assets/new/sweetalert-2.min.css' %}">
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 height-card box-margin">
+            <div class="card">
+                <div class="card-body pb-0">
+                    <div class="d-flex justify-content-between align-items-center pb-2">
+                        <h6 class="card-title mb-0">Categories</h6>
+                        <a href="#" class="btn btn-primary" onclick="addFunction(null, 'Add Category');">Add Category</a>
+                    </div>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{message.tags}}" role="alert" id="messages">
+                                <strong>{{ message }}</strong>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <div class="input-group mt-4">
+                        <input type="text" class="form-control" id="categorySearch" placeholder="Search here">
+                    </div>
+                    <div id="accordion-" class="pt-2">
+                        <!-- Categories will be dynamically loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding/editing category or subcategory -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addModalLabel"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="categoryID" name="categoryID">
+                    <input type="hidden" id="parent" name="parent">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control mb-2" id="name" name="name">
+                        <span id="NameError" class="text-danger"></span>
+                    </div>
+                    <div id="bg_photo_category" style="display: none;"></div>                    
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to initialize collapsible elements
+function initializeCollapsible() {
+    $('[data-toggle="collapse"]').on('click', function() {
+        var icon = $(this).find('i');
+        var target = $(this).attr('href');
+        if ($(target).hasClass('show')) {
+            icon.removeClass('fa-plus').addClass('fa-minus');
+        } else {
+            icon.removeClass('fa-minus').addClass('fa-plus');
+        }
+    });
+
+    // Handle the collapse events to update icons
+    $('.collapse').on('show.bs.collapse', function() {
+        var id = $(this).attr('id');
+        $('#icon-' + id.replace('accordion-', '')).removeClass('fa-plus').addClass('fa-minus');
+    }).on('hide.bs.collapse', function() {
+        var id = $(this).attr('id');
+        $('#icon-' + id.replace('accordion-', '')).removeClass('fa-minus').addClass('fa-plus');
+    });
+}
+
+// Function to fetch and display categories
+function fetchAndDisplayCategories() {
+    var openCategories = $('.collapse.show').map(function() {
+        return $(this).attr('id');
+    }).get();
+
+    $.ajax({
+        url: '{% url "fetch_categories" %}',
+        type: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                var categoriesHtml = response.categories.length ? 
+                    response.categories.map(function(category) {
+                        return generateCategoryHtml(category);
+                    }).join('') :
+                    '<div class="card-body"><div id="subaccordion-1"><p>No Categories available.</p></div></div>';
+
+                $('#accordion-').html(categoriesHtml);
+                initializeCollapsible();
+                initializeSortable();
+                $('#addForm').find('button[type="submit"]').text('Submit'); // Reset button text
+
+                openCategories.forEach(function(id) {
+                    $('#' + id).collapse('show');
+                });
+            } else {
+                console.log('Failed to fetch categories');
+            }
+        },
+        error: function() {
+            console.log('Error fetching categories');
+        }
+    });
+}
+
+// Function to generate HTML for a category
+function generateCategoryHtml(category) {
+    var subcategoriesHtml = category.subcategories.map(function(subcategory) {
+        return generateSubcategoryHtml(subcategory);
+    }).join('');
+
+    return `
+        <div class="card my-2" id="category-id-${category.id}">
+            <div class="card-header bg-primary text-white">
+                <span class="mr-2"><i class="fa fa-bars handle"></i></span>
+                <a class="text-white collapsed ml-2" data-toggle="collapse" href="#accordion-${category.id}" aria-expanded="false">
+                    <i class="fa fa-plus" id="icon-${category.id}"></i>
+                    <span class="ml-2">${category.name}</span>
+                </a>
+                <div class="float-right">
+                    <a href="#" data-toggle="tooltip" title="Add Subcategory" class="text-white mr-2 Subcategory" data-parent-id="${category.id}" onclick="addFunction(this, 'Add Subcategory')">
+                        <i class="zmdi zmdi-collection-plus"></i>
+                    </a>
+                    <a href="#" class="text-white mr-2" data-toggle="tooltip" title="Edit Category" onclick="addFunction(null, 'Edit Category', ${category.id})">
+                        <i class="fa fa-edit"></i>
+                    </a>
+                    <a href="#" class="text-white mr-2 delete-category" data-toggle="tooltip" title="Delete Category" data-category-id="${category.id}" onclick="confirmDelete(${category.id}, 'Category')">
+                        <i class="fa fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+            <div id="accordion-${category.id}" class="collapse" data-parent="#accordion-">
+                <div class="card-body">
+                    <div id="subaccordion-${category.id}">
+                        ${subcategoriesHtml || '<p>No subcategories available.</p>'}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Function to generate HTML for a subcategory
+function generateSubcategoryHtml(subcategory) {
+    return `
+        <div class="card mb-2" id="subcategory-id-${subcategory.id}">
+            <div class="card-header" style="background-color: #7686fd;">
+                <a class="text-white collapsed" data-toggle="collapse2" aria-expanded="false">
+                    <span class="mr-2">${subcategory.name}</span>
+                </a>
+                <div class="float-right">
+                    <a href="#" class="text-white mr-2" data-toggle="tooltip" title="Edit Subcategory" onclick="addFunction(null, 'Edit Subcategory', ${subcategory.id})">
+                        <i class="fa fa-edit"></i>
+                    </a>
+                    <a href="#" class="text-white mr-2 delete-subcategory" data-toggle="tooltip" title="Delete Subcategory" data-subcategory-id="${subcategory.id}" onclick="confirmDelete(${subcategory.id}, 'Subcategory')">
+                        <i class="fa fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Function to initialize sortable elements
+function initializeSortable() {
+    new Sortable(document.getElementById('accordion-'), {
+        handle: '.handle',
+        animation: 150,
+        onEnd: function (evt) {
+            var order = $('#accordion- > .card').map(function() {
+                return $(this).attr('id').replace('category-id-', '');
+            }).get();
+            updateCategoryOrder(order);
+        }
+    });
+}
+
+// Function to update category order
+function updateCategoryOrder(order) {
+    $.ajax({
+        url: '{% url "update_category_order" %}',
+        type: 'POST',
+        data: {
+            'order': order,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+            console.log(response.status === 'success' ? 'Category order updated successfully.' : 'Failed to update category order.');
+        },
+        error: function() {
+            console.log('Error updating category order.');
+        }
+    });
+}
+
+// Function to add or edit category/subcategory
+function addFunction(element, name, id = null) {
+    var parentId = element ? $(element).data('parent-id') : null;
+    $('#NameError').text('');
+    $('#parent').val(parentId);
+    $('#categoryID').val(id || '');
+    $('#addModal').modal('show');
+    $('#addModalLabel').text(name);
+    var submitButton = $('#addForm').find('button[type="submit"]');
+    submitButton.text(id ? 'Update' : 'Submit');
+
+    if (id) {
+        $.ajax({
+            url: '{% url "get_category" %}',
+            type: 'GET',
+            data: { 'category_id': id },
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('#name').val(response.category.name);                    
+                } else {
+                    console.log('Failed to fetch category details');
+                }
+            },
+            error: function() {
+                console.log('Error fetching category details');
+            }
+        });
+    } else {
+        $('#name').val('');
+    }
+}
+
+// Function to confirm deletion
+function confirmDelete(category_id, cat_name) {
+    console.log(category_id)
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You want to delete this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#1a83bf',
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "No, keep it!",      
+    }).then((result) => {
+        console.log(result)
+        if (result.value) {           
+            $.ajax({
+                url: '{% url "deletecategory" %}',
+                type: 'POST',
+                data: {
+                    'category_id': category_id,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    fetchAndDisplayCategories();
+                    Swal.fire(
+                        response.status === 'success' ? 'Deleted!' : 'Error!',
+                        response.status === 'success' ? cat_name + ' has been successfully Deleted.' : 'There was an error deleting the category.',
+                        response.status === 'success' ? 'success' : 'error'
+                    );
+                },
+                error: function() {
+                    Swal.fire('Error!', 'There was an error deleting the category.', 'error');
+                }
+            });
+        }
+    });
+}
+
+$(document).ready(function() {
+    fetchAndDisplayCategories();
+
+    // Search functionality
+    $('#categorySearch').on('input', function() {
+        var searchTerm = $(this).val().toLowerCase();
+        var anyVisible = false;
+        
+        $('#accordion- > .card').each(function() {
+            var categoryName = $(this).find('.card-header a').text().toLowerCase();
+            if (categoryName.includes(searchTerm)) {
+                $(this).show();
+                anyVisible = true;
+            } else {
+                $(this).hide();
+            }
+        });
+
+        if (!anyVisible) {
+            if ($('#noCategoriesMessage').length === 0) {
+                $('#accordion-').append('<div id="noCategoriesMessage" class="card-body"><div id="subaccordion-1"><p>No categories found.</p></div></div>');
+            }
+        } else {
+            $('#noCategoriesMessage').remove();
+        }
+    });
+
+    // Form submission
+    $('#addForm').on('submit', function(event) {
+        event.preventDefault();
+        var name = $('#name').val();
+        var id = $('#categoryID').val();
+
+        if (name.trim() === '') {
+            $('#NameError').text("Name can't be empty.");
+            return;
+        }
+
+        var formData = new FormData(this);
+        var url = id ? '{% url "updatecategory" %}' : '{% url "createcategory" %}';
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.status === 'success') {
+                    console.log(response.message);
+                    fetchAndDisplayCategories();
+                    $('#addModal').modal('hide');
+                    $('#name').val('');
+                    $('#parent').val('');
+                    showToast("success", response.message);    
+
+                } else {
+                    if (response.status === 'error' && response.errors) {
+                        var errors = JSON.parse(response.errors);
+                        $('#NameError').text(errors.name ? errors.name[0].message : response.message);
+                    } else {
+                        showToast("success", 'An unexpected error occurred.');    
+                    }
+                }
+            },
+            error: function() {
+                showToast("success", 'An unexpected error occurred.');    
+            }
+        });
+    });
+
+    // Close modal
+    $('#closeModal').on('click', function(event) {  
+        $('#addModal').modal('hide');
+        $('#NameError').text('');
+        $('#name').val('');
+        $('#parent').val('');
+        $('#addForm').find('button[type="submit"]').text('Submit'); // Reset button text
+
+    });
+});
+</script>
+{% endblock content %}

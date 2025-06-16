@@ -1,0 +1,60 @@
+/* :: Sidebar Light CSS */
+
+.ecaps-page-wrapper.sidebar-light {
+    .ecaps-sidemenu-area {
+        -webkit-box-shadow: none;
+        box-shadow: none;
+        background-color: #ededed;
+        box-shadow: none;
+    }
+
+    .top-header-area {
+        border-bottom: none;
+    }
+
+    .ecaps-logo a {
+        background-color: #fff;
+    }
+
+    .ecaps-sidemenu-area .slimScrollDiv {
+        background-color: #ededed;
+    }
+
+    .sidebar-menu .treeview-menu > li.active > a {
+        color: $primary-color;
+    }
+
+    .sidemenu-user-profile .user-content h6 {
+        color: #666;
+    }
+
+    .sidebar-menu > li > a:hover,
+    .sidebar-menu > li.active > a,
+    .sidebar-menu > li.menu-open > a {
+        color: $primary-color;
+        background-color: #f6f6f6;
+    }
+
+    .sidebar-menu li a {
+        color: #666;
+    }
+
+    .footer-area {
+        border-top: 1px solid #e3e3e3;
+        background-color: transparent;
+    }
+
+    .sidebar-menu li .treeview-menu li a:hover {
+        color: $primary-color;
+    }
+
+    .side-menu-area {
+        margin-top: 30px;
+    }
+
+    @media only screen and (max-width: 991px) {
+        .top-header-area {
+            background-color: #fff;
+        }
+    }
+}

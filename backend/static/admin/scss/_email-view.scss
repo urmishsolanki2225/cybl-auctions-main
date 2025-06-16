@@ -1,0 +1,73 @@
+/* :: Email View CSS */
+
+.mail-windoe-body-area {
+    @media #{$breakpoint-xs} {
+        margin-top: 100px;
+    }
+
+    .mail-window-header {
+        border-bottom: 1px solid $border-color;
+        padding: 0 0 15px 0;
+
+        @media #{$breakpoint-xs} {
+            border-bottom: none;
+        }
+
+        a {
+            color: $heading-color;
+            font-size: 14px;
+
+            &:hover {
+                color: $primary-color;
+            }
+        }
+    }
+
+    .mail-window-text-content {
+        padding-top: 15px;
+
+        p {
+            font-size: 14px;
+        }
+
+        .mail-avatra {
+            .mail-avatar-thumb {
+                @include flex(0 0 50px);
+                max-width: 50px;
+                width: 50px;
+                border-radius: 50%;
+                margin-right: 10px;
+
+                img {
+                    border-radius: 50%;
+                }
+            }
+        }
+    }
+
+    .avatar-title {
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        align-items: center;
+        background-color: #727cf5;
+        color: #fff;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        font-weight: 600;
+        height: 100%;
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .avatar-sm {
+        height: 3rem;
+        width: 3rem;
+    }
+}
+
+.bg-primary-lighten {
+    background-color: rgba(114, 124, 245, .25) !important;
+}

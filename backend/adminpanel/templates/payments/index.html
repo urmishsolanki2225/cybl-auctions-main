@@ -1,0 +1,169 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<style>
+    .avatar-area {
+        display: flex;
+        align-items: center;
+    }
+
+    .avatar-area img {
+        width: 50px;
+        height: 50px;
+        margin-right: 10px;
+    }
+
+    .avatar-area .edit-link {
+        display: inline-block;
+        margin-top: 5px;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 height-card box-margin">
+            <div class="card">
+                <div class="card-body pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0">Transaction</h6>
+
+                        <a href="{% url 'createpaymenthistory' %}" class="btn btn-primary">
+                            Add New
+                        </a>
+                    </div>
+
+                    <!-- Tabs for Payment Status -->
+                    <ul class="nav nav-tabs nav-bordered">
+                        <li class="nav-item">
+                            <a href="{% url 'payment_history' 1 %}" class="nav-link {% if tabId == 'Pending' %}active{% endif %}">
+                                Pending
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'payment_history' 2 %}" class="nav-link {% if tabId == 'Completed' %}active{% endif %}">
+                                Paid
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'payment_history' 3 %}" class="nav-link {% if tabId == 'Refunded' %}active{% endif %}">
+                                Refunded
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'payment_history' 4 %}" class="nav-link {% if tabId == 'Failed' %}active{% endif %}">
+                                Failed
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <table id="payment-history-datatable" class="table table-striped mt-3">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Image</th>
+                                    <th>Transaction ID</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Payment Method</th>
+                                    <th>Created At</th>
+                                    <th>Customer name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payment_history %}
+                                <tr>
+                                    <td>{{ payment.id }}</td>
+                                    <td>
+                                        {% if payment.inventory.media_items.all %}
+                                        <img src="{{MEDIA_URL}}{{ payment.inventory.media_items.first.path }}" style="width: 50px; height: 50px;"/>
+                                        {% else %}
+                                            <img src="{% static 'admin/img/member-img/contact-2.jpg' %}" style="width: 50px; height: 50px;"/>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ payment.transaction_id }}</td>
+                                    <td>{{ payment.amount }}</td>
+                                    <td>{{ payment.get_status_display }}</td>
+                                    <td>{{ payment.get_payment_method_display }}</td>
+                                    <td>{{ payment.created_at|date:"F j, Y h:i A" }}</td>
+
+                                    <td>{{ payment.user.first_name }} {{ payment.user.last_name }}</td>
+                                    <td>
+                                        <a href="{% url 'editpaymenthistory' payment.id %}" target="_blank" class="btn btn-primary btn-sm">edit</a>
+                                        <a href="{% url 'payment_invoice' payment.id %}" target="_blank" class="btn btn-primary btn-sm">Invoice</a>
+                                        <a href="#" class="btn btn-danger btn-sm mr-2" onclick="confirmDelete({{ payment.id }})">Delete</a>
+
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>                        
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+$(document).ready(function () {
+    $('#payment-history-datatable').DataTable({
+        lengthChange: true,
+        language: {
+            paginate: {
+                previous: "<i class='arrow_carrot-left'></i>",
+                next: "<i class='arrow_carrot-right'></i>"
+            }
+        },
+        pageLength: 10,
+        drawCallback: function() {
+            $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
+        }
+    });    
+});
+function confirmDelete(Trans_Id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You want to delete this Transection!",
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.value) {
+                deleteItem(Trans_Id);
+            }
+        });
+    }
+
+    function deleteItem(Trans_Id) {
+        $.ajax({
+            url: '{% url "deletepaymenthistory" %}',
+            type: 'POST',
+            data: {
+                'Trans_Id': Trans_Id,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    Swal.fire(
+                        'Deleted!',
+                        'Item has been deleted.',
+                        'success'
+                    );
+                    $('#field-' + itemId).remove();
+                    location.reload();
+                } else {
+                    showError('There was an error deleting the item.');
+                }
+            },
+            error: function() {
+                showError('There was an error deleting the item.');
+            }
+        });
+    }
+
+    function showError(message) {
+        Swal.fire('Error!', message, 'error');
+    }
+</script>
+
+{% endblock %}

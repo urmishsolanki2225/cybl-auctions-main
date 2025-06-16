@@ -1,0 +1,131 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<style>
+    .table-responsive {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .scrollable-table-body {
+        display: block;
+        max-height: 300px;
+        overflow-y: auto;
+        width: 100%;
+    }
+
+    .scrollable-table-body tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .scrollable-table-body td {
+        white-space: nowrap;
+    }
+
+    #permissions_table thead, #permissions_table tbody tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    #permissions_table thead {
+        width: calc( 100% - 1em )
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-sm-6 col-xl">
+            <div class="card box-margin">
+                <div class="card-body">
+                    <div class="p-1 align-items-center">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="card-title mb-0">Manage Roles and Permissions</h6>
+                            <a class="btn btn-primary waves-effect waves-light mb-3 float-right" href="{% url 'groups' %}">Back to Roles</a>
+                        </div>
+                        <table class="table table-striped" id="permissions_table">
+                            <thead>
+                                <tr>
+                                    <th>Permission</th>
+                                    {% for group in groups %}
+                                        <th>
+                                            {{ group.name }}
+                                        </th>
+                                    {% endfor %}
+                                </tr>
+                                <tr>
+                                    <th>Select all</th>
+                                    {% for group in groups %}
+                                        <th>
+                                            <div class="form-check p-0">
+                                            <label class="form-check-label">
+                                                <input type="checkbox" class="select-all-checkbox" data-group-id="{{ group.id }}" {% if group.name == 'Super Admin' %}disabled checked{% endif %}>
+                                            </label>
+                                            </div>
+                                        </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody class="scrollable-table-body">
+                                {% for permission in permissions %}
+                                    <tr>
+                                        <td>{{ permission.name }}</td>
+                                        {% for group in groups %}
+                                            <td>
+                                                <input type="checkbox" class="permission-checkbox"  data-group-id="{{ group.id }}" data-permission-id="{{ permission.id }}" {% if group.name == 'Super Admin' %}disabled{% endif %} {% if permission in group.permissions.all %}checked{% endif %}>
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <button id="save-btn" class="btn btn-primary" disabled>Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.permission-checkbox').on('change', function() {
+            $('#save-btn').prop('disabled', false);
+        });
+
+        $('#save-btn').on('click', function() {
+            var updates = [];
+            $('.permission-checkbox').each(function() {
+                updates.push({
+                    group_id: $(this).data('group-id'),
+                    permission_id: $(this).data('permission-id'),
+                    is_checked: $(this).is(':checked')
+                });
+            });
+
+            $.ajax({
+                url: '{% url "update_permissions" %}',
+                method: 'POST',
+                data: {
+                    'updates': JSON.stringify(updates),
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {                  
+                    showToast("success", 'Premissions Changed Successfully!');                     
+                },
+                error: function(response) {
+                    showToast("error", 'An error occurred');                        
+                }
+            });
+        });
+        $('.select-all-checkbox').on('change', function() {
+            var groupId = $(this).data('group-id');
+            var isChecked = $(this).is(':checked');
+            $('.permission-checkbox[data-group-id="' + groupId + '"]').prop('checked', isChecked);
+            $('#save-btn').prop('disabled', false);
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-sm-6 col-xl">
+            <div class="card box-margin">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="d-flex">
+                                <h5>Add Role</h5>
+                                <a href="{% url 'groups' %}" class="btn btn-primary btn-sm ml-auto">Go Back</a>
+                            </div>
+                            <form method="post" action="{% url 'creategroup' %}" class="mt-4">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label for="name">Name <span class="text-danger">*</span></label>
+                                    <input type="text" id="name" name="name" class="form-control" value="{{ form.name.value|default:'' }}" placeholder="Type Name..">
+                                    {% if form.name.errors %}
+                                    <label id="name-error" class="error mt-2 text-danger" for="name">{{ form.name.errors }}
+                                    </label>
+                                    {% endif %}
+                                </div>
+                                <button type="submit" class="btn btn-primary">Add</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

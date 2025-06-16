@@ -1,0 +1,226 @@
+/* :: Chat CSS */
+
+.people-list {
+    .status {
+        font-size: 12px;
+    }
+
+    img {
+        float: left;
+        border: 1px solid $white-color;
+        @include box-shadow(0px 5px 25px 0px rgba(0, 0, 0, 0.2));
+        border-radius: 50%;
+    }
+
+    .about {
+        float: left;
+        padding-left: 8px;
+    }
+
+    .chat-list {
+        img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        li {
+            padding: 15px 15px 10px 15px;
+            list-style: none;
+            border-radius: 3px;
+            border: 1px solid $border-color;
+            margin-bottom: 15px;
+
+            .name {
+                font-size: 14px;
+                color: $heading-color;
+            }
+
+            &.active {
+                background: #eff2f9;
+                border: 1px solid $border-color;
+            }
+        }
+
+        .status {
+            i {
+                font-size: 10px;
+                margin-right: 3px;
+                color: #2ecc71;
+            }
+        }
+    }
+}
+
+.chat-header {
+    img {
+        width: 30px;
+        border-radius: 50%;
+    }
+}
+
+.chat-header-text {
+    padding-bottom: 15px;
+}
+
+.chat-with {
+    font-size: 16px;
+    font-weight: 500;
+    color: $heading-color;
+}
+
+.chat-header-thumb {
+    display: inline-block;
+    float: left;
+    margin-right: 15px;
+
+    img {
+        width: 45px;
+        border-radius: 50%;
+    }
+}
+
+.chat {
+    .chat-header {
+        padding: 20px;
+        border-bottom: 1px solid $border-color;
+        border-radius: 0 0.55rem 0 0;
+
+        .chat-about {
+            float: left;
+            padding-left: 10px;
+        }
+
+        .chat-with {
+            font-weight: bold;
+            font-size: 16px;
+        }
+    }
+
+    .chat-message {
+        padding: 20px;
+
+        .form-control {
+            height: 48px;
+            border: 1px solid $border-color;
+        }
+    }
+}
+
+.form-group {
+    .form-line {
+        width: 100%;
+        position: relative;
+    }
+}
+
+.chat {
+    .chat-history {
+        padding: 20px;
+        border-bottom: 2px solid $white-color;
+        height: 450px;
+
+        .other-message {
+            background-color: #eef2f7;
+        }
+
+        .message {
+            position: relative;
+            z-index: 1;
+            color: #555;
+            padding: 15px 30px;
+            font-size: 14px;
+            margin-bottom: 15px;
+            width: 90%;
+            border-radius: 6px;
+        }
+
+        .message-data {
+            margin-bottom: 10px;
+
+            .message-data-name {
+                font-size: 13px;
+                font-weight: 700;
+            }
+        }
+
+        .message-data-time {
+            color: #555;
+            padding-left: 5px;
+            font-size: 12px;
+        }
+
+        .my-message {
+            background: #eff2f9;
+            color: #555;
+        }
+    }
+}
+
+.chat-num-messages {
+    font-size: 12px;
+    color: #555;
+}
+
+.message-thumb {
+    width: 200px;
+    height: auto;
+    margin-left: auto;
+
+    img {
+        border-radius: 10px;
+    }
+}
+
+.message {
+    &.my-message {
+        p {
+            margin-bottom: 0;
+            color: $gray-color;
+        }
+    }
+}
+
+.chat-upload {
+    float: right;
+
+    button {
+        font-size: 14px;
+
+        &:hover {
+            color: $white-color;
+        }
+    }
+}
+
+.people-list {
+    .chat-list {
+        li {
+            &:hover {
+                background: $background-color;
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+.chat-features a {
+    color: #6c758d;
+    font-size: 20px;
+    margin-left: 10px;
+
+    &:hover {
+        color: $primary;
+    }
+}
+
+.chat-upload {
+    a {
+        color: #555;
+        margin-left: 10px;
+        font-size: 20px;
+    }
+}
+.input-group-append .btn, .input-group-prepend .btn{
+    z-index: 1;
+}
