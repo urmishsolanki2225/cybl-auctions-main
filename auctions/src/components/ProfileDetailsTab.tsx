@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Save, Edit } from 'lucide-react';
 import { protectedApi, publicApi } from '../api/apiUtils';
-import './ProfileDetailsTab.css';
+import '../styles/ProfileDetailsTab.css';
 
 interface Country {
   id: number;

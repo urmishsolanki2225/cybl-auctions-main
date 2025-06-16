@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Clock, DollarSign, Trophy, X } from 'lucide-react';
-import './BiddingHistoryTab.css';
+import '../styles/BiddingHistoryTab.css';
 import { protectedApi, publicApi } from '../api/apiUtils';
 import BASE_URL from '../api/endpoints'
 

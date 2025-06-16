@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { CreditCard, Download, Eye, Clock, CheckCircle } from 'lucide-react';
-import './PaymentHistoryTab.css';
+import '../styles/PaymentHistoryTab.css';
 import { protectedApi, publicApi } from '../api/apiUtils';
 
 interface PaymentHistoryItem {

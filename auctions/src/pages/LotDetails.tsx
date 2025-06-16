@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import useWebSocket from '../hooks/useWebSocket';
 import LiveTimer from '../components/LiveTimer';
-import './LotDetails.css';
+import '../styles/LotDetails.css';
 import { publicApi, protectedApi } from '../api/apiUtils';
 import BASE_URL from '../api/endpoints';
 

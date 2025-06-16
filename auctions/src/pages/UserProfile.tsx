@@ -5,7 +5,7 @@ import PasswordChangeTab from '../components/PasswordChangeTab';
 import BiddingHistoryTab from '../components/BiddingHistoryTab';
 import PaymentHistoryTab from '../components/PaymentHistoryTab';
 import { protectedApi } from '../api/apiUtils';
-import './UserProfile.css';
+import '../styles/UserProfile.css';
 
 interface UserData {
   username: string;
@@ -58,7 +58,7 @@ const UserProfile = () => {
     const fetchUserData = async () => {
       try {
         const response = await protectedApi.getProfile(); 
-        console.log('Profile response:', response); // Debug log
+        //console.log('Profile response:', response); // Debug log
         
         const profileData = {
           username: response.user.username,

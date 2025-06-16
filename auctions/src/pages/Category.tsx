@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import './Category.css';
+import '../styles/Category.css';
 
 const Category = () => {
   const { categoryId } = useParams();
