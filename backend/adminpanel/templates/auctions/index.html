@@ -67,7 +67,6 @@
                                     <tr>
                                         <th>Auction Info</th>
                                         <th>Auction Time</th>
-                                        <th>Lot Count</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -89,7 +88,6 @@
                                             <div class="auction-time">
                                                 <div class="auction-time-labels">
                                                     <div><strong>Bidding Start Time:</strong></div>
-                                                    <div><strong>End Date Time:</strong></div>
                                                 </div>
                                                 <div class="auction-time-values">
                                                     <div>
@@ -99,7 +97,6 @@
                                                             {{ auction.start_date|date:"j F Y" }}
                                                         {% endif %}
                                                     </div>
-                                                    <div>{{ auction.end_date|date:"j F Y" }}</div>
                                                 </div>
                                                 <div class="auction-time-times">
                                                     <div>
@@ -109,16 +106,10 @@
                                                             {{ auction.start_date|date:"g:i A" }}
                                                         {% endif %}
                                                     </div>
-                                                    <div>{{ auction.end_date|date:"g:i A" }}</div>
                                                 </div>
                                             </div>
 
                                         </td>  
-                                        <td>
-                                            <div class="auction-time-labels">
-                                                <div><strong>{{ auction.lot_count }}</strong></div>
-                                            </div>
-                                        </td>
                                         <td>
                                             <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
                                             <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
@@ -135,7 +126,6 @@
                                     <tr>
                                         <th>Auction Info</th>
                                         <th>Auction Time</th>
-                                        <th>Lot Count</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -157,23 +147,28 @@
                                             <div class="auction-time">
                                                 <div class="auction-time-labels">
                                                     <div><strong>Bidding Start Time:</strong></div>
-                                                    <div><strong>End Date Time:</strong></div>
                                                 </div>
                                                 <div class="auction-time-values">
-                                                    <div>{{ auction.start_date|date:"j F Y" }}</div>
-                                                    <div>{{ auction.end_date|date:"j F Y" }}</div>
+                                                    <div>
+                                                        {% if auction.prebid_start_date %}
+                                                            {{ auction.prebid_start_date|date:"j F Y" }}
+                                                        {% else %}
+                                                            {{ auction.start_date|date:"j F Y" }}
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
                                                 <div class="auction-time-times">
-                                                    <div>{{ auction.start_date|date:"g:i A" }}</div>
-                                                    <div>{{ auction.end_date|date:"g:i A" }}</div>
+                                                    <div>
+                                                        {% if auction.prebid_start_date %}
+                                                            {{ auction.prebid_start_date|date:"g:i A" }}
+                                                        {% else %}
+                                                            {{ auction.start_date|date:"g:i A" }}
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
                                             </div>
+
                                         </td>  
-                                        <td>
-                                            <div class="auction-time-labels">
-                                                <div><strong>{{ auction.lot_count }}</strong></div>
-                                            </div>
-                                        </td>
                                         <td>
                                             <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
                                             <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
@@ -190,7 +185,6 @@
                                     <tr>
                                         <th>Auction Info</th>
                                         <th>Auction Time</th>
-                                        <th>Lot Count</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -212,23 +206,27 @@
                                             <div class="auction-time">
                                                 <div class="auction-time-labels">
                                                     <div><strong>Bidding Start Time:</strong></div>
-                                                    <div><strong>End Date Time:</strong></div>
                                                 </div>
                                                 <div class="auction-time-values">
-                                                    <div>{{ auction.start_date|date:"j F Y" }}</div>
-                                                    <div>{{ auction.end_date|date:"j F Y" }}</div>
+                                                    <div>
+                                                        {% if auction.prebid_start_date %}
+                                                            {{ auction.prebid_start_date|date:"j F Y" }}
+                                                        {% else %}
+                                                            {{ auction.start_date|date:"j F Y" }}
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
                                                 <div class="auction-time-times">
-                                                    <div>{{ auction.start_date|date:"g:i A" }}</div>
-                                                    <div>{{ auction.end_date|date:"g:i A" }}</div>
+                                                    <div>
+                                                        {% if auction.prebid_start_date %}
+                                                            {{ auction.prebid_start_date|date:"g:i A" }}
+                                                        {% else %}
+                                                            {{ auction.start_date|date:"g:i A" }}
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </td>  
-                                        <td>
-                                            <div class="auction-time-labels">
-                                                <div><strong>{{ auction.lot_count }}</strong></div>
-                                            </div>
-                                        </td>
+                                        </td> 
                                         <td>
                                             <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
                                             <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>

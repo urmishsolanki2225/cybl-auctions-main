@@ -48,8 +48,8 @@ export const isTokenExpired = (token: string): boolean => {
         const currentTime = Date.now() / 1000;
         const expirationTime = payload.exp;
 
-        console.log('Token expires at:', new Date(expirationTime * 1000));
-        console.log('Current time:', new Date(currentTime * 1000));
+        // console.log('Token expires at:', new Date(expirationTime * 1000));
+        // console.log('Current time:', new Date(currentTime * 1000));
         console.log('Token expired:', expirationTime < currentTime);
 
         return expirationTime < currentTime;

@@ -1,5 +1,4 @@
-# frontapi/urls.py
-
+# backend\api\urls.py
 from django.urls import path, include
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -10,67 +9,54 @@ router = DefaultRouter()
 from api import views
 
 urlpatterns = [
-    #User Register
+    # USER REGISTER
     path('register/', views.RegisterView.as_view(), name='register'),
 
-    #LoginPage
+    # LOGIN
     path('login/', views.LoginView.as_view(), name='login'),
 
-    #All Country Fetch
+    # ALL COUNTRY + DETAILS
     path('countries/', views.CountryListCreateView.as_view(), name='country-list-create'),
     path('countries/<int:pk>/', views.CountryRetrieveUpdateDestroyView.as_view(), name='country-detail'),
     
-    #All State Fetch
+    # ALL STATES + DETAILS
     path('states/', views.StateListCreateView.as_view(), name='state-list-create'),
     path('states/<int:pk>/', views.StateRetrieveUpdateDestroyView.as_view(), name='state-detail'),
     
     # New endpoint to fetch states by country ID
     path('countries/<int:country_id>/states/', views.StateByCountryView.as_view(), name='states-by-country'),
 
-    #profile
+    # PROFILE
     path('profile/', views.ProfileDetail.as_view(), name='profile-detail'),
 
-    # path('profile/', views.ProfileDetail, name='profile-detail'),
-    # path('change-password/', views.ChangePasswordView, name='change_password'),
-    path('password/update/', views.PasswordUpdateView.as_view(), name='password-update'),
- 
+    # PASSWORD UPDATE
+    path('password/update/', views.PasswordUpdateView.as_view(), name='password-update'), 
 
-    # # login required tokens
+    #Login required tokens
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # # items urls
-    # path('items/', ItemListView, name='item_list'),
+    #LOT URLS
     path('lots/<int:id>/', views.InventoryDetailAPIView.as_view(), name='inventory-detail'),
     path('lots/<int:lot_id>/bid/', views.place_bid_api, name='place_bid'),
     path('lots/<int:lot_id>/bids/', views.get_bid_history, name='bid_history'),
-    path('lots/<int:lot_id>/status/', views.get_lot_status, name='lot_status'),
-   
+    path('lots/<int:lot_id>/status/', views.get_lot_status, name='lot_status'),   
 
-  
+    # AUCTIONS
+    path('auctions/', views.AuctionListView.as_view(), name='auction_view'),   
 
-    # # auction url
-    path('auctions/', views.AuctionListView.as_view(), name='auction_view'),    
+    # AUCTIONS DETAILS 
     path('auctions/<int:pk>/', views.AuctionDetailView.as_view(), name='auction_detail'),    
 
-    # #Category
+    # CATEGORIES
     path('categories/',  views.CategoryListView.as_view(), name='category-list-create'),
-    # path('categories/<int:pk>/', CategoryDetailView, name='category-detail'),
 
-    # #items
-    # path('subcategories/<int:subcategory_id>/latest-items/', LatestItemsBySubcategoryView, name='latest-items-by-subcategory'),
-
-    # #Compnay
+    # COMPANY
     path('companies/', views.CompanyListView.as_view(), name='company-list'),
 
-    # path('category-for-filters/', CategoryfiltersListView, name='category_list'),
-
-    # # place_bid
-    # path('items/<int:item_id>/place-bid/', place_bid, name='place_bid'),
-    # path('items/<int:item_id>/latest-bid/', LatestBidView, name='latest-bid'),
-
-    # path('user/bidding-history/', UserBiddingHistoryView, name='user-bidding-history'),
+    # BIDDING HISTORY
     path('user/bidding-history/', views.user_bidding_history, name='user_bidding_history'),
 
+    # PAYMENT HISTORY
     path('user/payment-history/',  views.user_payment_history, name='payment-history-list'),
 ]

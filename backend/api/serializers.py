@@ -1,4 +1,5 @@
-# backend/api/serializers.py
+# backend\api\serializers.py
+import re
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
@@ -8,7 +9,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from django.db import models
 
-####################################################################################################
+################################################################################################################
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(write_only=True, required=True)
@@ -38,7 +39,7 @@ class LoginSerializer(serializers.Serializer):
         attrs['user'] = user
         return attrs
     
-####################################################################################################
+################################################################################################################
 class PasswordUpdateSerializer(serializers.Serializer):
     currentPassword = serializers.CharField(required=True, write_only=True)
     newPassword = serializers.CharField(required=True, write_only=True)
@@ -110,7 +111,7 @@ class PasswordUpdateSerializer(serializers.Serializer):
         user.save()
         
         return user
-####################################################################################################
+################################################################################################################
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     confirm_password = serializers.CharField(write_only=True)
@@ -188,9 +189,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             last_name=validated_data['last_name'],
         )
         
-        return user
- 
-####################################################################################################
+        return user 
+################################################################################################################
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = serializers.SerializerMethodField()
 
@@ -201,31 +201,31 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_subcategories(self, obj):
         children = obj.subcategories.filter(deleted_at__isnull=True).order_by('order')
         return CategorySerializer(children, many=True).data
-####################################################################################################
+################################################################################################################
 class CountrySerializer(serializers.ModelSerializer):
     class Meta:
         model = Country
         fields = '__all__'
-####################################################################################################  
+################################################################################################################
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
         model = State
         fields = '__all__'
-####################################################################################################  
+################################################################################################################
 class MediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
-        fields = '__all__'  # Or specify fields you want to include
-####################################################################################################    
+        fields = '__all__'  
+################################################################################################################ 
 class InventorySerializer(serializers.ModelSerializer):
-    media_items = MediaSerializer(many=True, read_only=True)  # Nested serializer
+    media_items = MediaSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
     current_bid = serializers.SerializerMethodField()
     next_required_bid = serializers.SerializerMethodField()
 
     class Meta:
         model = Inventory
-        fields = '__all__'  # Or specify fields you want to include
+        fields = '__all__' 
 
     def get_current_bid(self, obj):
         highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
@@ -235,7 +235,7 @@ class InventorySerializer(serializers.ModelSerializer):
         highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
         current_bid = highest_bid.bid_amount if highest_bid else obj.starting_bid
         return str(current_bid + obj.auction.bid_increment)
-#######################################################################################################
+################################################################################################################
 class ProfileSerializer(serializers.ModelSerializer):
     country = CountrySerializer()
     state = StateSerializer()
@@ -243,17 +243,17 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['title','phone_no', 'gender', 'address', 'country', 'state', 'city', 'zipcode', 'photo']
-#######################################################################################################
+################################################################################################################
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name']
         read_only_fields = ['username']
-#######################################################################################################
+################################################################################################################
 class ProfileDetailSerializer(serializers.Serializer):
     auth_user = UserSerializer()
     profile = ProfileSerializer()
-    
+################################################################################################################    
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='user.first_name', required=False)
     last_name = serializers.CharField(source='user.last_name', required=False)
@@ -281,13 +281,12 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             
         instance.save()
         return instance
-
-####################################################################################################
+################################################################################################################
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ['id', 'name', 'address', 'phone_no', 'company_logo']
-####################################################################################################
+################################################################################################################
 class AuctionSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)  # ⬅️ Use custom serializer here
     location_details = serializers.SerializerMethodField()
@@ -332,9 +331,7 @@ class AuctionSerializer(serializers.ModelSerializer):
         return InventorySerializer(inventory, many=True).data
     def get_lot_count(self, obj):
         return obj.inventory_set.filter(deleted_at__isnull=True).count()
-#####################
-# Add this to your backend/api/serializers.py
-
+################################################################################################################
 class AuctionDetailSerializer(serializers.ModelSerializer):
     """Enhanced serializer for auction details with filtering support"""
     user = UserSerializer(read_only=True)
@@ -492,9 +489,8 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
         """Helper method to get current bid amount for an inventory item"""
         highest_bid = inventory_item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
         return float(highest_bid.bid_amount) if highest_bid else float(inventory_item.starting_bid)
-####################################################################################################
-# serializers.py
-#for auction detaisll page 
+################################################################################################################
+# FOR AUCTIOSN DETAILS PAGE 
 class InventoryBidInfoSerializer(serializers.ModelSerializer):
     current_bid = serializers.SerializerMethodField()
     next_required_bid = serializers.SerializerMethodField()
@@ -525,10 +521,9 @@ class InventoryBidInfoSerializer(serializers.ModelSerializer):
 
     def get_reserve_met(self, obj):
         latest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
-        return (latest_bid.bid_amount >= obj.reserve_price) if latest_bid else False
-    
-####################################################################################################
-#for item detais p age 
+        return (latest_bid.bid_amount >= obj.reserve_price) if latest_bid else False    
+################################################################################################################
+# FOR ITEM DETAILS PAGE
 class InventoryDetailSerializer(serializers.ModelSerializer):
     media_items = MediaSerializer(many=True, read_only=True)
     current_bid = serializers.SerializerMethodField()
@@ -571,9 +566,7 @@ class InventoryDetailSerializer(serializers.ModelSerializer):
                 "timestamp": bid.created_at
             } for bid in bids
         ]
-
-# Add this to your serializers.py
-
+################################################################################################################
 class BiddingHistorySerializer(serializers.ModelSerializer):
     """Updated serializer for user's bidding history"""
     
@@ -691,12 +684,11 @@ class BiddingHistorySerializer(serializers.ModelSerializer):
         if obj.inventory.winning_bid:
             return str(obj.inventory.winning_bid.bid_amount)
         return None
-
-
-#Paymnet hsitry serolaizer
+################################################################################################################
+# PAYMENT HISTORY
 class PaymentHistorySerializer(serializers.ModelSerializer):
     """Serializer for user's payment history"""
-    
+
     # Lot/Inventory details
     lot_name = serializers.CharField(source='inventory.title', read_only=True)
     lot_image = serializers.SerializerMethodField()
@@ -749,7 +741,7 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
         elif obj.status in [Payment_History.PaymentStatus.FAILED, Payment_History.PaymentStatus.REFUNDED]:
             return 'failed'
         return 'unknown'
-################################################
+################################################################################################################
 class CompanyListingSerializer(serializers.ModelSerializer):
     """Serializer for company listing with state and country names"""
     country_name = serializers.CharField(source='country.name', read_only=True)
@@ -772,3 +764,4 @@ class CompanyListingSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.company_logo.url)
             return obj.company_logo.url
         return None
+################################################################################################################

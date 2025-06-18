@@ -31,7 +31,7 @@ const App = () => (
             <Route path="/auctions" element={<AuctionsListing />} />
             <Route path="/auction/:id" element={<AuctionDetails />} />
             <Route path="/lot/:id" element={<LotDetails />} />
-            <Route path="/category/:categoryId" element={<Category />} />
+            <Route path="/category" element={<Category />} />
             <Route path="/contact" element={<Contact />} />           
             <Route path="/account" element={
               <PrivateRoute>

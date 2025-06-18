@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 
 @login_required(login_url='login')
 def all_category(request):
-    categories = Category.objects.all()   
+    categories = Category.objects.filter(parent__isnull=True).prefetch_related('subcategories').order_by('order')  # nulls last by default in PostgreSQL
     return render(request, 'category/index.html', {'categories': categories, 'active_tab': 'allcategory'})
 
 @login_required(login_url='login')

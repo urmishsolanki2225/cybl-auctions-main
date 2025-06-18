@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     useEffect(() => {
-        console.log('Checking auth state...');
+        //console.log('Checking auth state...');
         const token = localStorage.getItem('authToken');
         const userData = localStorage.getItem('user');
        // console.log('Token exists:', !!token, 'User data exists:', !!userData);

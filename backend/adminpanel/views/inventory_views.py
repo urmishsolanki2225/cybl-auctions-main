@@ -48,7 +48,7 @@ def all_inventory(request, tabId):
         start_date__gt=current_date
     )
 
-    auctions = running_auctions.union(upcoming_auctions).order_by('start_date')
+    auctions = running_auctions.union(upcoming_auctions).order_by('created_at')
 
     return render(request, 'inventory/index.html', {
         'current_tab': tabId,

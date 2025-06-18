@@ -107,24 +107,22 @@ export const authApi = {
 export const publicApi = {
   getCountries: async () => {
     return makeRequest(API_ENDPOINTS.COUNTRIES);
-  },
+  },  
   getStatesByCountry: async (countryId: number) => {
     return makeRequest(API_ENDPOINTS.STATES_BY_COUNTRY(countryId));
   },
   getFeaturedAuctions: async () => {
     return makeRequest(API_ENDPOINTS.FEATURED_AUCTIONS);
-  },
-  
+  },  
   getRunningAuctions: async (queryString?: string) => {
     const url = queryString 
       ? `${API_ENDPOINTS.RUNNING_AUCTIONS}${queryString}`
       : API_ENDPOINTS.RUNNING_AUCTIONS;
     return makeRequest(url);
-  },
-  
+  },  
+
   getAuctionDetails: async (id, filters = {}) => {
-    const params = new URLSearchParams();
-    
+    const params = new URLSearchParams();    
     // Add filter parameters that match your Django serializer
     if (filters.search) params.append('search', filters.search);
     if (filters.categories && filters.categories.length > 0) {
@@ -145,12 +143,15 @@ export const publicApi = {
   getLotDetails: async (id: number) => {
     return makeRequest(API_ENDPOINTS.LOT_DETAILS(id));
   },
+
   getCompanies: async () => {
     return makeRequest(API_ENDPOINTS.COMPANIES);
   },
+
   getCategories: async () => {
     return makeRequest(API_ENDPOINTS.CATEGORIES);
   },
+  
   // Search/Filter functions
   searchAuctions: async (filters: {
     company_id?: string;

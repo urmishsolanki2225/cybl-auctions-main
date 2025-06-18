@@ -1,4 +1,4 @@
-# backend/api/views.py
+# backend\api\views.py
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,9 +23,6 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from rest_framework import status, permissions
 from rest_framework.exceptions import ValidationError
-
-
-
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from adminpanel.models import Inventory, Bid, Auctions
@@ -35,8 +32,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.db.models import Q
 
-
-####################################################################################################
+################################################################################################################
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
@@ -72,7 +68,7 @@ class LoginView(APIView):
                 "message": "Login failed",
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-####################################################################################################
+################################################################################################################
 class RegisterView(APIView):
     permission_classes = [AllowAny]
     
@@ -124,9 +120,8 @@ class RegisterView(APIView):
                 "success": False,
                 "message": "Registration failed",
                 "errors": {"general": [str(e)]}
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
- 
-####################################################################################################
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+################################################################################################################
 class PasswordUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -167,7 +162,7 @@ class PasswordUpdateView(APIView):
                 "message": "Password update failed",
                 "errors": {"general": [str(e)]}
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-####################################################################################################
+################################################################################################################
 class CountryListCreateView(generics.ListCreateAPIView):
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
@@ -175,7 +170,7 @@ class CountryListCreateView(generics.ListCreateAPIView):
 class CountryRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
-####################################################################################################
+################################################################################################################
 class StateListCreateView(generics.ListCreateAPIView):
     queryset = State.objects.all()
     serializer_class = StateSerializer
@@ -183,14 +178,14 @@ class StateListCreateView(generics.ListCreateAPIView):
 class StateRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = State.objects.all()
     serializer_class = StateSerializer
-####################################################################################################
+################################################################################################################
 class StateByCountryView(generics.ListAPIView):
     serializer_class = StateSerializer
 
     def get_queryset(self):
         country_id = self.kwargs['country_id']
         return State.objects.filter(country__id=country_id)
-####################################################################################################
+################################################################################################################
 class ProfileDetail(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -256,9 +251,7 @@ class ProfileDetail(APIView):
         profile_data = {k: v for k, v in request.data.items() 
                        if k in ['title', 'phone_no', 'gender', 'address', 'country', 'state', 'city', 'zipcode', 'photo']}
         
-        serializer = ProfileUpdateSerializer(profile, data=profile_data, partial=True)
-
-        
+        serializer = ProfileUpdateSerializer(profile, data=profile_data, partial=True)        
 
         if serializer.is_valid():
             # Save the updated profile data
@@ -289,8 +282,7 @@ class ProfileDetail(APIView):
 
         # If the data is invalid, return errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-####################################################################################################
+################################################################################################################
 class AuctionPagination(PageNumberPagination):
     """Custom pagination class for auctions"""
     page_size = 10  # Default number of items per page
@@ -388,12 +380,7 @@ class AuctionListView(generics.ListAPIView):
                 raise ValidationError(f"Geo lookup error: {str(e)}")
 
         return queryset
-####################################################################################################
-# class AuctionDetailView(RetrieveAPIView):
-#     queryset = Auctions.objects.select_related('user__profile__company').all()
-#     serializer_class = AuctionSerializer
-#     permission_classes = [AllowAny]
-
+################################################################################################################
 class AuctionDetailView(RetrieveAPIView):
     queryset = Auctions.objects.select_related('user__profile__company').prefetch_related(
         'inventory_set__category',
@@ -431,117 +418,13 @@ class AuctionDetailView(RetrieveAPIView):
             obj._sorted_inventory = inventory_items
         
         return obj
-####################################################################################################
+################################################################################################################
 class InventoryDetailAPIView(RetrieveAPIView):
     queryset = Inventory.objects.all()
     serializer_class = InventoryDetailSerializer
     permission_classes = [AllowAny]
     lookup_field = 'id'
-####################################################################################################
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def place_bid_api(request, lot_id):
-#     """
-#     API endpoint to place a bid on a lot
-#     """
-#     try:
-#         lot = Inventory.objects.get(id=lot_id, deleted_at__isnull=True)
-#         bid_amount = Decimal(str(request.data.get('bid_amount', 0)))
-        
-#         # Validate lot timing
-#         now = timezone.now()
-#         if lot.lot_start_time and lot.lot_start_time > now:
-#             return Response({
-#                 'error': 'Bidding has not started for this lot'
-#             }, status=status.HTTP_400_BAD_REQUEST)
-            
-#         if lot.lot_end_time and lot.lot_end_time < now:
-#             return Response({
-#                 'error': 'Bidding has ended for this lot'
-#             }, status=status.HTTP_400_BAD_REQUEST)
-        
-#         # Get current highest bid
-#         latest_bid = lot.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
-#         current_bid = latest_bid.bid_amount if latest_bid else lot.starting_bid
-#         required_bid = current_bid + lot.auction.bid_increment
-        
-#         if bid_amount < required_bid:
-#             return Response({
-#                 'error': f'Bid must be at least ₹{required_bid}',
-#                 'required_bid': str(required_bid)
-#             }, status=status.HTTP_400_BAD_REQUEST)
-        
-#         # Create bid
-#         bid = Bid.objects.create(
-#             user=request.user,
-#             auction=lot.auction,
-#             inventory=lot,
-#             bid_amount=bid_amount,
-#             type='Pre Bid'
-#         )
-        
-#         # Check if reserve is met
-#         reserve_met = bid_amount >= lot.reserve_price
-#         was_reserve_met_before = current_bid >= lot.reserve_price
-        
-#         # Send WebSocket notification
-#         channel_layer = get_channel_layer()
-#         room_group_name = f'lot_{lot_id}'
-        
-#         # Broadcast bid placed
-#         async_to_sync(channel_layer.group_send)(
-#             room_group_name,
-#             {
-#                 'type': 'bid_placed',
-#                 'bid_data': {
-#                     'bidder': request.user.username,
-#                     'amount': str(bid_amount),
-#                     'timestamp': bid.created_at.isoformat(),
-#                     'reserve_met': reserve_met,
-#                     'next_required_bid': str(bid_amount + lot.auction.bid_increment)
-#                 }
-#             }
-#         )
-        
-#         # Send reserve met notification if applicable
-#         if reserve_met and not was_reserve_met_before:
-#             async_to_sync(channel_layer.group_send)(
-#                 room_group_name,
-#                 {
-#                     'type': 'reserve_met',
-#                     'data': {
-#                         'lot_id': lot_id,
-#                         'reserve_price': str(lot.reserve_price)
-#                     }
-#                 }
-#             )
-        
-#         return Response({
-#             'success': True,
-#             'bid': {
-#                 'id': bid.id,
-#                 'amount': str(bid.bid_amount),
-#                 'timestamp': bid.created_at.isoformat(),
-#                 'bidder': request.user.username
-#             },
-#             'lot_status': {
-#                 'current_bid': str(bid_amount),
-#                 'next_required_bid': str(bid_amount + lot.auction.bid_increment),
-#                 'reserve_met': reserve_met
-#             }
-#         }, status=status.HTTP_201_CREATED)
-        
-#     except Inventory.DoesNotExist:
-#         return Response({
-#             'error': 'Lot not found'
-#         }, status=status.HTTP_404_NOT_FOUND)
-#     except Exception as e:
-#         return Response({
-#             'error': str(e)
-#         }, status=status.HTTP_400_BAD_REQUEST)
-
-# Updated place_bid_api function in views.py
-
+################################################################################################################
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def place_bid_api(request, lot_id):
@@ -652,7 +535,7 @@ def place_bid_api(request, lot_id):
         return Response({
             'error': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+################################################################################################################    
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_bid_history(request, lot_id):
@@ -682,7 +565,8 @@ def get_bid_history(request, lot_id):
         return Response({
             'error': 'Lot not found'
         }, status=status.HTTP_404_NOT_FOUND)
-
+    
+################################################################################################################
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_lot_status(request, lot_id):
@@ -716,8 +600,8 @@ def get_lot_status(request, lot_id):
         return Response({
             'error': 'Lot not found'
         }, status=status.HTTP_404_NOT_FOUND)
-####################################################################################################
-#BID Hostry FOR particulser users
+################################################################################################################
+# BID HISTORY FOR PARTICULER USERS
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_bidding_history(request):
@@ -851,9 +735,8 @@ def user_bidding_history(request):
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-#####################################
-#user payment hostry
+################################################################################################################
+#PAYMENT HISTORY FOR PARTICULER USERS
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_payment_history(request):
@@ -952,6 +835,7 @@ def user_payment_history(request):
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
+################################################################################################################   
 class CompanyListView(generics.ListAPIView):
     """List all companies with state and country information"""
     #permission_classes = [permissions.AllowAny]  # Change as needed
@@ -988,9 +872,8 @@ class CompanyListView(generics.ListAPIView):
                 Q(state__name__icontains=search)
             )
         
-        return queryset.order_by('name')
-    
-#######################
+        return queryset.order_by('name')   
+################################################################################################################
 class CategoryListView(APIView):
     def get(self, request):
         # Get only top-level categories (assuming top-level has no parent)
