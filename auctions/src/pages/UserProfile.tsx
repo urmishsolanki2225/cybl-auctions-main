@@ -128,7 +128,7 @@ const UserProfile = () => {
       formData.append('photo', file);
 
       // Upload using the API utility
-      const response = await protectedApi.updateProfile(formData);
+      const response = await protectedApi.uploadProfilePhoto(formData);
       
       // Update user data with new avatar URL from API response
       setUserData(prev => ({ 

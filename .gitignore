@@ -165,7 +165,7 @@ cython_debug/
 #.idea/
 
 # Ignore my.cnf
-my.cnf
+#my.cnf
 
 # ignore in the photo
 # media/

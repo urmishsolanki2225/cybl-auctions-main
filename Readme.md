@@ -111,5 +111,10 @@ npm run dev -- --host
 ```
 
 ---
+### ✅ Get CCS/JS Change.
+
+```bash
+python manage.py collectstatic
+```
 
 Let me know if you'd like this saved as a markdown `.md` file or converted into a project `README.md` style.
