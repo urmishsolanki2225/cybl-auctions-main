@@ -222,7 +222,11 @@ def auction_inventory(request):
         }
         inventory_list.append(item_dict)
 
-    return JsonResponse({'status': 'success', 'inventory_list': inventory_list})
+    return JsonResponse({
+        'status': 'success',
+        'auction_status': auction.status, 
+        'inventory_list': inventory_list
+    })
 
 @login_required(login_url='login')
 def remove_inventory_from_auction(request):

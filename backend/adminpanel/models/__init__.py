@@ -6,3 +6,5 @@ from adminpanel.models.inventory import *
 from adminpanel.models.media import *
 from adminpanel.models.bid import *
 from adminpanel.models.payment_history import *
+from adminpanel.models.contact import *
+

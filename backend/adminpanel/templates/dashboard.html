@@ -11,20 +11,6 @@
                             <div class="col-md-3 mb-3">
                                 <div class="card bg-primary text-white">
                                     <div class="card-body text-center">
-                                        <a href="{% url 'allinventory' 1 %}" class="text-white text-decoration-none">  <!-- Link to the inventory view -->
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3">
-                                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                                            </svg>
-                                            <h5 class="text-white">Inventory</h5>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <div class="card bg-primary text-white">
-                                    <div class="card-body text-center">
                                         <a href="{% url 'allauctions' 1 %}" class="text-white text-decoration-none">  <!-- Link to the auctions view -->
                                             <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3">
                                                 <rect x="2" y="4" width="20" height="16" rx="2"></rect>
@@ -35,6 +21,20 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card bg-primary text-white">
+                                    <div class="card-body text-center">
+                                        <a href="{% url 'allinventory' 1 %}" class="text-white text-decoration-none">  <!-- Link to the inventory view -->
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3">
+                                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                            </svg>
+                                            <h5 class="text-white">Inventory</h5>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>                            
                             <div class="col-md-3 mb-3">
                                 <div class="card bg-primary text-white">
                                     <div class="card-body text-center">
@@ -79,12 +79,6 @@
                                 </div>
                             </div>
                         </div>
-                        <form method="post" action="{% url 'clear_cache' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to clear the cache?');">
-                                Clear Cache
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>

@@ -10,9 +10,6 @@
             <th>Inventory Info</th>
             <th>Price</th>
             <th>Category</th>
-            {% if current_tab != 1 %}
-            <th>Company Details</th>
-            {% endif %}
             <th>Action</th>
         </tr>
     </thead>
@@ -50,15 +47,17 @@
                 </div>
             </td>
             <td>{{ inventory.category.name }}</td>
-            {% if current_tab != 1 %}
-            <td>{{ inventory.auction.user.profile.company.name }}</td>
-            {% endif %}        
             <td class="d-flex align-items-center">                
                 {% if current_tab == 2 %}
                 <a href="#" class="btn btn-primary btn-sm mr-2" onclick="showBiddingHistory({{ inventory.id }}, '{{inventory.title}}')">Bids</a>
-                {% endif %}       
-                <a href="{% url 'editinventory' inventory.id %}" class="btn btn-info btn-sm mr-2">Edit</a>
-                <a href="#" class="btn btn-danger btn-sm mr-2" onclick="confirmDelete({{ inventory.id }})">Delete</a>
+                {% endif %}   
+                {% if inventory.auction and inventory.auction.status == 'current' %}
+                    <a class="btn btn-info btn-sm mr-2 disabled" href="#" tabindex="-1" aria-disabled="true">Edit</a>
+                    <a class="btn btn-danger btn-sm mr-2 disabled" href="#" tabindex="-1" aria-disabled="true">Delete</a>
+                {% else %}
+                    <a href="{% url 'editinventory' inventory.id %}" class="btn btn-info btn-sm mr-2">Edit</a>
+                    <a href="#" class="btn btn-danger btn-sm mr-2" onclick="confirmDelete({{ inventory.id }})">Delete</a>
+                {% endif %}
             </td>
         </tr>
         {% endfor %}

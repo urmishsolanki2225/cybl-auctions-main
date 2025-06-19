@@ -224,7 +224,7 @@ const UserProfile = () => {
                   <div className="profile-stats">
                     <div className="stat">
                       <div className="stat-number">{userData.wonAuctions}</div>
-                      <div className="stat-label">Won Auctions</div>
+                      <div className="stat-label">Won Inventory</div>
                     </div>
                     <div className="stat">
                       <div className="stat-number">{userData.memberSince}</div>

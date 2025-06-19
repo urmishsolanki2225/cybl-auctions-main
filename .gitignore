@@ -1,5 +1,5 @@
 # ignore in the project
-migrations/
+# migrations/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

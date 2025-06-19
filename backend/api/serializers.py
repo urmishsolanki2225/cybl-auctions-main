@@ -1,10 +1,11 @@
 # backend\api\serializers.py
+from decimal import Decimal
 import re
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from adminpanel.models import Country, State, Media, Inventory, Profile, Auctions, Company, Category, Bid, Payment_History
+from adminpanel.models import Country, State, Media, Inventory, Profile, Auctions, Company, Category, Bid, Payment_History, ContactMessage
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from django.db import models
@@ -217,6 +218,25 @@ class MediaSerializer(serializers.ModelSerializer):
         model = Media
         fields = '__all__'  
 ################################################################################################################ 
+# class InventorySerializer(serializers.ModelSerializer):
+#     media_items = MediaSerializer(many=True, read_only=True)
+#     category = CategorySerializer(read_only=True)
+#     current_bid = serializers.SerializerMethodField()
+#     next_required_bid = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Inventory
+#         fields = '__all__' 
+
+#     def get_current_bid(self, obj):
+#         highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+#         return str(highest_bid.bid_amount) if highest_bid else str(obj.starting_bid)
+    
+#     def get_next_required_bid(self, obj):
+#         highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+#         current_bid = highest_bid.bid_amount if highest_bid else obj.starting_bid
+#         return str(current_bid + obj.auction.bid_increment)
+
 class InventorySerializer(serializers.ModelSerializer):
     media_items = MediaSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
@@ -231,10 +251,24 @@ class InventorySerializer(serializers.ModelSerializer):
         highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
         return str(highest_bid.bid_amount) if highest_bid else str(obj.starting_bid)
     
-    def get_next_required_bid(self, obj):
+    def get_current_highest_bid(self, obj):
+        # Get the highest bid for this inventory item
         highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
-        current_bid = highest_bid.bid_amount if highest_bid else obj.starting_bid
-        return str(current_bid + obj.auction.bid_increment)
+        return highest_bid
+    
+    def get_next_required_bid(self, obj):
+        current_highest_bid = self.get_current_highest_bid(obj)
+        if current_highest_bid is None:
+            # Handle case where there are no bids yet
+            if obj.starting_bid is None:
+                return None  # or some default value
+            return obj.starting_bid
+        
+        # Make sure bid_increment exists before accessing it
+        if not hasattr(obj, 'bid_increment') or obj.bid_increment is None:
+            return Decimal(current_highest_bid.bid_amount) + Decimal('1.00')  # default increment
+            
+        return Decimal(current_highest_bid.bid_amount) + Decimal(str(obj.bid_increment))
 ################################################################################################################
 class ProfileSerializer(serializers.ModelSerializer):
     country = CountrySerializer()
@@ -332,6 +366,163 @@ class AuctionSerializer(serializers.ModelSerializer):
     def get_lot_count(self, obj):
         return obj.inventory_set.filter(deleted_at__isnull=True).count()
 ################################################################################################################
+# class AuctionDetailSerializer(serializers.ModelSerializer):
+#     """Enhanced serializer for auction details with filtering support"""
+#     user = UserSerializer(read_only=True)
+#     location_details = serializers.SerializerMethodField()
+#     inventory_items = serializers.SerializerMethodField()
+#     lot_count = serializers.SerializerMethodField()
+#     categories = serializers.SerializerMethodField()
+#     bid_range = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Auctions
+#         fields = '__all__'
+
+#     def get_location_details(self, obj):
+#         if obj.seller_location == 'onsite':
+#             try:
+#                 company = obj.user.profile.company
+#                 if company:
+#                     return {
+#                         'address': company.address,
+#                         'country': company.country.name if company.country else None,
+#                         'state': company.state.name if company.state else None,
+#                         'city': company.city,
+#                         'zipcode': company.zipcode,
+#                         'name': company.name,
+#                         'phone_no': company.phone_no,
+#                         'company_logo': company.company_logo.url if company.company_logo else None,
+#                     }
+#             except Exception:
+#                 return {}
+#         elif obj.seller_location == 'offsite':
+#             return {
+#                 'address': obj.address,
+#                 'country': obj.country.name if obj.country else None,
+#                 'state': obj.state.name if obj.state else None,
+#                 'city': obj.city,
+#                 'zipcode': obj.zipcode,
+#             }
+#         return {}
+
+#     def get_inventory_items(self, obj):
+#         """Get filtered inventory items based on query parameters"""
+#         request = self.context.get('request')
+#         inventory = obj.inventory_set.filter(deleted_at__isnull=True)
+        
+#         if request:
+#             # Apply filters based on query parameters
+#             search = request.GET.get('search', '').strip()
+#             categories = request.GET.getlist('categories')
+#             min_bid = request.GET.get('min_bid')
+#             max_bid = request.GET.get('max_bid')
+#             status = request.GET.get('status')
+#             sort_by = request.GET.get('sort_by', 'closing_soon')
+            
+#             # Search filter
+#             if search:
+#                 inventory = inventory.filter(
+#                     models.Q(title__icontains=search) |
+#                     models.Q(description__icontains=search) |
+#                     models.Q(inventory_number__icontains=search)
+#                 )
+            
+#             # Category filter
+#             if categories:
+#                 inventory = inventory.filter(category_id__in=categories)
+            
+#             # Bid range filter
+#             if min_bid or max_bid:
+#                 for item in inventory:
+#                     current_bid = self._get_current_bid_amount(item)
+#                     if min_bid and current_bid < float(min_bid):
+#                         inventory = inventory.exclude(id=item.id)
+#                     if max_bid and current_bid > float(max_bid):
+#                         inventory = inventory.exclude(id=item.id)
+            
+#             # Status filter
+#             if status:
+#                 now = timezone.now()
+#                 if status == 'open':
+#                     inventory = inventory.filter(lot_end_time__gt=now)
+#                 elif status == 'closed':
+#                     inventory = inventory.filter(lot_end_time__lte=now)
+            
+#             # Sorting
+#             if sort_by == 'closing_soon':
+#                 inventory = inventory.order_by('lot_end_time')
+#             elif sort_by == 'lowest_bid':
+#                 # Custom sorting by current bid amount (will be handled in view)
+#                 pass
+#             elif sort_by == 'highest_bid':
+#                 # Custom sorting by current bid amount (will be handled in view)
+#                 pass
+#             elif sort_by == 'title_asc':
+#                 inventory = inventory.order_by('title')
+#             elif sort_by == 'title_desc':
+#                 inventory = inventory.order_by('-title')
+        
+#         return InventorySerializer(inventory, many=True, context=self.context).data
+
+#     def get_lot_count(self, obj):
+#         """Get filtered lot count"""
+#         request = self.context.get('request')
+#         inventory = obj.inventory_set.filter(deleted_at__isnull=True)
+        
+#         if request:
+#             search = request.GET.get('search', '').strip()
+#             categories = request.GET.getlist('categories')
+#             status = request.GET.get('status')
+            
+#             if search:
+#                 inventory = inventory.filter(
+#                     models.Q(title__icontains=search) |
+#                     models.Q(description__icontains=search) |
+#                     models.Q(inventory_number__icontains=search)
+#                 )
+            
+#             if categories:
+#                 inventory = inventory.filter(category_id__in=categories)
+            
+#             if status:
+#                 now = timezone.now()
+#                 if status == 'open':
+#                     inventory = inventory.filter(lot_end_time__gt=now)
+#                 elif status == 'closed':
+#                     inventory = inventory.filter(lot_end_time__lte=now)
+        
+#         return inventory.count()
+
+#     def get_categories(self, obj):
+#         """Get all categories used in this auction's lots"""
+#         categories = Category.objects.filter(
+#             inventory__auction=obj,
+#             inventory__deleted_at__isnull=True,
+#             deleted_at__isnull=True
+#         ).distinct()
+#         return CategorySerializer(categories, many=True).data
+
+#     def get_bid_range(self, obj):
+#         """Get min and max bid amounts for this auction"""
+#         inventory_items = obj.inventory_set.filter(deleted_at__isnull=True)
+#         bid_amounts = []
+        
+#         for item in inventory_items:
+#             current_bid = self._get_current_bid_amount(item)
+#             bid_amounts.append(current_bid)
+        
+#         if bid_amounts:
+#             return {
+#                 'min': min(bid_amounts),
+#                 'max': max(bid_amounts)
+#             }
+#         return {'min': 0, 'max': 0}
+
+#     def _get_current_bid_amount(self, inventory_item):
+#         """Helper method to get current bid amount for an inventory item"""
+#         highest_bid = inventory_item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+#         return float(highest_bid.bid_amount) if highest_bid else float(inventory_item.starting_bid)
 class AuctionDetailSerializer(serializers.ModelSerializer):
     """Enhanced serializer for auction details with filtering support"""
     user = UserSerializer(read_only=True)
@@ -378,56 +569,7 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
         inventory = obj.inventory_set.filter(deleted_at__isnull=True)
         
         if request:
-            # Apply filters based on query parameters
-            search = request.GET.get('search', '').strip()
-            categories = request.GET.getlist('categories')
-            min_bid = request.GET.get('min_bid')
-            max_bid = request.GET.get('max_bid')
-            status = request.GET.get('status')
-            sort_by = request.GET.get('sort_by', 'closing_soon')
-            
-            # Search filter
-            if search:
-                inventory = inventory.filter(
-                    models.Q(title__icontains=search) |
-                    models.Q(description__icontains=search) |
-                    models.Q(inventory_number__icontains=search)
-                )
-            
-            # Category filter
-            if categories:
-                inventory = inventory.filter(category_id__in=categories)
-            
-            # Bid range filter
-            if min_bid or max_bid:
-                for item in inventory:
-                    current_bid = self._get_current_bid_amount(item)
-                    if min_bid and current_bid < float(min_bid):
-                        inventory = inventory.exclude(id=item.id)
-                    if max_bid and current_bid > float(max_bid):
-                        inventory = inventory.exclude(id=item.id)
-            
-            # Status filter
-            if status:
-                now = timezone.now()
-                if status == 'open':
-                    inventory = inventory.filter(lot_end_time__gt=now)
-                elif status == 'closed':
-                    inventory = inventory.filter(lot_end_time__lte=now)
-            
-            # Sorting
-            if sort_by == 'closing_soon':
-                inventory = inventory.order_by('lot_end_time')
-            elif sort_by == 'lowest_bid':
-                # Custom sorting by current bid amount (will be handled in view)
-                pass
-            elif sort_by == 'highest_bid':
-                # Custom sorting by current bid amount (will be handled in view)
-                pass
-            elif sort_by == 'title_asc':
-                inventory = inventory.order_by('title')
-            elif sort_by == 'title_desc':
-                inventory = inventory.order_by('-title')
+            inventory = self._apply_filters(inventory, request)
         
         return InventorySerializer(inventory, many=True, context=self.context).data
 
@@ -437,26 +579,7 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
         inventory = obj.inventory_set.filter(deleted_at__isnull=True)
         
         if request:
-            search = request.GET.get('search', '').strip()
-            categories = request.GET.getlist('categories')
-            status = request.GET.get('status')
-            
-            if search:
-                inventory = inventory.filter(
-                    models.Q(title__icontains=search) |
-                    models.Q(description__icontains=search) |
-                    models.Q(inventory_number__icontains=search)
-                )
-            
-            if categories:
-                inventory = inventory.filter(category_id__in=categories)
-            
-            if status:
-                now = timezone.now()
-                if status == 'open':
-                    inventory = inventory.filter(lot_end_time__gt=now)
-                elif status == 'closed':
-                    inventory = inventory.filter(lot_end_time__lte=now)
+            inventory = self._apply_filters(inventory, request)
         
         return inventory.count()
 
@@ -485,10 +608,301 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
             }
         return {'min': 0, 'max': 0}
 
+    def _apply_filters(self, inventory, request):
+        """Apply all filters to inventory queryset"""
+        search = request.GET.get('search', '').strip()
+        categories = request.GET.getlist('categories')
+        min_bid = request.GET.get('min_bid')
+        max_bid = request.GET.get('max_bid')
+        status = request.GET.get('status')
+        sort_by = request.GET.get('sort_by', 'closing_soon')
+        
+        # Search filter
+        if search:
+            inventory = inventory.filter(
+                models.Q(title__icontains=search) |
+                models.Q(description__icontains=search) |
+                models.Q(inventory_number__icontains=search)
+            )
+        
+        # Category filter
+        if categories:
+            inventory = inventory.filter(category_id__in=categories)
+        
+        # Bid range filter
+        if min_bid or max_bid:
+            filtered_ids = []
+            for item in inventory:
+                current_bid = self._get_current_bid_amount(item)
+                include_item = True
+                if min_bid and current_bid < float(min_bid):
+                    include_item = False
+                if max_bid and current_bid > float(max_bid):
+                    include_item = False
+                if include_item:
+                    filtered_ids.append(item.id)
+            inventory = inventory.filter(id__in=filtered_ids)
+        
+        # Status filter
+        if status:
+            now = timezone.now()
+            if status == 'open':
+                inventory = inventory.filter(lot_end_time__gt=now)
+            elif status == 'closed':
+                inventory = inventory.filter(lot_end_time__lte=now)
+        
+        # Sorting
+        if sort_by == 'closing_soon':
+            inventory = inventory.order_by('lot_end_time')
+        elif sort_by in ['lowest_bid', 'highest_bid']:
+            # Will be handled in view
+            pass
+        elif sort_by == 'title_asc':
+            inventory = inventory.order_by('title')
+        elif sort_by == 'title_desc':
+            inventory = inventory.order_by('-title')
+        
+        return inventory
+
     def _get_current_bid_amount(self, inventory_item):
         """Helper method to get current bid amount for an inventory item"""
         highest_bid = inventory_item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
         return float(highest_bid.bid_amount) if highest_bid else float(inventory_item.starting_bid)
+
+# New serializer for category-based lot listing
+# Updated serializer for category-based lot listing with pagination
+from django.core.paginator import Paginator
+from django.db import models
+from django.utils import timezone
+from rest_framework import serializers
+from adminpanel.models import Inventory, Category
+
+class CategoryLotsSerializer(serializers.Serializer):
+    """Serializer for category-based lot listing with pagination"""
+    category_info = serializers.SerializerMethodField()
+    inventory_items = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
+    bid_range = serializers.SerializerMethodField()
+    pagination = serializers.SerializerMethodField()
+
+    def get_category_info(self, obj):
+        """Get category information"""
+        category_ids = self._get_category_ids()
+        if category_ids:  # Only if categories are specified
+            try:
+                # If single category, return its info
+                if len(category_ids) == 1:
+                    category = Category.objects.get(id=category_ids[0])
+                    return CategorySerializer(category).data
+                else:
+                    # If multiple categories, return list of category info
+                    categories = Category.objects.filter(id__in=category_ids)
+                    return CategorySerializer(categories, many=True).data
+            except Category.DoesNotExist:
+                pass
+        return None
+
+    def get_inventory_items(self, obj):
+        """Get filtered inventory items for categories with pagination"""
+        request = self.context.get('request')
+        category_ids = self._get_category_ids()
+        current_time = timezone.now()
+        
+        # Get base queryset - if no categories, get all lots
+        if category_ids:
+            inventory = Inventory.objects.filter(
+                category_id__in=category_ids,
+                deleted_at__isnull=True,
+                lot_end_time__isnull=False,  # Only lots with end time
+                lot_end_time__gt=current_time  # Only active lots (not expired)
+            )
+        else:
+            # If no categories specified, get all lots
+            inventory = Inventory.objects.filter(
+                deleted_at__isnull=True,
+                lot_end_time__isnull=False,  # Only lots with end time
+                lot_end_time__gt=current_time  # Only active lots (not expired)
+            )
+        
+        inventory = inventory.select_related('auction', 'category').prefetch_related('media_items', 'bids')
+        
+        if request:
+            inventory = self._apply_filters(inventory, request)
+        
+        # Apply pagination
+        page = int(request.GET.get('page', 1)) if request else 1
+        page_size = int(request.GET.get('page_size', 20)) if request else 20
+        
+        paginator = Paginator(inventory, page_size)
+        page_obj = paginator.get_page(page)
+        
+        # Store pagination info for get_pagination method
+        self._pagination_info = {
+            'current_page': page_obj.number,
+            'total_pages': paginator.num_pages,
+            'total_items': paginator.count,
+            'page_size': page_size,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+        }
+        
+        # Serialize the paginated inventory items
+        from .serializers import InventorySerializer  # Import your inventory serializer
+        return InventorySerializer(page_obj.object_list, many=True, context=self.context).data
+
+    def get_categories(self, obj):
+        """Get only subcategories for filtering (exclude parent categories)"""
+        # Filter to get only subcategories (categories that have a parent)
+        subcategories = Category.objects.filter(
+            deleted_at__isnull=True,
+            parent__isnull=False  # Only subcategories (have parent)
+        ).distinct()
+        
+        # Use a custom serializer or modify the data to exclude subcategories field
+        categories_data = []
+        for category in subcategories:
+            category_data = {
+                'id': category.id,
+                'name': category.name,
+                # Exclude subcategories field entirely
+            }
+            # Add any other fields you need from CategorySerializer except subcategories
+            categories_data.append(category_data)
+        
+        return categories_data
+
+    def get_bid_range(self, obj):
+        """Get min and max bid amounts for category lots"""
+        category_ids = self._get_category_ids()
+        current_time = timezone.now()
+        
+        # If no categories specified, get all lots
+        if category_ids:
+            inventory_items = Inventory.objects.filter(
+                category_id__in=category_ids,
+                deleted_at__isnull=True,
+                lot_end_time__isnull=False,
+                lot_end_time__gt=current_time
+            )
+        else:
+            inventory_items = Inventory.objects.filter(
+                deleted_at__isnull=True,
+                lot_end_time__isnull=False,
+                lot_end_time__gt=current_time
+            )
+        
+        bid_amounts = []
+        for item in inventory_items:
+            current_bid = self._get_current_bid_amount(item)
+            bid_amounts.append(current_bid)
+        
+        if bid_amounts:
+            return {
+                'min': min(bid_amounts),
+                'max': max(bid_amounts)
+            }
+        return {'min': 0, 'max': 0}
+
+    def get_pagination(self, obj):
+        """Get pagination information"""
+        return getattr(self, '_pagination_info', {})
+
+    def _get_category_ids(self):
+        """Helper method to get category IDs from request"""
+        request = self.context.get('request')
+        if not request:
+            return []
+        
+        # Check for comma-separated category_id parameter
+        category_id_param = request.GET.get('category_id', '').strip()
+        if category_id_param:
+            try:
+                # Split by comma and convert to integers, filter out empty strings
+                category_ids = [int(id.strip()) for id in category_id_param.split(',') if id.strip()]
+                return category_ids
+            except (ValueError, TypeError):
+                pass
+        
+        # Fallback to individual category parameters (if any)
+        categories = request.GET.getlist('categories')
+        if categories:
+            try:
+                return [int(cat) for cat in categories if cat]
+            except (ValueError, TypeError):
+                pass
+        
+        # Return empty list if no valid categories found
+        return []
+
+    def _apply_filters(self, inventory, request):
+        """Apply all filters to inventory queryset"""
+        search = request.GET.get('search', '').strip()
+        min_bid = request.GET.get('min_bid')
+        max_bid = request.GET.get('max_bid')
+        status = request.GET.get('status')
+        sort_by = request.GET.get('sort_by', 'closing_soon')
+        
+        # Search filter
+        if search:
+            inventory = inventory.filter(
+                models.Q(title__icontains=search) |
+                models.Q(description__icontains=search) |
+                models.Q(inventory_number__icontains=search)
+            )
+        
+        # Bid range filter - Fallback to original approach for compatibility
+        if min_bid or max_bid:
+            filtered_ids = []
+            for item in inventory:
+                current_bid = self._get_current_bid_amount(item)
+                include_item = True
+                
+                if min_bid:
+                    try:
+                        if current_bid < float(min_bid):
+                            include_item = False
+                    except (ValueError, TypeError):
+                        pass
+                
+                if max_bid:
+                    try:
+                        if current_bid > float(max_bid):
+                            include_item = False
+                    except (ValueError, TypeError):
+                        pass
+                
+                if include_item:
+                    filtered_ids.append(item.id)
+            
+            inventory = inventory.filter(id__in=filtered_ids)
+        
+        # Status filter
+        if status:
+            now = timezone.now()
+            if status == 'open':
+                inventory = inventory.filter(lot_end_time__gt=now)
+            elif status == 'closed':
+                inventory = inventory.filter(lot_end_time__lte=now)
+        
+        # Sorting
+        if sort_by == 'closing_soon':
+            inventory = inventory.order_by('lot_end_time')
+        elif sort_by == 'title_asc':
+            inventory = inventory.order_by('title')
+        elif sort_by == 'title_desc':
+            inventory = inventory.order_by('-title')
+        elif sort_by == 'lowest_bid':
+            inventory = inventory.order_by('starting_bid')
+        elif sort_by == 'highest_bid':
+            inventory = inventory.order_by('-starting_bid')
+        
+        return inventory
+
+    def _get_current_bid_amount(self, inventory_item):
+        """Helper method to get current bid amount for an inventory item"""
+        highest_bid = inventory_item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+        return float(highest_bid.bid_amount) if highest_bid else float(inventory_item.starting_bid)
+    
 ################################################################################################################
 # FOR AUCTIOSN DETAILS PAGE 
 class InventoryBidInfoSerializer(serializers.ModelSerializer):
@@ -765,3 +1179,7 @@ class CompanyListingSerializer(serializers.ModelSerializer):
             return obj.company_logo.url
         return None
 ################################################################################################################
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = '__all__' 

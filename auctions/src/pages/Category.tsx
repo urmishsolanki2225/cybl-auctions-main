@@ -1,3 +1,4 @@
+// Category.tsx - Enhanced to navigate to the new auction details page
 import { useNavigate } from "react-router-dom";
 import "../styles/Category.css";
 import { useEffect, useState } from "react";
@@ -50,31 +51,45 @@ const Category = () => {
       }));
   };
 
+  const handleSubcategoryClick = (subcategoryId: number) => {
+    navigate("/category/lots", {
+      state: {
+        categoryId: subcategoryId,
+      },
+    });
+  };
+
   return (
     <div className="category-page">
       <div className="container">
         {loading ? (
-          <p>Loading categories...</p>
+          <div className="loading-container">
+            <p>Loading categories...</p>
+          </div>
         ) : error ? (
-          <p>{error}</p>
+          <div className="error-container">
+            <p>{error}</p>
+          </div>
         ) : (
-          categories.map((cat) => (
-            <div key={cat.id} className="category-item">
-              <h2>{cat.name}</h2>
-              <ul>
-                {cat.subcategories.map((sub) => (
-                  <li key={sub.id}>
+          <div className="categories-grid">
+            {categories.map((cat) => (
+              <div key={cat.id} className="category-item">
+                <h2 className="category-title">{cat.name}</h2>
+                <div className="subcategories-list">
+                  {cat.subcategories.map((sub) => (
                     <div
-                      onClick={() => navigate(`/subcategory/${sub.id}`)}
-                      className="subcategory-link"
+                      key={sub.id}
+                      className="subcategory-item"
+                      onClick={() => handleSubcategoryClick(sub.id)}
                     >
-                      {sub.name}
+                      <span className="subcategory-name">{sub.name}</span>
+                      <span className="subcategory-arrow">→</span>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

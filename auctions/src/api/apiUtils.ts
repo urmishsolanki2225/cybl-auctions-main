@@ -114,6 +114,11 @@ export const publicApi = {
   getFeaturedAuctions: async () => {
     return makeRequest(API_ENDPOINTS.FEATURED_AUCTIONS);
   },  
+
+  getNextToCloseAuctions: async () => {
+     return makeRequest(API_ENDPOINTS.NEXT_TO_CLOSE);
+  },  
+  
   getRunningAuctions: async (queryString?: string) => {
     const url = queryString 
       ? `${API_ENDPOINTS.RUNNING_AUCTIONS}${queryString}`
@@ -146,6 +151,35 @@ export const publicApi = {
 
   getCompanies: async () => {
     return makeRequest(API_ENDPOINTS.COMPANIES);
+  },
+
+  getCategoryLots: async (categoryIds, filters = {}) => {
+    const queryParams = new URLSearchParams();
+
+    // Handle category IDs - pass blank parameter if no categories selected
+    if (categoryIds && categoryIds.length > 0) {
+      const categoryParam = Array.isArray(categoryIds)
+        ? categoryIds.join(',')
+        : categoryIds.toString();
+      queryParams.append('category_id', categoryParam);
+    } else {
+      // Pass blank category_id parameter when no categories are selected
+      queryParams.append('category_id', '');
+    }
+
+    // Add other filter parameters
+    if (filters.search) queryParams.append('search', filters.search);
+    if (filters.min_bid) queryParams.append('min_bid', filters.min_bid);
+    if (filters.max_bid) queryParams.append('max_bid', filters.max_bid);
+    if (filters.status) queryParams.append('status', filters.status);
+    if (filters.sort_by) queryParams.append('sort_by', filters.sort_by);
+    
+    // Add pagination parameters
+    if (filters.page) queryParams.append('page', filters.page);
+    if (filters.page_size) queryParams.append('page_size', filters.page_size);
+
+    const url = `${API_ENDPOINTS.CATEGORY_LOTS}?${queryParams.toString()}`;
+    return makeRequest(url);
   },
 
   getCategories: async () => {

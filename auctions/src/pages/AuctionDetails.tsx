@@ -283,6 +283,7 @@ const AuctionDetails = () => {
             </div>
 
             <div className="auction-details">
+               
               <h3 className="auction-name">{auction.name}</h3>
               <div className="auction-location">
                 <span className="address">
@@ -335,6 +336,7 @@ const AuctionDetails = () => {
 
                   {/* Info Section */}
                   <div className="lot-info mb-3">
+                    <p><strong>Category : </strong>{lot?.category?.name} </p>
                     <h5 className="mb-2 fw-semibold">{lot.title}</h5>
                     <p className="mb-1 text-muted">
                       <strong>Current Bid:</strong> ${lot.current_bid == null ? lot.starting_bid : lot.current_bid}

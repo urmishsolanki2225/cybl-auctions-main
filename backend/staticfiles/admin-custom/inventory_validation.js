@@ -1,3 +1,4 @@
+
 $(document).ready(function () {
     function showError(field, message) {
         $('#error_' + field).text(message);
@@ -25,12 +26,7 @@ $(document).ready(function () {
         if (isEmpty($(this).val())) showError('title', 'Title is required.');
         else clearError('title');
     });
-
-    $('#editor').on('blur', function () {
-        if (isEmpty($(this).val())) showError('description', 'Description is required.');
-        else clearError('description');
-    });
-
+  
     $('#status').on('change blur', function () {
         if (isEmpty($(this).val())) showError('status', 'Status is required.');
         else clearError('status');

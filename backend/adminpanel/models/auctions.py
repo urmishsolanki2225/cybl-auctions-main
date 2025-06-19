@@ -84,34 +84,37 @@ class Auctions(models.Model):
     def __str__(self):
         return self.name
 
+    # Update the save method to check if it's an extension update:
     def save(self, *args, **kwargs):
         current_time = timezone.now()
+        
+        # Check if this is an extension update (skip auto-calculation)
+        skip_auto_calculation = kwargs.pop('skip_auto_calculation', False)
 
         # Updated status logic to include prebid_start_date
         if self.end_date and current_time >= self.end_date:
             self.status = 'closed'
         elif self.prebid_start_date and self.prebid_start_date <= current_time:
-            self.status = 'current'  # Prebid period starts -> current
+            self.status = 'current'
         elif self.start_date and self.start_date <= current_time:
-            self.status = 'current'  # Main auction starts -> current
+            self.status = 'current'
         else:
-            self.status = 'next'  # Before prebid/start -> next
+            self.status = 'next'
 
-        # Save the instance first to ensure it has a PK
+        # Save the instance first
         is_new = self.pk is None
         super(Auctions, self).save(*args, **kwargs)
 
-        # Now we can safely access related inventory items
-        lot_count = self.inventory_set.filter(deleted_at__isnull=True).count()
+        # Only recalculate end_date if not skipping and not during extension
+        if not skip_auto_calculation and not is_new:
+            lot_count = self.inventory_set.filter(deleted_at__isnull=True).count()
 
-        # Update lot count if changed or new
-        if is_new or self.lot_count != lot_count:
-            self.lot_count = lot_count
+            if self.lot_count != lot_count:
+                self.lot_count = lot_count
 
-            if self.lots_time_duration:
-                total_duration_seconds = lot_count * self.lots_time_duration
-                self.end_date = self.start_date + timedelta(seconds=total_duration_seconds)
+                if self.lots_time_duration:
+                    total_duration_seconds = lot_count * self.lots_time_duration
+                    self.end_date = self.start_date + timedelta(seconds=total_duration_seconds)
 
-            # Save again to persist updated fields
-            super(Auctions, self).save(update_fields=['lot_count', 'end_date'])
+                super(Auctions, self).save(update_fields=['lot_count', 'end_date'])
 

@@ -214,10 +214,11 @@
             // Filter items by category
             $('#' + tableId + '-categoryFilter').on('change', function() {
                 const selectedCategory = $(this).val();
+                const col = tableId == "in-auction-items-table" ? 2 : 3;
                 if (selectedCategory) {
-                    table.column(3).search('^' + selectedCategory + '$', true, false).draw();
+                    table.column(col).search('^' + selectedCategory + '$', true, false).draw();
                 } else {
-                    table.column(3).search('').draw();
+                    table.column(col).search('').draw();
                 }
             });
         }

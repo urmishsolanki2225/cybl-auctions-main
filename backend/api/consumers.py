@@ -28,6 +28,13 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             )
             print("Added to channel group")
 
+            auction = await database_sync_to_async(lambda: Inventory.objects.get(id=self.lot_id).auction)()
+            self.auction_group_name = f'auction_{auction.id}'
+            await self.channel_layer.group_add(
+                self.auction_group_name,
+                self.channel_name
+            )
+
             await self.accept()
             print("WebSocket connection accepted")
             
@@ -57,6 +64,12 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
+        # Leave auction group
+        if hasattr(self, 'auction_group_name'):
+            await self.channel_layer.group_discard(
+                self.auction_group_name,
+                self.channel_name
+            )
 
     # Receive message from WebSocket
     async def receive(self, text_data):
@@ -160,6 +173,7 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             # Prepare bid data with updated lot end time
             bid_data = {
                 'bidder': user.username,
+                'user_id': user.id,
                 'amount': str(bid_amount),
                 'timestamp': bid.created_at.isoformat(),
                 'reserve_met': reserve_met,
@@ -179,7 +193,12 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             )
             
             # Send timer extension notification if applicable
+            # In the place_bid method, after the timer extension, add this:
             if should_extend:
+                # Get extension amount for broadcasting
+                extension_seconds = auction.auto_extend_duration
+                
+                # Broadcast to current lot
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
@@ -187,8 +206,22 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                         'data': {
                             'lot_id': self.lot_id,
                             'new_end_time': lot.lot_end_time.isoformat(),
-                            'extended_by_minutes': 5,  # or whatever your extension is
-                            'message': 'Timer extended by 5 minutes due to last-minute bid!'
+                            'extended_by_seconds': extension_seconds,
+                            'message': f'Timer extended by {extension_seconds} seconds due to last-minute bid!'
+                        }
+                    }
+                )
+                
+                # Broadcast schedule update to all lots in auction
+                await self.channel_layer.group_send(
+                    f'auction_{auction.id}',
+                    {
+                        'type': 'schedule_updated',
+                        'data': {
+                            'auction_id': auction.id,
+                            'extended_by_seconds': extension_seconds,
+                            'trigger_lot_id': self.lot_id,
+                            'message': f'Auction schedule updated due to lot {self.lot_id} extension'
                         }
                     }
                 )
@@ -214,38 +247,112 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 'message': str(e)
             }))
 
+    # async def check_and_extend_timer(self, lot, current_time):
+    #     """
+    #     Check if timer should be extended and extend it if needed
+    #     Returns True if timer was extended
+    #     """
+    #     try:
+    #         if not lot.lot_end_time:
+    #             return False
+                
+    #         # Check if bid is placed within last 5 minutes
+    #         time_remaining = lot.lot_end_time - current_time
+    #         extension_threshold = timedelta(minutes=5)
+            
+    #         if time_remaining <= extension_threshold and time_remaining > timedelta(0):
+    #             # Extend timer by 5 minutes
+    #             new_end_time = lot.lot_end_time + timedelta(minutes=5)
+                
+    #             await database_sync_to_async(self.update_lot_end_time)(lot, new_end_time)
+                
+    #             print(f"Timer extended for lot {lot.id} to {new_end_time}")
+    #             return True
+                
+    #         return False
+            
+    #     except Exception as e:
+    #         print(f"Error in check_and_extend_timer: {str(e)}")
+    #         return False
+    # Replace the current check_and_extend_timer method with:
     async def check_and_extend_timer(self, lot, current_time):
         """
-        Check if timer should be extended and extend it if needed
-        Returns True if timer was extended
+        Standard auto-extend logic:
+        - If a bid is placed within the last X seconds before lot end time
+        - And auto_extend_time is enabled for the auction
+        - Then extend the lot by auto_extend_duration seconds
         """
         try:
             if not lot.lot_end_time:
                 return False
-                
-            # Check if bid is placed within last 5 minutes
+
+            # Fetch related auction with auto extend settings
+            auction = await database_sync_to_async(lambda: lot.auction)()
+            
+            # Check if auto-extend is enabled
+            if not auction.auto_extend_time or not auction.auto_extend_duration:
+                return False
+
+            # Calculate time remaining until lot ends
             time_remaining = lot.lot_end_time - current_time
-            extension_threshold = timedelta(minutes=5)
             
-            if time_remaining <= extension_threshold and time_remaining > timedelta(0):
-                # Extend timer by 5 minutes
-                new_end_time = lot.lot_end_time + timedelta(minutes=5)
-                
+            # Convert auto_extend_duration to timedelta (it's in seconds)
+            extension_threshold = timedelta(seconds=auction.auto_extend_duration)
+            extension_amount = timedelta(seconds=auction.auto_extend_duration)
+
+            # If bid placed within the last X seconds, extend by X seconds
+            if timedelta(seconds=0) < time_remaining <= extension_threshold:
+                new_end_time = lot.lot_end_time + extension_amount
+
+                # Update lot end time in DB
                 await database_sync_to_async(self.update_lot_end_time)(lot, new_end_time)
-                
-                print(f"Timer extended for lot {lot.id} to {new_end_time}")
+
+                print(f"✅ Timer extended for lot {lot.id} from {lot.lot_end_time} to {new_end_time}")
                 return True
-                
+
             return False
-            
+
         except Exception as e:
-            print(f"Error in check_and_extend_timer: {str(e)}")
+            print(f"❌ Error in check_and_extend_timer: {str(e)}")
             return False
 
     def update_lot_end_time(self, lot, new_end_time):
-        """Update lot end time in database"""
-        lot.lot_end_time = new_end_time
-        lot.save(update_fields=['lot_end_time'])
+        """Update lot end time and cascade to subsequent lots"""
+        from django.db import transaction
+        
+        with transaction.atomic():
+            # Calculate the extension amount
+            original_end_time = lot.lot_end_time
+            extension_seconds = (new_end_time - original_end_time).total_seconds()
+            
+            # Update current lot
+            lot.lot_end_time = new_end_time
+            lot.save(update_fields=['lot_end_time'])
+            
+            # Get auction and lot duration
+            auction = lot.auction
+            lot_duration_seconds = auction.lots_time_duration
+            
+            # Find all subsequent lots in the same auction
+            subsequent_lots = Inventory.objects.filter(
+                auction=auction,
+                lot_start_time__gt=original_end_time,  # Lots that start after current lot's original end
+                deleted_at__isnull=True
+            ).order_by('lot_start_time')
+            
+            # Update subsequent lots' start and end times
+            for subsequent_lot in subsequent_lots:
+                # Extend start time
+                subsequent_lot.lot_start_time += timedelta(seconds=extension_seconds)
+                # Extend end time
+                if subsequent_lot.lot_end_time:
+                    subsequent_lot.lot_end_time += timedelta(seconds=extension_seconds)
+                subsequent_lot.save(update_fields=['lot_start_time', 'lot_end_time'])
+            
+            # Update auction end date
+            if auction.end_date:
+                auction.end_date += timedelta(seconds=extension_seconds)
+                auction.save(update_fields=['end_date'])
 
     # WebSocket message handlers
     async def bid_placed(self, event):
@@ -264,6 +371,13 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
     async def reserve_met(self, event):
         await self.send(text_data=json.dumps({
             'type': 'reserve_met',
+            'data': event['data']
+        }))
+    
+    # Add this new method to the LotBiddingConsumer class:
+    async def schedule_updated(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'schedule_updated',
             'data': event['data']
         }))
 

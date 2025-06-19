@@ -16,6 +16,9 @@
                         <!-- ==================== -->
                         <!-- Personal Information -->
                         <!-- ==================== -->
+                         <!-- Hidden field to track photo deletion -->
+
+                        <input type="hidden" id="delete_photo" name="delete_photo" value="false">
                         <fieldset>
                             <legend>Personal Information</legend>
                             <div class="row">
@@ -190,9 +193,19 @@ Dropzone.options.myAwesomeDropzone = {
     dictRemoveFile: "<i class='fa fa-times'></i>",
     dictCancelUpload: "<i class='fa fa-times'></i>",
     init: function() {
+        var myDropzone = this;
         this.on("addedfile", function(file) {
             if (this.files.length > 1) {
                 this.removeFile(this.files[0]);
+            }
+            $('#delete_photo').val('false');
+        });
+
+        // Handle file removal
+        this.on("removedfile", function(file) {
+            // If this was the existing image, mark for deletion
+            if (file.isExisting) {
+                $('#delete_photo').val('true');
             }
         });
     }
@@ -210,7 +223,8 @@ $(document).ready(function() {
             var mockFile = { 
                 name: "{{ form.photo.value }}", 
                 size: 12345, // Adjust size
-                accepted: true 
+                accepted: true,
+                isExisting: true 
             };
 
             // Add file to Dropzone
@@ -227,9 +241,13 @@ $( "#userForm" ).on( "submit", function( event ) {
     event.preventDefault();
     var formData = new FormData(this);    
     var myDropzone = Dropzone.forElement("#myAwesomeDropzone");
-    if (myDropzone.files.length > 0) {
-        formData.append("photo", myDropzone.files[0]);
+    var newFile = myDropzone.files.find(file => !file.isExisting);
+     if (newFile) {
+        formData.append("photo", newFile);
     }
+    // if (myDropzone.files.length > 0) {
+    //     formData.append("photo", myDropzone.files[0]);
+    // }
 
     $.ajax({
         url:  $(this).attr("action"),

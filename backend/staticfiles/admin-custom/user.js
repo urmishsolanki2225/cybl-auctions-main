@@ -69,7 +69,7 @@ $(document).ready(function () {
             case 'city':
             case 'zipcode':
             case 'group':
-                validateField(id, `${id.replace('_', ' ')} is required.`);
+                validateField(id, `${capitalizeLabel(id)} is required.`);
                 break;
 
             case 'seller_type':
@@ -91,6 +91,13 @@ $(document).ready(function () {
                 break;
         }
     });
+
+    function capitalizeLabel(field) {
+        return field
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, char => char.toUpperCase()); // Capitalizes every word
+    }
+
 
     // On submit
     $('#userForm').on('submit', function (e) {

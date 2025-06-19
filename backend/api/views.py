@@ -2,11 +2,11 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from rest_framework.pagination import PageNumberPagination
 from django.db.models.functions import TruncDate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import LoginSerializer, CountrySerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer
+from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, CountrySerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer
 from adminpanel.models import Category, Country, State, Inventory, User, Profile, Auctions, Media, Payment_History, Company
 from rest_framework import generics 
 from django.utils import timezone
@@ -31,6 +31,7 @@ from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.db.models import Q
+
 
 ################################################################################################################
 class LoginView(APIView):
@@ -311,7 +312,12 @@ class AuctionListView(generics.ListAPIView):
 
         # Filter by auction type
         if auction_type == 'featured':
-            queryset = queryset.filter(is_featured=True)
+            #queryset = queryset.filter(is_featured=True)
+            queryset = queryset.filter(
+                is_featured=True
+            ).exclude(
+                status__in=['closed', 'next']
+            )
         elif auction_type == 'upcoming':
             queryset = queryset.filter(start_date__gt=now, status='next')
         elif auction_type == 'running':
@@ -380,14 +386,66 @@ class AuctionListView(generics.ListAPIView):
                 raise ValidationError(f"Geo lookup error: {str(e)}")
 
         return queryset
+
+class ClosingSoonAuctionsView(generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = AuctionSerializer
+    pagination_class = AuctionPagination
+
+    def get_queryset(self):
+        now = timezone.now()
+        next_24_hours = now + timedelta(hours=24)
+
+        return Auctions.objects.filter(
+            status='current',
+            end_date__gt=now,              # Still active
+            end_date__lte=next_24_hours    # Ends within next 24 hours
+        ).order_by('end_date')
 ################################################################################################################
+# class AuctionDetailView(RetrieveAPIView):
+#     queryset = Auctions.objects.select_related('user__profile__company').prefetch_related(
+#         'inventory_set__category',
+#         'inventory_set__media_items',
+#         'inventory_set__bids'
+#     ).all()
+#     serializer_class = AuctionDetailSerializer  # Use the new serializer
+#     permission_classes = [AllowAny]
+
+#     def get_serializer_context(self):
+#         """Pass request context to serializer for filtering"""
+#         context = super().get_serializer_context()
+#         context['request'] = self.request
+#         return context
+
+#     def get_object(self):
+#         """Custom sorting for bid-based sorting"""
+#         obj = super().get_object()
+#         sort_by = self.request.GET.get('sort_by')
+        
+#         if sort_by in ['lowest_bid', 'highest_bid']:
+#             # Get inventory items and sort by current bid
+#             inventory_items = list(obj.inventory_set.filter(deleted_at__isnull=True))
+            
+#             def get_current_bid(item):
+#                 highest_bid = item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+#                 return float(highest_bid.bid_amount) if highest_bid else float(item.starting_bid)
+            
+#             if sort_by == 'lowest_bid':
+#                 inventory_items.sort(key=get_current_bid)
+#             else:  # highest_bid
+#                 inventory_items.sort(key=get_current_bid, reverse=True)
+            
+#             # Store sorted items on the object (this is a workaround)
+#             obj._sorted_inventory = inventory_items
+        
+#         return obj
 class AuctionDetailView(RetrieveAPIView):
     queryset = Auctions.objects.select_related('user__profile__company').prefetch_related(
         'inventory_set__category',
         'inventory_set__media_items',
         'inventory_set__bids'
     ).all()
-    serializer_class = AuctionDetailSerializer  # Use the new serializer
+    serializer_class = AuctionDetailSerializer
     permission_classes = [AllowAny]
 
     def get_serializer_context(self):
@@ -402,7 +460,6 @@ class AuctionDetailView(RetrieveAPIView):
         sort_by = self.request.GET.get('sort_by')
         
         if sort_by in ['lowest_bid', 'highest_bid']:
-            # Get inventory items and sort by current bid
             inventory_items = list(obj.inventory_set.filter(deleted_at__isnull=True))
             
             def get_current_bid(item):
@@ -411,10 +468,9 @@ class AuctionDetailView(RetrieveAPIView):
             
             if sort_by == 'lowest_bid':
                 inventory_items.sort(key=get_current_bid)
-            else:  # highest_bid
+            else:
                 inventory_items.sort(key=get_current_bid, reverse=True)
             
-            # Store sorted items on the object (this is a workaround)
             obj._sorted_inventory = inventory_items
         
         return obj
@@ -880,3 +936,57 @@ class CategoryListView(APIView):
         categories = Category.objects.filter(parent__isnull=True, deleted_at__isnull=True).order_by('order')
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class CategoryLotsView(generics.ListAPIView):
+    """Updated view for category-based lot listing with optional category filtering"""
+    permission_classes = [AllowAny]
+    serializer_class = CategoryLotsSerializer
+
+    def get_queryset(self):
+        return [{}]  # Dummy queryset since we handle data in serializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        context['category_id'] = self.request.GET.get('category_id')
+        return context
+
+    def list(self, request, *args, **kwargs):
+        category_id = request.GET.get('category_id', '').strip()
+        
+        # If category_id is provided and not empty, validate it exists
+        if category_id:
+            # Handle comma-separated category IDs
+            category_ids = [id.strip() for id in category_id.split(',') if id.strip()]
+            
+            if category_ids:
+                try:
+                    # Validate that all category IDs exist
+                    for cat_id in category_ids:
+                        int(cat_id)  # Check if it's a valid integer
+                        Category.objects.get(id=int(cat_id), deleted_at__isnull=True)  # Check if category exists and not deleted
+                except (Category.DoesNotExist, ValueError):
+                    return Response({'error': 'One or more categories not found'}, status=404)
+        
+        # If no category_id or empty category_id, fetch all lots
+        # This allows the API to work with or without category filtering
+        
+        serializer = self.get_serializer({})
+        return Response(serializer.data)
+#######################################
+class ContactFormView(APIView):
+    def post(self, request):
+        serializer = ContactMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+
+            # # Send email            data = serializer.validated_data
+            # send_mail(
+            #     subject=f"New Contact: {data['subject']}",
+            #     message=f"From: {data['name']} <{data['email']}>\n\n{data['message']}",
+            #     from_email='your_email@example.com',
+            #     recipient_list=['your_email@example.com'],
+            #     fail_silently=False            )
+
+            return Response({'message': 'Message received and email sent!'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

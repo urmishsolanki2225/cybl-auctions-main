@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
   // Auctions
   FEATURED_AUCTIONS: `${BASE_API_URL}auctions/?type=featured`,
   RUNNING_AUCTIONS: `${BASE_API_URL}auctions/?type=running&`,
+  NEXT_TO_CLOSE : `${BASE_API_URL}auctions/closing-soon/`,
   AUCTION_DETAILS: (id: number) => `${BASE_API_URL}auctions/${id}/`,
   BIDDINGHISTROY: `${BASE_API_URL}bidding-history/`,
   
@@ -30,7 +31,9 @@ export const API_ENDPOINTS = {
   
   // Companies & Categories
   COMPANIES: `${BASE_API_URL}companies/`,
+
   CATEGORIES: `${BASE_API_URL}categories/`,
+  CATEGORY_LOTS: `${BASE_API_URL}lots/`, 
   
   // Search & Filters
   SEARCH_AUCTIONS: `${BASE_API_URL}auctions/search/`,

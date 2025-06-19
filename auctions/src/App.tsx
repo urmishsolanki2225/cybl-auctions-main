@@ -11,6 +11,7 @@ import LotDetails from "./pages/LotDetails";
 import Category from "./pages/Category";
 import Contact from "./pages/Contact";
 import UserProfile from "./pages/UserProfile";
+import CatLots from "./pages/CatLots.tsx";
 import NotFound from "./pages/NotFound";
 import "./styles/global.css";
 import PrivateRoute from "./routes/PrivateRoute";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/register" element={<Registration />} />
             <Route path="/auctions" element={<AuctionsListing />} />
             <Route path="/auction/:id" element={<AuctionDetails />} />
+            <Route path="/category/lots" element={<CatLots />} />
             <Route path="/lot/:id" element={<LotDetails />} />
             <Route path="/category" element={<Category />} />
             <Route path="/contact" element={<Contact />} />           

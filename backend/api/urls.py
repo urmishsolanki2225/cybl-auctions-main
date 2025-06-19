@@ -44,9 +44,14 @@ urlpatterns = [
 
     # AUCTIONS
     path('auctions/', views.AuctionListView.as_view(), name='auction_view'),   
+    path('auctions/closing-soon/',  views.ClosingSoonAuctionsView.as_view(), name='closing-soon-auctions'),
+
 
     # AUCTIONS DETAILS 
     path('auctions/<int:pk>/', views.AuctionDetailView.as_view(), name='auction_detail'),    
+
+    #CETEGORY WISE LOTS :
+    path('lots/',  views.CategoryLotsView.as_view(), name='category-lots'),
 
     # CATEGORIES
     path('categories/',  views.CategoryListView.as_view(), name='category-list-create'),
@@ -59,4 +64,8 @@ urlpatterns = [
 
     # PAYMENT HISTORY
     path('user/payment-history/',  views.user_payment_history, name='payment-history-list'),
+
+    #contcat
+    path('contact/', views.ContactFormView.as_view(), name='contact-form')
+
 ]

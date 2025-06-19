@@ -13,6 +13,8 @@ import os, json
 import uuid
 from django.utils import timezone
 from django.db.models import Q
+from django.db.models import Count
+
 
 @login_required(login_url='login')
 def all_inventory(request, tabId):
@@ -23,10 +25,12 @@ def all_inventory(request, tabId):
         .order_by('-created_at')
 
     in_auction_inventory = Inventory.objects.filter(status='auction')\
+        .select_related('auction')\
         .prefetch_related('media_items')\
         .order_by('-created_at')
 
     sold_inventory = Inventory.objects.filter(status='sold')\
+        .select_related('auction')\
         .prefetch_related('media_items')\
         .order_by('-created_at')
 
@@ -38,17 +42,9 @@ def all_inventory(request, tabId):
         .prefetch_related('media_items')\
         .order_by('-created_at')
 
-    current_date = timezone.now()
-
-    running_auctions = Auctions.objects.filter(
-        start_date__lte=current_date,
-    )
-
     upcoming_auctions = Auctions.objects.filter(
-        start_date__gt=current_date
-    )
-
-    auctions = running_auctions.union(upcoming_auctions).order_by('created_at')
+        status='next'
+    ).order_by('created_at')
 
     return render(request, 'inventory/index.html', {
         'current_tab': tabId,
@@ -58,7 +54,7 @@ def all_inventory(request, tabId):
         'unsold_inventory': unsold_inventory,
         'in_transit_inventory': in_transit_inventory,
         'categories': categories,
-        'auctions': auctions,
+        'auctions': upcoming_auctions,
         'MEDIA_URL': settings.MEDIA_URL
     })
 

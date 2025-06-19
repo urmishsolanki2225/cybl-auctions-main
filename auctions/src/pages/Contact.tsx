@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import '../styles/Contact.css';
+import BASE_URL from '../api/endpoints';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -17,13 +18,24 @@ const Contact = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Contact form submitted:', formData);
-    // Handle form submission here
-    alert('Message sent successfully!');
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    //alert(BASE_URL+'/api/contact/');
+    const response = await fetch(BASE_URL+'/api/contact/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
+
+    if (response.ok) {
+      alert('Message sent!');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } else {
+      alert('Failed to send message');
+    }
   };
+
+//////////////////////
 
   return (
     <div className="contact-page">

@@ -62,180 +62,13 @@
                     <!-- Tab panes -->
                     <div class="tab-content">
                         <div class="tab-pane {% if tabId == 1 %} show active {% endif %}" id="running-auctions">
-                            <table id="running-items-datatable" class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Auction Info</th>
-                                        <th>Auction Time</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for auction in running_auctions %}
-                                    <tr id="auction-{{ auction.id }}">   
-                                        <td>
-                                            <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
-                                                <img class="thumb-xl rounded mr-2" 
-                                                     src="{% if auction.user.profile.company and auction.user.profile.company.company_logo %}{{ auction.user.profile.company.company_logo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}" 
-                                                     alt="user" style="width: 50px; height: 50px;"> <!-- Adjust size as needed -->
-                                        
-                                                <div class="ml-2"> 
-                                                    <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-link" style="color: #480c57;"> <strong>{{ auction.name }}</strong></a> 
-                                                </div>
-                                            </div>                                            
-                                        </td>                                                                                    
-                                        <td>
-                                            <div class="auction-time">
-                                                <div class="auction-time-labels">
-                                                    <div><strong>Bidding Start Time:</strong></div>
-                                                </div>
-                                                <div class="auction-time-values">
-                                                    <div>
-                                                        {% if auction.prebid_start_date %}
-                                                            {{ auction.prebid_start_date|date:"j F Y" }}
-                                                        {% else %}
-                                                            {{ auction.start_date|date:"j F Y" }}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="auction-time-times">
-                                                    <div>
-                                                        {% if auction.prebid_start_date %}
-                                                            {{ auction.prebid_start_date|date:"g:i A" }}
-                                                        {% else %}
-                                                            {{ auction.start_date|date:"g:i A" }}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </td>  
-                                        <td>
-                                            <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
-                                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
-                                            <button type="button" class="btn btn-info btn-sm" onclick="showInventory({{ auction.id }})">View Inventory</button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                            {% include 'auctions/partials/auction_table.html' with auctions=running_auctions table_id="running-items-datatable" tabId=tabId %}
                         </div>
-                        <div class="tab-pane {% if tabId == 2 %}show active{% endif %}" id="upcoming-auctions">
-                            <table id="upcoming-items-datatable" class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Auction Info</th>
-                                        <th>Auction Time</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for auction in upcoming_auctions %}
-                                    <tr id="auction-{{ auction.id }}">   
-                                        <td>
-                                            <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
-                                                <img class="thumb-xl rounded mr-2" 
-                                                     src="{% if auction.user.profile.company and auction.user.profile.company.company_logo %}{{ auction.user.profile.company.company_logo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}" 
-                                                     alt="user" style="width: 50px; height: 50px;"> <!-- Adjust size as needed -->
-                                        
-                                                <div class="ml-2"> 
-                                                    <a href="{% url 'editauction' auction.id %}" class="btn btn-link" style="color: #480c57;"> <strong>{{ auction.name }}</strong></a> 
-                                                </div>
-                                            </div>                                            
-                                        </td>                                                                                    
-                                        <td>
-                                            <div class="auction-time">
-                                                <div class="auction-time-labels">
-                                                    <div><strong>Bidding Start Time:</strong></div>
-                                                </div>
-                                                <div class="auction-time-values">
-                                                    <div>
-                                                        {% if auction.prebid_start_date %}
-                                                            {{ auction.prebid_start_date|date:"j F Y" }}
-                                                        {% else %}
-                                                            {{ auction.start_date|date:"j F Y" }}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="auction-time-times">
-                                                    <div>
-                                                        {% if auction.prebid_start_date %}
-                                                            {{ auction.prebid_start_date|date:"g:i A" }}
-                                                        {% else %}
-                                                            {{ auction.start_date|date:"g:i A" }}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </td>  
-                                        <td>
-                                            <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
-                                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
-                                            <button type="button" class="btn btn-info btn-sm" onclick="showInventory({{ auction.id }})">View Inventory</button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <div class="tab-pane {% if tabId == 2 %} show active {% endif %}" id="upcoming-auctions">
+                            {% include 'auctions/partials/auction_table.html' with auctions=upcoming_auctions table_id="upcoming-items-datatable" tabId=tabId %}
                         </div>
-                        <div class="tab-pane {% if tabId == 3 %}show active{% endif %}" id="closed-auctions">
-                            <table id="closed-items-datatable" class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Auction Info</th>
-                                        <th>Auction Time</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for auction in closed_auctions %}
-                                    <tr id="auction-{{ auction.id }}">   
-                                        <td>
-                                            <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
-                                                <img class="thumb-xl rounded mr-2" 
-                                                     src="{% if auction.user.profile.company and auction.user.profile.company.company_logo %}{{ auction.user.profile.company.company_logo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}" 
-                                                     alt="user" style="width: 50px; height: 50px;"> <!-- Adjust size as needed -->
-                                        
-                                                <div class="ml-2"> 
-                                                    <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-link" style="color: #480c57;"> <strong>{{ auction.name }}</strong></a> 
-                                                </div>
-                                            </div>                                            
-                                        </td>                                                                                    
-                                        <td>
-                                            <div class="auction-time">
-                                                <div class="auction-time-labels">
-                                                    <div><strong>Bidding Start Time:</strong></div>
-                                                </div>
-                                                <div class="auction-time-values">
-                                                    <div>
-                                                        {% if auction.prebid_start_date %}
-                                                            {{ auction.prebid_start_date|date:"j F Y" }}
-                                                        {% else %}
-                                                            {{ auction.start_date|date:"j F Y" }}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="auction-time-times">
-                                                    <div>
-                                                        {% if auction.prebid_start_date %}
-                                                            {{ auction.prebid_start_date|date:"g:i A" }}
-                                                        {% else %}
-                                                            {{ auction.start_date|date:"g:i A" }}
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td> 
-                                        <td>
-                                            <a href="{% url 'editauction' auction.id %}?tabId={{tabId}}" class="btn btn-primary btn-sm">Edit</a>
-                                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="showInventory({{ auction.id }})">View Inventory</button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <div class="tab-pane {% if tabId == 3 %} show active {% endif %}" id="closed-auctions">
+                            {% include 'auctions/partials/auction_table.html' with auctions=closed_auctions table_id="closed-items-datatable" tabId=tabId %}
                         </div>
                     </div>
                 </div>
@@ -353,6 +186,7 @@
                     var MEDIA_URL = "{{ MEDIA_URL|escapejs }}";
                     var staticImageFallback = "{% static 'admin/img/member-img/contact-2.jpg' %}";
                     var items = response.inventory_list;  // Backend should return this correctly
+                    var auctionStatus = response.auction_status; // <-- Get auction status
 
                     // Constructing table for items
                     var modalBody = `
@@ -385,7 +219,7 @@
                                 <td>${item.status}</td>
                                 <td>${item.starting_bid_amount}</td>
                                 <td>${item.reserve_price}</td>
-                                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeInventory(${item.id})">Remove</button></td>
+                                <td>${auctionStatus !== 'current' ? `<button type="button" class="btn btn-danger btn-sm" onclick="removeInventory(${item.id})">Remove</button>` : '<button type="button" class="btn btn-danger btn-sm mr-1" disabled>Remove</button>'}</td>
                             </tr>
                         `;
                     });

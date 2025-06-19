@@ -17,9 +17,9 @@ const Banner: React.FC = () => {
                     <Link to="/auctions" className="btn btn-primary btn-lg">
                         Browse Auctions
                     </Link>
-                    <Link to="/register" className="btn btn-secondary btn-lg">
+                    {/*<Link to="/register" className="btn btn-secondary btn-lg">
                         Start Bidding
-                    </Link>
+                    </Link>*/}
                 </div>
             </div>
             <div className="hero-image">
