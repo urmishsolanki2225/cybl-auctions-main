@@ -23,6 +23,11 @@ export const API_ENDPOINTS = {
   NEXT_TO_CLOSE : `${BASE_API_URL}auctions/closing-soon/`,
   AUCTION_DETAILS: (id: number) => `${BASE_API_URL}auctions/${id}/`,
   BIDDINGHISTROY: `${BASE_API_URL}bidding-history/`,
+
+  PASSWORD_UPDATE: `${BASE_API_URL}password/update/`,
+
+  REGISTRATION: `${BASE_API_URL}register/`,
+  
   
   // Lots
   LOT_DETAILS: (id: number) => `${BASE_API_URL}lots/${id}/`,
@@ -38,4 +43,6 @@ export const API_ENDPOINTS = {
   // Search & Filters
   SEARCH_AUCTIONS: `${BASE_API_URL}auctions/search/`,
   FILTER_AUCTIONS: `${BASE_API_URL}auctions/filter/`,
+
+  INVOICE: (paymentId: number) => `${BASE_API_URL}payments/${paymentId}/invoice/`,
 };

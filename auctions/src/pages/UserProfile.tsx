@@ -6,6 +6,7 @@ import BiddingHistoryTab from '../components/BiddingHistoryTab';
 import PaymentHistoryTab from '../components/PaymentHistoryTab';
 import { protectedApi } from '../api/apiUtils';
 import '../styles/UserProfile.css';
+import { toast } from 'react-toastify';
 
 interface UserData {
   username: string;
@@ -67,7 +68,7 @@ const UserProfile = () => {
           last_name: response.user.last_name || '',
           email: response.user.email,
           avatar: response.user.photo || "/placeholder.svg",
-          memberSince: response.user.member_since || '2022',
+          memberSince: response.user.member_since || '2025',
           wonAuctions: response.user.won_auctions || 0,
           phone_no: response.user.phone_no || '',
           address: response.user.address || '',
@@ -137,6 +138,7 @@ const UserProfile = () => {
       }));
 
       setUploadSuccess(true);
+      toast.success(`Photo uploaded Successfully`);
       
       // Hide success badge after 3 seconds
       setTimeout(() => {
@@ -218,19 +220,8 @@ const UserProfile = () => {
               <div className="profile-info">
                 <div className="profile-details">
                   <h1 className="profile-name">{userData.name || userData.username}</h1>
-                  <p className="profile-email">{userData.email}</p>
+                  {/*<p className="profile-email">{userData.email}</p>*/}
                   
-                  {/* Stats */}
-                  <div className="profile-stats">
-                    <div className="stat">
-                      <div className="stat-number">{userData.wonAuctions}</div>
-                      <div className="stat-label">Won Inventory</div>
-                    </div>
-                    <div className="stat">
-                      <div className="stat-number">{userData.memberSince}</div>
-                      <div className="stat-label">Member Since</div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

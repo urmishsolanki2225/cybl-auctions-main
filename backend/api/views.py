@@ -1,4 +1,5 @@
 # backend\api\views.py
+import logging
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,7 +7,7 @@ from datetime import datetime, time, timedelta
 from rest_framework.pagination import PageNumberPagination
 from django.db.models.functions import TruncDate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, CountrySerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer
+from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, CountrySerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer
 from adminpanel.models import Category, Country, State, Inventory, User, Profile, Auctions, Media, Payment_History, Company
 from rest_framework import generics 
 from django.utils import timezone
@@ -31,6 +32,11 @@ from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.db.models import Q
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from io import BytesIO
+from xhtml2pdf import pisa
+from django.conf import settings
 
 
 ################################################################################################################
@@ -990,3 +996,81 @@ class ContactFormView(APIView):
 
             return Response({'message': 'Message received and email sent!'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+logger = logging.getLogger(__name__)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_invoice(request, payment_id):
+    """
+    Download invoice PDF for a specific payment
+    """
+    try:
+        # Get the payment with related data (simplified query)
+        payment = Payment_History.objects.select_related(
+            'user',
+            'user__profile',
+            'inventory',
+            'inventory__auction'
+        ).prefetch_related(
+            'charge_details'
+        ).get(id=payment_id, user=request.user)
+
+        # Calculate buyer's premium (5% of the amount)
+        buyers_premium = (payment.amount * 5) / 100  # 5% buyers premium
+
+        # Get all payment charges (excluding soft-deleted ones if applicable)
+        payment_charges = payment.charge_details.all()
+        if hasattr(payment_charges, 'filter'):
+            payment_charges = payment_charges.filter(deleted_at__isnull=True) if hasattr(payment_charges.model, 'deleted_at') else payment_charges.all()
+        total_charges = sum([charge.total_amount for charge in payment_charges])
+
+        # Calculate grand total
+        grand_total = payment.amount + buyers_premium + total_charges
+
+        # Prepare context for the template
+        context = {
+            'payment': payment,
+            'buyers_premium': buyers_premium,
+            'payment_charges': payment_charges,
+            'total_charges': total_charges,
+            'grand_total': grand_total,
+            'MEDIA_URL': settings.MEDIA_URL,
+        }
+
+        # Render HTML template
+        html = render_to_string('payments/invoice.html', context)
+
+        # Create PDF
+        result = BytesIO()
+        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+
+        if not pdf.err:
+            response = HttpResponse(
+                result.getvalue(),
+                content_type='application/pdf'
+            )
+            response['Content-Disposition'] = (
+                f'attachment; filename="invoice_{payment_id}.pdf"'
+            )
+            return response
+        else:
+            logger.error(f"PDF generation error: {pdf.err}")
+            return HttpResponse(
+                'Error generating PDF',
+                status=500,
+                content_type='text/plain'
+            )
+
+    except Payment_History.DoesNotExist:
+        return HttpResponse(
+            'Payment not found or access denied',
+            status=404,
+            content_type='text/plain'
+        )
+    except Exception as e:
+        logger.error(f"Error generating invoice: {str(e)}")
+        return HttpResponse(
+            'Internal server error',
+            status=500,
+            content_type='text/plain'
+        )

@@ -66,6 +66,8 @@ urlpatterns = [
     path('user/payment-history/',  views.user_payment_history, name='payment-history-list'),
 
     #contcat
-    path('contact/', views.ContactFormView.as_view(), name='contact-form')
+    path('contact/', views.ContactFormView.as_view(), name='contact-form'),
 
+    #
+   path('payments/<int:payment_id>/invoice/',  views.download_invoice, name='download-invoice'),
 ]

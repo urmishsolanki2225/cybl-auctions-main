@@ -96,6 +96,51 @@ async function makeFormDataRequest<T>(
   }
 }
 
+async function makeBlobRequest(
+  url: string,
+  method: 'GET' | 'POST' = 'GET',
+  data: any = null,
+  requiresAuth: boolean = false
+): Promise<Blob> {
+  const headers: HeadersInit = {};
+
+  if (requiresAuth) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const config: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (data) {
+    config.body = JSON.stringify(data);
+    headers['Content-Type'] = 'application/json';
+  }
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw {
+        message: errorData.message || 'Something went wrong',
+        errors: errorData.errors,
+        status: response.status
+      } as ApiError;
+    }
+
+    return await response.blob();
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
 // Auth API functions
 export const authApi = {
   login: async (email: string, password: string) => {
@@ -234,4 +279,11 @@ export const protectedApi = {
   getUsersPaymentHistory: async () => {
     return makeRequest(API_ENDPOINTS.USERPAYMENTHISTORY, 'GET', null, true);
   },
+
+
+  downloadInvoice: async (paymentId: number) => {
+    const blob = await makeBlobRequest(API_ENDPOINTS.INVOICE(paymentId), 'GET', null, true);
+    return blob;
+  },
+  
 };

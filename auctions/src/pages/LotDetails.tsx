@@ -13,79 +13,9 @@ const LotDetails = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [lot, setLot] = useState<any>(null);
   const [currentBid, setCurrentBid] = useState<number>(0);
+  const [bidHistory, setBidHistory] = useState<any[]>(lot?.bid_history || []);
+  const [isPlacingBid, setIsPlacingBid] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
-
-  // const handleMessage = useCallback((message: any) => {
-  //   console.log("📩 Incoming message:", message);
-
-  //   if (message.type === "lot_status") {
-  //     setLot((prev: any) => ({
-  //       ...prev,
-  //       ...message.data,
-  //     }));
-
-  //     if (typeof message.data?.current_bid === "number") {
-  //       setCurrentBid(message.data.current_bid);
-  //     }
-  //   }
-
-  //   if (message.type === "bid_placed") {
-  //     const bidAmount = parseFloat(message.data?.amount || "0");
-  //     const nextBid = parseFloat(message.data?.next_required_bid || "0");
-
-  //     setLot((prev: any) => ({
-  //       ...prev,
-  //       next_required_bid: nextBid,
-  //       reserve_met: message.data.reserve_met,
-  //       lot_end_time: message.data.lot_end_time,
-  //       endTime: message.data.lot_end_time,
-  //     }));
-
-  //     setCurrentBid(bidAmount);
-  //     // Show success toast for the user who placed the bid
-  //     if (message.data.user_id == user?.id) {
-  //       let toastMessage = `Your bid of $${bidAmount} has been placed successfully!`;
-  //       if (message.data.timer_extended) {
-  //         toastMessage += ` Timer extended!`;
-  //       }
-  //       toast.success(toastMessage);
-  //     } else {
-  //       // Show info toast for other users
-  //       let toastMessage = `New bid placed: $${bidAmount}`;
-  //       if (message.data.timer_extended) {
-  //         toastMessage += ` - Timer extended!`;
-  //       }
-  //       toast.info(toastMessage);
-  //     }
-  //   } else if (message.type === "reserve_met") {
-  //     toast.success(`🎉 Reserve has been met!`);
-  //   } else if (message.type === "timer_extended") {
-  //     setLot((prev: any) => ({
-  //       ...prev,
-  //       lot_end_time: message.data.new_end_time,
-  //       endTime: message.data.new_end_time,
-  //     }));
-
-  //     toast.info(
-  //       `⏰ Timer extended by ${message.data.extended_by_seconds} seconds!`
-  //     );
-  //   } // Add this to the handleMessage callback:
-  //   else if (message.type === "schedule_updated") {
-  //     // Refresh lot data to get updated times
-  //     const refreshedData = await publicApi.getLotDetails(id);
-  //     setLot((prev: any) => ({
-  //       ...prev,
-  //       lot_start_time: refreshedData.lot_start_time,
-  //       lot_end_time: refreshedData.lot_end_time,
-  //       startTime: refreshedData.lot_start_time,
-  //       endTime: refreshedData.lot_end_time,
-  //     }));
-
-  //     if (message.data.trigger_lot_id !== parseInt(id!)) {
-  //       toast.info(`📅 Schedule updated due to extension in another lot`);
-  //     }
-  //   }
-  // }, []);
 
   const handleMessage = useCallback(
     async (message: any) => {
@@ -100,9 +30,16 @@ const LotDetails = () => {
         if (typeof message.data?.current_bid === "number") {
           setCurrentBid(message.data.current_bid);
         }
+
+        if (message.data?.bid_history) {
+          setBidHistory(message.data.bid_history);
+        }
       }
 
       if (message.type === "bid_placed") {
+        // Reset loading state when bid response is received
+        setIsPlacingBid(false);
+
         const bidAmount = parseFloat(message.data?.amount || "0");
         const nextBid = parseFloat(message.data?.next_required_bid || "0");
 
@@ -113,6 +50,11 @@ const LotDetails = () => {
           lot_end_time: message.data.lot_end_time,
           endTime: message.data.lot_end_time,
         }));
+
+        // Update bid history if included in message
+        if (message.data.bid_history) {
+          setBidHistory(message.data.bid_history);
+        }
 
         setCurrentBid(bidAmount);
         // Show success toast for the user who placed the bid
@@ -160,11 +102,15 @@ const LotDetails = () => {
         } catch (error) {
           console.error("Error refreshing lot data:", error);
         }
+      } else if (message.type === "error") {
+        setIsPlacingBid(false); // Reset loading state on error
+        toast.error(message.message || "An error occurred");
+        console.error("❌ WebSocket Error:", message.message);
       }
     },
     [id, user?.id]
   );
-  
+
   const { getSocket } = useWebSocket({ lotId: id!, onMessage: handleMessage });
 
   useEffect(() => {
@@ -173,6 +119,7 @@ const LotDetails = () => {
         const data = await publicApi.getLotDetails(id);
         setLot(data);
         setCurrentBid(data.current_bid || data.starting_price || 0);
+        setBidHistory(data.bid_history || []);
       } catch (err) {
         console.error("Error loading lot:", err);
       }
@@ -188,6 +135,10 @@ const LotDetails = () => {
       const socket = getSocket();
       if (socket && socket.readyState === WebSocket.OPEN) {
         const bidAmount = lot.next_required_bid;
+
+        // Set loading state
+        setIsPlacingBid(true);
+        
 
         const message = {
           type: "place_bid",
@@ -276,6 +227,47 @@ const LotDetails = () => {
                   dangerouslySetInnerHTML={{ __html: lot?.description }}
                 />
               </div>
+              <div className="bid-history-section">
+                <h3>Bid History</h3>
+                <div className="bid-history-container">
+                  {bidHistory && bidHistory.length > 0 ? (
+                    <div className="bid-history-list">
+                      <div className="bid-history-item">
+                        <table width="100%">
+                          <thead>
+                            <tr>
+                              <th>bidder</th>
+                              <th>amount</th>
+                              <th>created_at</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bidHistory.map((bid, index) => (
+                              <tr key={bid.id || index}>
+                                <td align="center">
+                                  {bid.bidder}
+                                  {bid.user_id === user?.id && " (You)"}
+                                </td>
+                                <td align="center">
+                                  {" "}
+                                  <span className="bid-amount">
+                                    ${bid.amount}
+                                  </span>
+                                </td>
+                                <td align="center">
+                                  {new Date(bid.timestamp).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="no-bids">No bids placed yet</div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
           <div className="lot-right">
@@ -322,8 +314,14 @@ const LotDetails = () => {
                 </span>
               </div>
               <div>
-                <button className="bid-btn primary" onClick={handlePlaceBid}>
-                  Place ${lot.next_required_bid} Bid
+                <button
+                  className="bid-btn primary"
+                  onClick={handlePlaceBid}
+                  disabled={isPlacingBid}
+                >
+                  {isPlacingBid
+                    ? "Placing Bid..."
+                    : `Place $${lot.next_required_bid} Bid`}
                 </button>
               </div>
             </div>

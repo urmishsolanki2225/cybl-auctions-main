@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Save, Edit } from 'lucide-react';
 import { protectedApi, publicApi } from '../api/apiUtils';
 import '../styles/ProfileDetailsTab.css';
+import { toast } from 'react-toastify';
 
 interface Country {
   id: number;
@@ -220,7 +221,7 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
 
       setIsEditing(false);
       setValidationErrors({});
-      console.log('Profile updated successfully');
+      toast.success(`Profile updated Successfully`);
     } catch (err: any) {
       console.error('Failed to update profile', err);
       setSaveError(err.response?.data?.detail || err.message || 'Failed to update profile');

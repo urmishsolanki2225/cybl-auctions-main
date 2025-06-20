@@ -36,7 +36,7 @@ import random
 
 class WebSocketBidUser(User):
     wait_time = between(1, 3)
-    lot_id = 13  # Replace with your test lot ID
+    lot_id = 17  # Replace with your test lot ID
 
     def on_start(self):
         ws_url = f"ws://192.168.2.108:8000/ws/lot/{self.lot_id}/"
@@ -65,7 +65,7 @@ class WebSocketBidUser(User):
 
         try:
             bid_amount = round(random.uniform(100, 500), 2)
-            user_id = random.randint(1, 100)
+            user_id = random.randint(1, 25)
 
             payload = {
                 "type": "place_bid",

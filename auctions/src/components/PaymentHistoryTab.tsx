@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { CreditCard, Download, Eye, Clock, CheckCircle } from 'lucide-react';
-import '../styles/PaymentHistoryTab.css';
-import { protectedApi, publicApi } from '../api/apiUtils';
+import { useEffect, useState } from "react";
+import { CreditCard, Download, Eye, Clock, CheckCircle } from "lucide-react";
+import "../styles/PaymentHistoryTab.css";
+import { protectedApi, publicApi } from "../api/apiUtils";
 
 interface PaymentHistoryItem {
   payment_id: number;
@@ -36,46 +36,53 @@ interface ApiResponse {
 }
 
 const PaymentHistoryTab = () => {
-  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryItem[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [counts, setCounts] = useState({ all: 0, pending: 0, paid: 0 });
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     const fetchPaymentHistory = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response: ApiResponse = await protectedApi.getUsersPaymentHistory();
-        
+        const response: ApiResponse =
+          await protectedApi.getUsersPaymentHistory();
+
         if (response.success) {
           setPaymentHistory(response.data);
           setCounts(response.counts);
         } else {
-          setError('Failed to fetch payment history');
+          setError("Failed to fetch payment history");
         }
       } catch (err) {
-        console.error('Failed to load payment history', err);
-        setError('Failed to load payment history. Please try again.');
+        console.error("Failed to load payment history", err);
+        setError("Failed to load payment history. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchPaymentHistory();
   }, []);
 
   const filteredPayments = (status: string) => {
-    if (status === 'all') return paymentHistory;
-    return paymentHistory.filter(item => item.payment_status_filter === status);
+    if (status === "all") return paymentHistory;
+    return paymentHistory.filter(
+      (item) => item.payment_status_filter === status
+    );
   };
 
   const getStatusIcon = (status: string) => {
     const normalizedStatus = status.toLowerCase();
-    return normalizedStatus === 'paid' || normalizedStatus === 'completed' 
-      ? <CheckCircle className="w-4 h-4" /> 
-      : <Clock className="w-4 h-4" />;
+    return normalizedStatus === "paid" || normalizedStatus === "completed" ? (
+      <CheckCircle className="w-4 h-4" />
+    ) : (
+      <Clock className="w-4 h-4" />
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -86,6 +93,28 @@ const PaymentHistoryTab = () => {
     return parseFloat(price).toLocaleString();
   };
 
+  // In PaymentHistoryTab.tsx
+  const downloadInvoice = async (paymentId: number) => {
+    try {
+      const blob = await protectedApi.downloadInvoice(paymentId);
+
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice_${paymentId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Failed to download invoice:", error);
+      setError("Failed to download invoice. Please try again.");
+    }
+  };
+
   const PaymentRow = ({ payment }: { payment: PaymentHistoryItem }) => (
     <div className="payment-card">
       <div className="payment-card-content">
@@ -94,43 +123,53 @@ const PaymentHistoryTab = () => {
           <p className="payment-method">{payment.payment_method_display}</p>
           <p className="auction-name">{payment.auction_name}</p>
         </div>
-        
+
         <div className="payment-amount">
           <p className="payment-label">Amount</p>
           <p className="payment-value amount">${formatAmount(payment.price)}</p>
         </div>
-        
+
         <div className="payment-date">
           <p className="payment-label">Date</p>
           <p className="payment-value">{formatDate(payment.date)}</p>
         </div>
-        
+
         <div className="payment-transaction">
           <p className="payment-label">Transaction ID</p>
-          <p className="payment-value transaction-id">{payment.transaction_id}</p>
+          <p className="payment-value transaction-id">
+            {payment.transaction_id}
+          </p>
         </div>
-        
+
         <div className="payment-actions">
           <div className={`payment-status ${payment.payment_status_filter}`}>
             {getStatusIcon(payment.status)}
             {payment.status_display}
           </div>
-          
+
           <div className="payment-buttons">
-            {payment.payment_status_filter === 'pending' ? (
-              <button className="btn btn-primary">
-                <CreditCard className="w-4 h-4" />
-                Pay Now
-              </button>
+            {payment.payment_status_filter === "pending" ? (
+              <div>
+                <button className="btn btn-primary">
+                  <CreditCard className="w-4 h-4" />
+                  Pay Now
+                </button>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => downloadInvoice(payment.payment_id)}
+                >
+                  <Download className="w-4 h-4" />
+                  Invoice
+                </button>
+              </div>
             ) : (
               <>
-                <button className="btn btn-outline">
-                  <Eye className="w-4 h-4" />
-                  View
-                </button>
-                <button className="btn btn-outline">
+                <button
+                  className="btn btn-outline"
+                  onClick={() => downloadInvoice(payment.payment_id)}
+                >
                   <Download className="w-4 h-4" />
-                  Receipt
+                  Invoice
                 </button>
               </>
             )}
@@ -143,7 +182,7 @@ const PaymentHistoryTab = () => {
   const EmptyState = ({ status }: { status: string }) => (
     <div className="empty-state">
       <div className="empty-icon">
-        {status === 'pending' ? '⏳' : status === 'paid' ? '✅' : '💳'}
+        {status === "pending" ? "⏳" : status === "paid" ? "✅" : "💳"}
       </div>
       <h3>No {status} payments found</h3>
       <p>You don't have any {status} payments at the moment.</p>
@@ -164,7 +203,7 @@ const PaymentHistoryTab = () => {
       <div className="error-icon">❌</div>
       <h3>Error</h3>
       <p>{message}</p>
-      <button 
+      <button
         className="btn btn-primary"
         onClick={() => window.location.reload()}
       >
@@ -174,8 +213,14 @@ const PaymentHistoryTab = () => {
   );
 
   const calculateTotals = () => {
-    const pending = filteredPayments('pending').reduce((sum, p) => sum + parseFloat(p.price), 0);
-    const paid = filteredPayments('paid').reduce((sum, p) => sum + parseFloat(p.price), 0);
+    const pending = filteredPayments("pending").reduce(
+      (sum, p) => sum + parseFloat(p.price),
+      0
+    );
+    const paid = filteredPayments("paid").reduce(
+      (sum, p) => sum + parseFloat(p.price),
+      0
+    );
     return { pending, paid };
   };
 
@@ -203,62 +248,61 @@ const PaymentHistoryTab = () => {
         <div className="profile-card-content">
           <div className="custom-tabs">
             <div className="tab-list">
-              <button 
-                className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveTab('all')}
+              <button
+                className={`tab-button ${activeTab === "all" ? "active" : ""}`}
+                onClick={() => setActiveTab("all")}
               >
                 All ({counts.all})
               </button>
-              <button 
-                className={`tab-button ${activeTab === 'pending' ? 'active' : ''}`}
-                onClick={() => setActiveTab('pending')}
+              <button
+                className={`tab-button ${
+                  activeTab === "pending" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("pending")}
               >
                 Pending ({counts.pending})
               </button>
-              <button 
-                className={`tab-button ${activeTab === 'paid' ? 'active' : ''}`}
-                onClick={() => setActiveTab('paid')}
+              <button
+                className={`tab-button ${activeTab === "paid" ? "active" : ""}`}
+                onClick={() => setActiveTab("paid")}
               >
                 Paid ({counts.paid})
               </button>
             </div>
 
             <div className="tab-content">
-              {activeTab === 'all' && (
-                filteredPayments('all').length > 0 ? (
+              {activeTab === "all" &&
+                (filteredPayments("all").length > 0 ? (
                   <div className="payment-list">
-                    {filteredPayments('all').map((payment) => (
+                    {filteredPayments("all").map((payment) => (
                       <PaymentRow key={payment.payment_id} payment={payment} />
                     ))}
                   </div>
                 ) : (
                   <EmptyState status="all" />
-                )
-              )}
-              
-              {activeTab === 'pending' && (
-                filteredPayments('pending').length > 0 ? (
+                ))}
+
+              {activeTab === "pending" &&
+                (filteredPayments("pending").length > 0 ? (
                   <div className="payment-list">
-                    {filteredPayments('pending').map((payment) => (
+                    {filteredPayments("pending").map((payment) => (
                       <PaymentRow key={payment.payment_id} payment={payment} />
                     ))}
                   </div>
                 ) : (
                   <EmptyState status="pending" />
-                )
-              )}
-              
-              {activeTab === 'paid' && (
-                filteredPayments('paid').length > 0 ? (
+                ))}
+
+              {activeTab === "paid" &&
+                (filteredPayments("paid").length > 0 ? (
                   <div className="payment-list">
-                    {filteredPayments('paid').map((payment) => (
+                    {filteredPayments("paid").map((payment) => (
                       <PaymentRow key={payment.payment_id} payment={payment} />
                     ))}
                   </div>
                 ) : (
                   <EmptyState status="paid" />
-                )
-              )}
+                ))}
             </div>
           </div>
         </div>

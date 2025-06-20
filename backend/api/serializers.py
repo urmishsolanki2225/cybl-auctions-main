@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from adminpanel.models import Country, State, Media, Inventory, Profile, Auctions, Company, Category, Bid, Payment_History, ContactMessage
+from adminpanel.models import Country, State, Media, Inventory, Profile, Auctions, Company, Category, Bid, Payment_History, PaymentChargeDetail, ContactMessage
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from django.db import models
@@ -1099,6 +1099,11 @@ class BiddingHistorySerializer(serializers.ModelSerializer):
             return str(obj.inventory.winning_bid.bid_amount)
         return None
 ################################################################################################################
+class PaymentChargeDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentChargeDetail
+        fields = ['charge_type', 'description', 'per_day_amount', 'days', 'total_amount']
+
 # PAYMENT HISTORY
 class PaymentHistorySerializer(serializers.ModelSerializer):
     """Serializer for user's payment history"""
@@ -1109,6 +1114,7 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
     lot_id = serializers.IntegerField(source='inventory.id', read_only=True)
     inventory_number = serializers.CharField(source='inventory.inventory_number', read_only=True)
     lot_condition = serializers.CharField(source='inventory.condition', read_only=True)
+    
     
     # Auction details
     auction_name = serializers.CharField(source='inventory.auction.name', read_only=True)
@@ -1124,13 +1130,21 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
     # For filtering
     payment_status_filter = serializers.SerializerMethodField()
 
+
+    charges = PaymentChargeDetailSerializer(source='charge_details', many=True, read_only=True)
+    buyers_premium = serializers.SerializerMethodField()
+    total_charges = serializers.SerializerMethodField()
+    grand_total = serializers.SerializerMethodField()
+
+
     class Meta:
         model = Payment_History
         fields = [
             'id', 'transaction_id', 'lot_name', 'lot_image', 'lot_id', 
             'inventory_number', 'lot_condition', 'auction_name', 'auction_id',
             'price', 'status', 'status_display', 'payment_method', 
-            'payment_method_display', 'date', 'updated_date', 'payment_status_filter'
+            'payment_method_display', 'date', 'updated_date', 'payment_status_filter', 'charges', 'buyers_premium',
+            'total_charges', 'grand_total'
         ]
 
     def get_lot_image(self, obj):
@@ -1155,6 +1169,17 @@ class PaymentHistorySerializer(serializers.ModelSerializer):
         elif obj.status in [Payment_History.PaymentStatus.FAILED, Payment_History.PaymentStatus.REFUNDED]:
             return 'failed'
         return 'unknown'
+    
+    def get_buyers_premium(self, obj):
+        if obj.inventory.auction and obj.inventory.auction.buyers_premium:
+            return (obj.amount * obj.inventory.auction.buyers_premium) / 100
+        return 0
+
+    def get_total_charges(self, obj):
+        return sum([charge.total_amount for charge in obj.charge_details.all()])
+
+    def get_grand_total(self, obj):
+        return obj.amount + self.get_buyers_premium(obj) + self.get_total_charges(obj)
 ################################################################################################################
 class CompanyListingSerializer(serializers.ModelSerializer):
     """Serializer for company listing with state and country names"""
@@ -1183,3 +1208,5 @@ class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = '__all__' 
+
+        

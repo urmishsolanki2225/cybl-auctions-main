@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Auth.css';
 import { API_ENDPOINTS } from '../api/endpoints';
+import { toast } from 'react-toastify';
  
 // Type definitions
 interface FormData {
@@ -121,8 +122,6 @@ const Registration: React.FC = () => {
  
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    
-    // Clear previous messages
     setErrors({});
     setSuccessMessage('');
  
@@ -154,14 +153,16 @@ const Registration: React.FC = () => {
  
       if (response.ok && data.success && data.user) {
         setSuccessMessage(`Welcome ${data.user.full_name}! Your account has been created successfully.`);
+        toast.success(`Welcome ${data.user.full_name}! Your account has been created successfully.`);
         localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/', {
+        navigate('/login', {
           state: {
             message: `Welcome ${data.user.full_name}! Your account has been created successfully.`
           }
         });
  
       } else {
+        
         // Handle API errors
         if (data.errors) {
           const apiErrors: FormErrors = {};
@@ -202,6 +203,7 @@ const Registration: React.FC = () => {
       }
  
     } catch (error) {
+      
       console.error('Registration error:', error);
       setErrors({
         general: 'Network error. Please check your connection and try again.'
@@ -345,11 +347,11 @@ const Registration: React.FC = () => {
                   className="checkbox-input"
                 />
                 <span className="checkbox-custom"></span>
-                I agree to the{' '}
+                I agree to the&nbsp;
                 <Link to="/terms" className="terms-link" target="_blank" rel="noopener noreferrer">
-                  Terms of Service
+                  &nbsp;Terms of Service&nbsp;
                 </Link>
-                {' '}and{' '}
+                and&nbsp;
                 <Link to="/privacy" className="terms-link" target="_blank" rel="noopener noreferrer">
                   Privacy Policy
                 </Link>
@@ -375,7 +377,7 @@ const Registration: React.FC = () => {
             </button>
           </form>
  
-          <div className="auth-divider">
+          {/*<div className="auth-divider">
             <span>or</span>
           </div>
  
@@ -388,7 +390,7 @@ const Registration: React.FC = () => {
               <span className="social-icon">f</span>
               Continue with Facebook
             </button>
-          </div>
+          </div>*/}
  
           <div className="auth-footer">
             <p>

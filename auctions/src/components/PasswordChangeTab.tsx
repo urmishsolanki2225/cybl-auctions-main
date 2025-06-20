@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
 import { API_ENDPOINTS } from '../api/endpoints';
+import { toast } from 'react-toastify';
  
 interface PasswordFormData {
   currentPassword: string;
@@ -169,7 +170,7 @@ const PasswordChangeTab = () => {
         confirmNewPassword: formData.confirmPassword
       };
       
-      const response = await fetch('API_ENDPOINTS.PASSWORD_UPDATE', {
+      const response = await fetch(API_ENDPOINTS.PASSWORD_UPDATE, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -181,7 +182,7 @@ const PasswordChangeTab = () => {
       const data: ApiResponse = await response.json();
  
       if (response.ok && data.success) {
-        console.log('Password update successful');
+        toast.success(`Password update successful`);
         setSuccessMessage(data.message || 'Password updated successfully!');
         setFormData({
           currentPassword: '',
@@ -241,14 +242,7 @@ const PasswordChangeTab = () => {
           </h2>
         </div>
         
-        <div className="p-6">
-          {successMessage && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              {successMessage}
-            </div>
-          )}
- 
+        <div className="p-6">         
           {errors.general && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-red-600" />
@@ -269,9 +263,15 @@ const PasswordChangeTab = () => {
                   value={formData.currentPassword}
                   onChange={handleChange}
                   required
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.currentPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  style={{
+                    width: '50%',
+                    padding: '12px 16px',
+                    border: '2px solid #e9ecef',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.3s ease',
+                    borderColor: errors.currentPassword ? 'red' : '#e9ecef',
+                  }}
                   autoComplete="current-password"
                 />
                 <button
@@ -300,9 +300,15 @@ const PasswordChangeTab = () => {
                   value={formData.newPassword}
                   onChange={handleChange}
                   required
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.newPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  style={{
+                    width: '50%',
+                    padding: '12px 16px',
+                    border: '2px solid #e9ecef',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.3s ease',
+                    borderColor: errors.currentPassword ? 'red' : '#e9ecef',
+                  }}
                   autoComplete="new-password"
                 />
                 <button
@@ -368,9 +374,15 @@ const PasswordChangeTab = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  style={{
+                    width: '50%',
+                    padding: '12px 16px',
+                    border: '2px solid #e9ecef',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    transition: 'border-color 0.3s ease',
+                    borderColor: errors.currentPassword ? 'red' : '#e9ecef',
+                  }}
                   autoComplete="new-password"
                 />
                 <button
@@ -409,8 +421,12 @@ const PasswordChangeTab = () => {
             <button
               type="button"
               onClick={handleSubmit}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="btn btn-primary w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               disabled={loading}
+              style={{
+
+                marginTop: '20px'
+              }}
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">

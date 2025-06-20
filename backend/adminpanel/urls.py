@@ -97,7 +97,10 @@ urlpatterns = [
     path('ajax/inventory/<int:inventory_id>/', views.get_inventory_details, name='get_inventory_details'),
     path('ajax/user/<int:user_id>/', views.get_user_details, name='get_user_details'),
 
-
+    # Payment Charges Management
+    path('payment-charge/add/', views.add_payment_charge, name='add_payment_charge'),
+    path('payment-charge/delete/', views.delete_payment_charge, name='delete_payment_charge'),
+    path('payment/<int:payment_id>/charges/', views.get_payment_charges, name='get_payment_charges'),
 
 
     #__cached__

@@ -186,7 +186,7 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="auth-divider">
+          {/*<div className="auth-divider">
             <span>or</span>
           </div>
 
@@ -199,7 +199,7 @@ const Login = () => {
               <span className="social-icon">f</span>
               Continue with Facebook
             </button>
-          </div>
+          </div>*/}
 
           <div className="auth-footer">
             <p>

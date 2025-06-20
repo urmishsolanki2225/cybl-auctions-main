@@ -169,6 +169,9 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             
             # Check if reserve is met
             reserve_met = bid_amount >= lot.reserve_price
+
+            # Get updated bid history after the new bid
+            bid_history = await self.get_bid_history(lot)
             
             # Prepare bid data with updated lot end time
             bid_data = {
@@ -180,7 +183,8 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 'next_required_bid': str(bid_amount + auction.bid_increment),
                 'bid_type': bid_type,
                 'lot_end_time': lot.lot_end_time.isoformat() if lot.lot_end_time else None,
-                'timer_extended': should_extend
+                'timer_extended': should_extend,
+                'bid_history': bid_history  # Add bid history here
             }
             
             # Broadcast to all users in the lot room
@@ -278,7 +282,7 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
     async def check_and_extend_timer(self, lot, current_time):
         """
         Standard auto-extend logic:
-        - If a bid is placed within the last X seconds before lot end time
+        - If a bid is placed within the last 10 seconds before lot end time
         - And auto_extend_time is enabled for the auction
         - Then extend the lot by auto_extend_duration seconds
         """
@@ -297,7 +301,7 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             time_remaining = lot.lot_end_time - current_time
             
             # Convert auto_extend_duration to timedelta (it's in seconds)
-            extension_threshold = timedelta(seconds=auction.auto_extend_duration)
+            extension_threshold = timedelta(seconds=10)
             extension_amount = timedelta(seconds=auction.auto_extend_duration)
 
             # If bid placed within the last X seconds, extend by X seconds
@@ -381,6 +385,29 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             'data': event['data']
         }))
 
+    # Add this helper method
+    @database_sync_to_async
+    def get_bid_history(self, lot):
+        """Get bid history for a lot"""
+        try:
+            bid_history = lot.bids.filter(deleted_at__isnull=True).order_by('-created_at')
+            bid_history_data = []
+
+            for bid in bid_history:
+                bid_history_data.append({
+                    'id': bid.id,
+                    'bidder': bid.user.username,
+                    'user_id': bid.user.id,
+                    'amount': str(bid.bid_amount),
+                    'timestamp': bid.created_at.isoformat(),
+                    'type': bid.type  # Pre Bid or Live Bid
+                })
+            
+            return bid_history_data
+        except Exception as e:
+            print(f"Error getting bid history: {str(e)}")
+            return []
+        
     @database_sync_to_async
     def get_current_bid(self, lot):
         try:
@@ -396,6 +423,20 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             lot = Inventory.objects.get(id=self.lot_id)
             latest_bid = lot.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
             current_bid = latest_bid.bid_amount if latest_bid else lot.starting_bid
+
+            # Get bid history - all bids for this lot ordered by time (newest first)
+            bid_history = lot.bids.filter(deleted_at__isnull=True).order_by('-created_at')
+            bid_history_data = []
+
+            for bid in bid_history:
+                bid_history_data.append({
+                    'id': bid.id,
+                    'bidder': bid.user.username,
+                    'user_id': bid.user.id,
+                    'amount': str(bid.bid_amount),
+                    'timestamp': bid.created_at.isoformat(),
+                    'type': bid.type  # Pre Bid or Live Bid
+                })
             
             return {
                 'lot_id': lot.id,
@@ -407,6 +448,7 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 'reserve_price': str(lot.reserve_price),
                 'lot_start_time': lot.lot_start_time.isoformat() if lot.lot_start_time else None,
                 'lot_end_time': lot.lot_end_time.isoformat() if lot.lot_end_time else None,
+                'bid_history': bid_history_data  # Add bid history to response
             }
         except Inventory.DoesNotExist:
             print(f"Lot {self.lot_id} not found")

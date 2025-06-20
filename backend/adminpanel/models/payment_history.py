@@ -26,3 +26,15 @@ class Payment_History(models.Model):
 
     def str(self):
         return f"{self.user.username} - {self.amount} - {self.status} - {self.payment_method}"
+
+    @property
+    def total_charges_amount(self):
+        """Calculate total amount of all charges for this payment"""
+        return self.charge_details.filter(deleted_at__isnull=True).aggregate(
+            total=models.Sum('total_amount')
+        )['total'] or 0
+    
+    @property
+    def final_amount(self):
+        """Calculate final amount including all charges"""
+        return self.amount + self.total_charges_amount
