@@ -150,10 +150,10 @@ const Index = () => {
                 <div
                   key={index}
                   className="bg-blue-600 rounded-md px-4 py-2 text-center font-medium shadow-md hover:bg-blue-700 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/auction/${auction.id}`)}
+                  
                 >
                   <div className="featured-auction-combined-card">
-                    <div className="auction-header">
+                    <div className="auction-header" onClick={() => navigate(`/auction/${auction.id}`)}>
                       {/* Left - Company Info */}
                       <div className="company-info">
                         <img

@@ -318,8 +318,8 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
 
         except Exception as e:
             print(f"❌ Error in check_and_extend_timer: {str(e)}")
-            return False
-
+            return False    
+    
     def update_lot_end_time(self, lot, new_end_time):
         """Update lot end time and cascade to subsequent lots"""
         from django.db import transaction

@@ -11,12 +11,13 @@ import LiveTimer from "../components/LiveTimer";
 import "../styles/AuctionDetails.css";
 import { publicApi } from "../api/apiUtils";
 import BASE_URL from "../api/endpoints";
+import WatchlistButton from "../components/WatchlistButton"; 
 
 const CatLots = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const categoryId = location.state?.categoryId;
-  
+
   // Determine if this is a category view
   const isCategoryView = Boolean(categoryId);
 
@@ -45,12 +46,12 @@ const CatLots = () => {
       setError(null);
 
       let response;
-      
+
       // If we have a categoryId from state, fetch category-specific data
       if (categoryId) {
         // Fetch initial category data - you might need to adjust this based on your API
         response = await publicApi.getCategoryLots([categoryId.toString()], {
-          page_size: 0 // Just get metadata, not actual lots
+          page_size: 0, // Just get metadata, not actual lots
         });
       } else {
         // Fetch general auction data or handle non-category view
@@ -79,7 +80,7 @@ const CatLots = () => {
         setLotsLoading(true);
 
         let response;
-        
+
         // Always call the API, but pass selectedCategories as is
         // If selectedCategories is empty, the API function will handle it by not adding category_id param
         response = await publicApi.getCategoryLots(selectedCategories, {
@@ -89,7 +90,7 @@ const CatLots = () => {
           status: filters.status === "all" ? "" : filters.status || "",
           sort_by: filters.sort_by || "closing_soon",
         });
-        
+
         setLots(response.inventory_items || []);
       } catch (err) {
         console.error("Failed to load filtered lots", err);
@@ -168,13 +169,7 @@ const CatLots = () => {
     if (lotStatus !== "all") count++;
     if (sortBy !== "closing_soon") count++;
     return count;
-  }, [
-    searchTerm,
-    selectedCategories,
-    bidRange,
-    lotStatus,
-    sortBy,
-  ]);
+  }, [searchTerm, selectedCategories, bidRange, lotStatus, sortBy]);
 
   if (loading) {
     return (
@@ -221,7 +216,7 @@ const CatLots = () => {
   return (
     <div className="auction-details-page">
       <div className="auction-layout-page">
-        {/* Left-side filter section */}
+        {/* Left-side filter or info section */}
         <aside className="left-panel">
           <div className="filter-card">
             <div className="filter-header">
@@ -268,34 +263,27 @@ const CatLots = () => {
                 </div>
 
                 {/* Categories */}
-                {staticData?.categories && staticData.categories.length > 0 && (
-                  <div className="filter-group">
-                    <label className="filter-label">
-                      Categories ({selectedCategories.length} selected)
-                    </label>
-                    <div className="categories-list">
-                      {staticData.categories.map((category) => (
-                        <label key={category.id} className="category-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={selectedCategories.includes(
-                              category.id.toString()
-                            )}
-                            onChange={() => handleCategoryChange(category.id)}
-                          />
-                          <span>{category.name}</span>
-                          {isCategoryView &&
-                            category.id.toString() === categoryId.toString() && (
-                              <span className="text-muted small">
-                                {" "}
-                                (From navigation)
-                              </span>
-                            )}
-                        </label>
-                      ))}
-                    </div>
+                <div className="filter-group">
+                  <label className="filter-label">
+                    Categories ({selectedCategories.length} selected)
+                  </label>
+                  <div className="categories-list">
+                    {staticData.categories?.map((category) => (
+                      <label key={category.id} className="category-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.includes(
+                            category.id.toString()
+                          )}
+                          onChange={() =>
+                            handleCategoryChange(category.id.toString())
+                          }
+                        />
+                        <span>{category.name}</span>
+                      </label>
+                    ))}
                   </div>
-                )}
+                </div>
 
                 {/* Bid Range */}
                 <div className="filter-group">
@@ -377,76 +365,91 @@ const CatLots = () => {
 
         {/* Right-side auction content */}
         <section className="right-panel">
-          <div className="py-3">
-            <h5 className="mb-4 fw-bold text-primary">
-              {lotsLoading && <span className="text-muted"> (Loading...)</span>}
-            </h5>
-
-            {lots && lots.length > 0 ? (
-              lots.map((lot, index) => (
-                <div
-                  className="lot-card p-3 mb-4 border rounded shadow-sm bg-white"
-                  key={lot.id || index}
-                >
-                  {/* Image Section */}
-                  <div className="lot-img-wrapper mb-3">
-                    <img
-                      src={`${BASE_URL}/media/${lot.media_items?.[0]?.path}`}
-                      alt={lot.inventory_number}
-                      className="lot-img"
-                    />
-                  </div>
-
-                  {/* Info Section */}
-                  <div className="lot-info mb-3">
-                    
-                    <p><strong>Category : </strong>{lot?.category?.name} </p>
-                    <h5 className="mb-2 fw-semibold">{lot.title}</h5>
-                    
-                    <p className="mb-1 text-muted">
-                      <strong>Current Bid:</strong> $
-                      {lot.current_bid == null
-                        ? lot.starting_bid
-                        : lot.current_bid}
-                    </p>
-                    <p className="mb-1 text-muted">
-                      <strong>Next Required Bid:</strong> $
-                      {lot.next_required_bid == null
-                        ? lot.current_bid
-                        : lot.next_required_bid}
-                    </p>
-                    <p className="mb-1 text-muted">
-                      <strong>High Bidder:</strong>{" "}
-                      {lot.highest_bidder?.username || "No bids yet"}
-                    </p>
-                    <p
-                      className={`mb-1 fw-medium ${
-                        lot.reserve_met ? "text-success" : "text-danger"
-                      }`}
-                    >
-                      <strong>Reserve:</strong>{" "}
-                      {lot.reserve_met ? "Met" : "Not Met"}
-                    </p>
-                  </div>
-
-                  {/* Countdown & Action Section */}
-                  <div className="lot-timer-action text-center">
-                    <div className="text-muted small mb-1">Ends In:</div>
-                    <LiveTimer endTime={lot.lot_end_time} />
-                    <button
-                      className="btn btn-primary btn-sm mt-3"
-                      onClick={() => handlePlaceBidClick(lot)}
-                    >
-                      Place Bid
-                    </button>
-                  </div>
-                </div>
-              ))
+          <div className="lots-container">
+            {lotsLoading ? (
+              <div className="loading-spinner"></div>
             ) : (
-              <div className="no-lots-message text-center py-5">
-                <p className="text-muted">
-                  {lotsLoading ? "Loading lots..." : "No lots found matching your criteria."}
-                </p>
+              <div className="lots-grid">
+                {lots?.map((lot) => (
+                  <div className="lot-card" key={lot.id}>
+                    {/* Image with watchlist button */}
+                    <div className="lot-image-container">
+                      <img
+                        src={`${BASE_URL}/media/${lot.media_items?.[0]?.path}`}
+                        alt={lot.title}
+                        className="lot-image"
+                      />
+                      <div className="watchlist-button-container">
+                        <WatchlistButton
+                          inventoryId={lot.id}
+                          size="small"                          
+                        />
+                      </div>
+                    </div>
+
+                    {/* Lot content */}
+                    <div className="lot-content">
+                      <div className="lot-header">
+                        <h5 className="lot-title">{lot.title}</h5>
+                        <div className="lot-category">
+                          {lot?.category?.name}
+                        </div>
+                      </div>
+
+                      <div className="lot-details">
+                        <div className="lot-detail-row">
+                          <span className="lot-detail-label">Current Bid:</span>
+                          <span className="lot-detail-value">
+                            ${lot.current_bid || lot.starting_bid}
+                          </span>
+                        </div>
+
+                        <div className="lot-detail-row">
+                          <span className="lot-detail-label">Next Bid:</span>
+                          <span className="lot-detail-value">
+                            $
+                            {lot.next_required_bid ||
+                              (lot.current_bid
+                                ? lot.current_bid + 1
+                                : lot.starting_bid)}
+                          </span>
+                        </div>
+
+                        <div className="lot-detail-row">
+                          <span className="lot-detail-label">High Bidder:</span>
+                          <span className="lot-detail-value">
+                            {lot.highest_bidder?.username || "None"}
+                          </span>
+                        </div>
+
+                        <div className="lot-detail-row">
+                          <span className="lot-detail-label">Reserve:</span>
+                          <span
+                            className={`lot-reserve ${
+                              lot.reserve_met
+                                ? "reserve-met"
+                                : "reserve-not-met"
+                            }`}
+                          >
+                            {lot.reserve_met ? "Met" : "Not Met"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="lot-footer">
+                        <div className="lot-timer">
+                          <LiveTimer endTime={lot.lot_end_time} />
+                        </div>
+                        <button
+                          className="lot-bid-button"
+                          onClick={() => handlePlaceBidClick(lot)}
+                        >
+                          Place Bid
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

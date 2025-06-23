@@ -111,8 +111,7 @@ const Index = () => {
             featuredAuction.slice(0, 6).map((auctions, index) => (
               <div
                 className="featured-auction-combined-card"
-                key={index}
-                onClick={() => navigate(`/auction/${auctions.id}`)}
+                key={index}                
               >
                 <div className="auction-header">
                   {/* Left - Company Info */}
@@ -134,7 +133,7 @@ const Index = () => {
 
                   {/* Center - Auction Details */}
                   <div className="auction-details">
-                    <h3 className="auction-name">{auctions.name}</h3>
+                    <h3 className="auction-name" onClick={() => navigate(`/auction/${auctions.id}`)}>{auctions.name}</h3>
                     <div className="auction-location">
                       <span>
                         {auctions.location_details.address},&nbsp;
@@ -173,36 +172,7 @@ const Index = () => {
               </div>
             ))}
         </div>
-      </section>
-
-      {/* How It Works */}
-      {/*<section className="how-it-works">
-        <div className="container">
-          <h2 className="section-title">How It Works</h2>
-          <div className="steps-grid">
-            <div className="step">
-              <div className="step-number">1</div>
-              <h3>Register & Verify</h3>
-              <p>Create your account and verify your identity to start bidding</p>
-            </div>
-            <div className="step">
-              <div className="step-number">2</div>
-              <h3>Browse & Research</h3>
-              <p>Explore our auctions and research items you're interested in</p>
-            </div>
-            <div className="step">
-              <div className="step-number">3</div>
-              <h3>Bid & Win</h3>
-              <p>Place your bids and track auctions in real-time</p>
-            </div>
-            <div className="step">
-              <div className="step-number">4</div>
-              <h3>Pay & Receive</h3>
-              <p>Complete payment and receive your winning items</p>
-            </div>
-          </div>
-        </div>
-      </section>*/}
+      </section>     
     </div>
   );
 };

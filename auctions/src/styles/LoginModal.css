@@ -1,0 +1,177 @@
+.login-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.login-modal {
+  background-color: white;
+  border-radius: 8px;
+  padding: 30px;
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.login-modal-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-modal-header h2 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.login-modal-header p {
+  margin: 0;
+  color: #666;
+}
+
+.login-modal-error {
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.login-modal-form .form-group {
+  margin-bottom: 20px;
+}
+
+.login-modal-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+
+.login-modal-form input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.login-modal-form input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.checkbox-label input {
+  width: auto;
+  margin-right: 8px;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+  background-color: #1565c0;
+}
+
+.submit-button:disabled {
+  background-color: #90caf9;
+  cursor: not-allowed;
+}
+
+.login-modal-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.register-link {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-link:hover {
+  text-decoration: underline;
+}
+/* Add to existing styles */
+.password-group {
+  position: relative;
+}
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #666;
+}
+
+.password-toggle svg {
+  display: block;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+/* Adjust the password input padding to make room for the eye icon */
+.password-input-wrapper input {
+  padding-right: 40px;
+}

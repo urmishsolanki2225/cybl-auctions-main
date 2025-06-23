@@ -65,9 +65,15 @@ urlpatterns = [
     # PAYMENT HISTORY
     path('user/payment-history/',  views.user_payment_history, name='payment-history-list'),
 
-    #contcat
+    #CONTACT
     path('contact/', views.ContactFormView.as_view(), name='contact-form'),
 
-    #
-   path('payments/<int:payment_id>/invoice/',  views.download_invoice, name='download-invoice'),
+    #PAYMENT INVOICE DOWBLOAD
+    path('payments/<int:payment_id>/invoice/',  views.download_invoice, name='download-invoice'),
+
+    #WATCHLIST
+    path('watchlist/', views.WatchlistAPIView.as_view(), name='watchlist-list'),
+    path('watchlist/add/<int:inventory_id>/', views.WatchlistAPIView.as_view(), name='watchlist-add'),
+    path('watchlist/remove/<int:inventory_id>/', views.WatchlistAPIView.as_view(), name='watchlist-remove'),
+
 ]

@@ -8,4 +8,5 @@ from adminpanel.models.bid import *
 from adminpanel.models.payment_history import *
 from adminpanel.models.contact import *
 from adminpanel.models.payment_charges import * 
+from adminpanel.models.watchlist import * 
 

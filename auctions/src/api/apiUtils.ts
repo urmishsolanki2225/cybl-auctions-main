@@ -253,6 +253,22 @@ export const publicApi = {
   },
 };
 
+
+interface WatchlistItem {
+  id: number;
+  user: number;
+  inventory: {
+    id: number;
+    title: string;
+    current_bid: number | null;
+    starting_bid: number;
+    lot_end_time: string;
+    status: string;
+    media_items?: Array<{ path: string }>;
+  };
+  created_at: string;
+}
+
 // Protected API functions (require token)
 export const protectedApi = {
   getProfile: async () => {
@@ -279,11 +295,23 @@ export const protectedApi = {
   getUsersPaymentHistory: async () => {
     return makeRequest(API_ENDPOINTS.USERPAYMENTHISTORY, 'GET', null, true);
   },
-
-
   downloadInvoice: async (paymentId: number) => {
     const blob = await makeBlobRequest(API_ENDPOINTS.INVOICE(paymentId), 'GET', null, true);
     return blob;
   },
-  
+  // Watchlist functions
+  // Get all watchlist items
+  getWatchlist: async (): Promise<WatchlistItem[]> => {
+    return makeRequest(API_ENDPOINTS.WATCHLIST, 'GET', null, true);
+  },
+
+  // Add item to watchlist
+  addToWatchlist: async (inventoryId: number): Promise<WatchlistItem> => {
+    return makeRequest(API_ENDPOINTS.WATCHLIST_ADD(inventoryId), 'POST', null, true);
+  },
+
+  // Remove item from watchlist
+  removeFromWatchlist: async (inventoryId: number): Promise<{ message: string }> => {
+    return makeRequest(API_ENDPOINTS.WATCHLIST_REMOVE(inventoryId), 'DELETE', null, true);
+  },  
 };

@@ -238,6 +238,3 @@ const Login = () => {
 
 export default Login;
 
-function authLogin(token: any) {
-  throw new Error('Function not implemented.');
-}

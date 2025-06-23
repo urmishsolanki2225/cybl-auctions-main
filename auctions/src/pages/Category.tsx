@@ -1,11 +1,11 @@
-// Category.tsx - Enhanced to navigate to the new auction details page
 import { useNavigate } from "react-router-dom";
 import "../styles/Category.css";
 import { useEffect, useState } from "react";
 import { publicApi } from "../api/apiUtils";
+import BASE_URL from "../api/endpoints";
 
 const Category = () => {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -15,8 +15,6 @@ const Category = () => {
       try {
         setLoading(true);
         const response = await publicApi.getCategories();
-
-        // Sort categories and subcategories
         const sorted = sortCategories(response);
         setCategories(sorted);
       } catch (err) {
@@ -73,15 +71,36 @@ const Category = () => {
         ) : (
           <div className="categories-grid">
             {categories.map((cat) => (
-              <div key={cat.id} className="category-item">
+              <div key={cat.id} className="category-card">
+                {cat.image && (
+                  <div
+                    className="category-image"
+                    style={{ backgroundImage: `url(${BASE_URL}${cat?.image ?? ""})` }}
+                    aria-label={cat.name}
+                  />
+                )}
                 <h2 className="category-title">{cat.name}</h2>
                 <div className="subcategories-list">
                   {cat.subcategories.map((sub) => (
                     <div
                       key={sub.id}
-                      className="subcategory-item"
+                      className="subcategory-card"
                       onClick={() => handleSubcategoryClick(sub.id)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          handleSubcategoryClick(sub.id);
+                        }
+                      }}
                     >
+                      {sub.image && (
+                        <div
+                          className="subcategory-image"
+                          style={{ backgroundImage: `url(${sub.image})` }}
+                          aria-label={sub.name}
+                        />
+                      )}
                       <span className="subcategory-name">{sub.name}</span>
                       <span className="subcategory-arrow">→</span>
                     </div>

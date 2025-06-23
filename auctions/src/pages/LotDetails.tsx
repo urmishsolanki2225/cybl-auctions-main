@@ -6,6 +6,8 @@ import "../styles/LotDetails.css";
 import BASE_URL from "../api/endpoints";
 import LiveTimer from "../components/LiveTimer";
 import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import LoginModal from "../components/LoginModal";
 
 const LotDetails = () => {
   const { id } = useParams();
@@ -15,6 +17,13 @@ const LotDetails = () => {
   const [currentBid, setCurrentBid] = useState<number>(0);
   const [bidHistory, setBidHistory] = useState<any[]>(lot?.bid_history || []);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
+  const [lotStatus, setLotStatus] = useState<string>("unsold");
+  const [winner, setWinner] = useState<string | null>(null);
+  const [winningAmount, setWinningAmount] = useState<string | null>(null);
+  // Inside the LotDetails component, add these state variables
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { isAuthenticated } = useAuth();
+
   const user = JSON.parse(localStorage.getItem("user"));
 
   const handleMessage = useCallback(
@@ -120,6 +129,9 @@ const LotDetails = () => {
         setLot(data);
         setCurrentBid(data.current_bid || data.starting_price || 0);
         setBidHistory(data.bid_history || []);
+        setLotStatus(data.status || "");
+        setWinner(data.winner || null);
+        setWinningAmount(data.winning_amount || null);
       } catch (err) {
         console.error("Error loading lot:", err);
       }
@@ -131,6 +143,11 @@ const LotDetails = () => {
   if (!lot) return <p>Loading...</p>;
 
   const handlePlaceBid = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (user) {
       const socket = getSocket();
       if (socket && socket.readyState === WebSocket.OPEN) {
@@ -138,7 +155,6 @@ const LotDetails = () => {
 
         // Set loading state
         setIsPlacingBid(true);
-        
 
         const message = {
           type: "place_bid",
@@ -154,6 +170,40 @@ const LotDetails = () => {
     } else {
       navigate("/login");
     }
+  };
+
+  const WinnerDisplay = ({ lotStatus, winner, winningAmount, user }) => {
+    if (!lotStatus) return null;
+
+    return (
+      <div
+        className={`winner-section ${
+          lotStatus === "sold" ? "winner-found" : "no-winner"
+        }`}
+      >
+        {lotStatus === "sold" ? (
+          <div className="winner-info">
+            <div className="winner-badge">🏆 SOLD</div>
+            <div className="winner-details">
+              <div className="winner-name">
+                Winner: <strong>{winner}</strong>
+                {winner === user?.username && " (You!)"}
+              </div>
+              <div className="winning-amount">
+                Winning Bid: <strong>₹{winningAmount}</strong>
+              </div>
+            </div>
+          </div>
+        ) : lotStatus === "unsold" ? (
+          <div className="unsold-info">
+            <div className="unsold-badge">❌ UNSOLD</div>
+            <div className="unsold-message">
+              This lot did not meet the reserve price
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
   };
 
   return (
@@ -275,59 +325,74 @@ const LotDetails = () => {
               <div className="auction-timer">
                 <LiveTimer endTime={lot?.lot_end_time || lot?.endTime} />
               </div>
-              <div className="current-bid">
-                {/* Reserve Status */}
-                {lot?.reserve_price && (
-                  <div>
-                    <span
-                      className={`reserve-badge ${
-                        lot.reserve_met ? "met" : "not-met"
-                      }`}
-                    >
-                      {lot.reserve_met ? "✓ Reserve Met" : "⚠ Reserve Not Met"}
-                    </span>
-
-                    <div>
-                      {!lot.reserve_met && (
-                        <span className="label">
-                          Reserve: ${lot.reserve_price.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="current-bid-info">
-                <div className="current-bid">
-                  <span className="label">Starting bid</span>
-                  <span className="amount">${lot.starting_bid || "0"}</span>
-                </div>
-                <div className="current-bid">
-                  <span className="label">Current Bid</span>
-                  <span className="amount">${currentBid || "0"}</span>
-                </div>
-              </div>
-              <div className="next-bid-info">
-                <span className="next-bid-label">Next Bid:</span>
-                <span className="next-bid-amount">
-                  ${lot?.next_required_bid?.toLocaleString() || "0"}
-                </span>
-              </div>
+              <WinnerDisplay />
               <div>
-                <button
-                  className="bid-btn primary"
-                  onClick={handlePlaceBid}
-                  disabled={isPlacingBid}
-                >
-                  {isPlacingBid
-                    ? "Placing Bid..."
-                    : `Place $${lot.next_required_bid} Bid`}
-                </button>
+                <div className="current-bid">
+                  {/* Reserve Status */}
+                  {lot?.reserve_price && (
+                    <div>
+                      <span
+                        className={`reserve-badge ${
+                          lot.reserve_met ? "met" : "not-met"
+                        }`}
+                      >
+                        {lot.reserve_met
+                          ? "✓ Reserve Met"
+                          : "⚠ Reserve Not Met"}
+                      </span>
+
+                      <div>
+                        {!lot.reserve_met && (
+                          <span className="label">
+                            Reserve: ${lot.reserve_price.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="current-bid-info">
+                  <div className="current-bid">
+                    <span className="label">Starting bid</span>
+                    <span className="amount">${lot.starting_bid || "0"}</span>
+                  </div>
+                  <div className="current-bid">
+                    <span className="label">Current Bid</span>
+                    <span className="amount">${currentBid || "0"}</span>
+                  </div>
+                </div>
+                <div className="next-bid-info">
+                  <span className="next-bid-label">Next Bid:</span>
+                  <span className="next-bid-amount">
+                    ${lot?.next_required_bid?.toLocaleString() || "0"}
+                  </span>
+                </div>
+                <div>
+                  <button
+                    className="bid-btn primary"
+                    onClick={handlePlaceBid}
+                    disabled={isPlacingBid}
+                  >
+                    {isPlacingBid
+                      ? "Placing Bid..."
+                      : `Place $${lot.next_required_bid} Bid`}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+       {showLoginModal && (
+      <LoginModal
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={() => {
+          setShowLoginModal(false);
+          // Optionally automatically place the bid after login
+          // handlePlaceBid();
+        }}
+      />
+    )}
     </div>
   );
 };

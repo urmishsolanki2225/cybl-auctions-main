@@ -1,0 +1,174 @@
+/* WatchlistButton.css - Styles for the watchlist button component */
+
+.watchlist-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.watchlist-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.watchlist-button:active {
+  transform: scale(0.95);
+}
+
+.watchlist-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+/* Size variations */
+.watchlist-btn-small {
+  width: 32px;
+  height: 32px;
+  padding: 0.25rem;
+}
+
+.watchlist-btn-small .heart-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.watchlist-btn-medium {
+  width: 40px;
+  height: 40px;
+  padding: 0.5rem;
+}
+
+.watchlist-btn-medium .heart-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.watchlist-btn-large {
+  width: 48px;
+  height: 48px;
+  padding: 0.75rem;
+}
+
+.watchlist-btn-large .heart-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Active state (item in watchlist) */
+.watchlist-button.active {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  border: 2px solid rgba(220, 38, 38, 0.2);
+}
+
+.watchlist-button.active:hover {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+}
+
+/* Heart icon styles */
+.heart-icon {
+  transition: all 0.2s ease;
+}
+
+.heart-icon.filled {
+  animation: heartPulse 0.6s ease-in-out;
+}
+
+/* Text button variation */
+.watchlist-button.with-text {
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  width: auto;
+  height: auto;
+  background: rgba(255, 255, 255, 0.9);
+  color: #374151;
+}
+
+.watchlist-button.with-text.active {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.watchlist-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes heartPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .watchlist-btn-medium {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .watchlist-btn-large {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .watchlist-text {
+    font-size: 0.8rem;
+  }
+}
+
+/* Accessibility */
+.watchlist-button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Position for overlay usage */
+.watchlist-button.position-absolute {
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+}

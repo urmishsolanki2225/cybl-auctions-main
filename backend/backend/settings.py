@@ -245,13 +245,13 @@ CELERY_BEAT_SCHEDULE = {
     # Main auction status update - every minute
     'update_auction_status_every_minute': {
         'task': 'adminpanel.tasks.update_auction_status',
-        'schedule': 60.0,  # Every 60 seconds
+        'schedule': 1.0,  # Every 1 second
     },
     
     # Auto-extend check - every 10 seconds for better responsiveness
     'check_lot_auto_extend_every_10_seconds': {
         'task': 'adminpanel.tasks.check_lot_auto_extend',
-        'schedule': 10.0,  # Every 10 seconds
+        'schedule': 1.0,  # Every 1 second
     },
     
     # Cleanup old auctions - once daily at 2 AM

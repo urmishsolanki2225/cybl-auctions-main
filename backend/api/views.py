@@ -7,8 +7,8 @@ from datetime import datetime, time, timedelta
 from rest_framework.pagination import PageNumberPagination
 from django.db.models.functions import TruncDate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, CountrySerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer
-from adminpanel.models import Category, Country, State, Inventory, User, Profile, Auctions, Media, Payment_History, Company
+from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, WatchlistSerializer, CountrySerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer
+from adminpanel.models import Group, Category, Watchlist, Country, State, Inventory, User, Profile, Auctions, Media, Payment_History, Company
 from rest_framework import generics 
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
@@ -36,6 +36,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from io import BytesIO
 from xhtml2pdf import pisa
+from django.shortcuts import get_object_or_404
 from django.conf import settings
 
 
@@ -93,6 +94,16 @@ class RegisterView(APIView):
             
             if serializer.is_valid():
                 user = serializer.save()
+
+                # Assign "Buyer" group to the user
+                try:
+                    buyer_group = Group.objects.get(name="Buyer")
+                    user.groups.add(buyer_group)
+                except Group.DoesNotExist:
+                    return Response({
+                        "success": False,
+                        "message": "Buyer group does not exist. Please create it in admin.",
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
                 return Response({
                     "success": True,
@@ -1073,4 +1084,56 @@ def download_invoice(request, payment_id):
             'Internal server error',
             status=500,
             content_type='text/plain'
+        )
+################################################################################
+class WatchlistAPIView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = WatchlistSerializer
+
+    def get(self, request):
+        """List all watchlist items for the current user"""
+        watchlist = Watchlist.objects.filter(user=request.user).select_related('inventory')
+        serializer = self.get_serializer(watchlist, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, inventory_id=None):
+        """Add an item to watchlist (inventory_id in URL)"""
+        if not inventory_id:
+            return Response(
+                {'error': 'inventory_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        inventory = get_object_or_404(Inventory, id=inventory_id)
+        
+        if Watchlist.objects.filter(user=request.user, inventory=inventory).exists():
+            return Response(
+                {'error': 'Item already in watchlist'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        watchlist_item = Watchlist.objects.create(user=request.user, inventory=inventory)
+        serializer = self.get_serializer(watchlist_item)
+        return Response({
+            'message': 'Item added to watchlist',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, inventory_id=None):
+        """Remove an item from watchlist (inventory_id in URL)"""
+        if not inventory_id:
+            return Response(
+                {'error': 'inventory_id is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        watchlist_item = get_object_or_404(
+            Watchlist, 
+            user=request.user, 
+            inventory__id=inventory_id
+        )
+        watchlist_item.delete()
+        return Response(
+            {'message': 'Item removed from watchlist'}, 
+            status=status.HTTP_200_OK
         )

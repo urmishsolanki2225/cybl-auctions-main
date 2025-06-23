@@ -15,6 +15,9 @@ def update_auction_status():
     Comprehensive auction status management including:
     - Status updates (next -> current -> closed)
     - Lot timing calculations with auto-extend
+    - Winner determination
+    - Inventory status updates
+    - Payment transaction creation
     """
     now = timezone.now()
     updated_count = 0
@@ -59,6 +62,11 @@ def update_auction_status():
                 updated_count += 1
 
                 logger.info(f"Auction {auction.id} status updated from '{old_status}' to '{new_status}'")
+
+                # Handle auction closure
+                if new_status == 'closed':
+                    close_auction_and_process_results(auction)
+                    logger.info(f"Auction {auction.id} closed and processed - End date: {auction.end_date}")
 
             # Update lot times and handle auto-extend for current auctions
             if auction.status == 'current':
@@ -133,10 +141,6 @@ def update_lot_times_with_auto_extend(auction):
                 inv.lot_start_time = lot_start
                 inv.lot_end_time = lot_end
                 inv.save(update_fields=['lot_start_time', 'lot_end_time'])
-            
-            # Process closed lots immediately when they end
-            if now >= inv.lot_end_time and inv.status in ['pending', 'auction']:
-                process_closed_lot(inv)
         
         # If any lot was extended, recalculate auction end date
         if auction_extended:
@@ -154,56 +158,67 @@ def update_lot_times_with_auto_extend(auction):
         logger.error(f"Error updating lot times for auction {auction.id}: {e}")
 
 
-def process_closed_lot(inventory):
+def close_auction_and_process_results(auction):
     """
-    Process a single closed lot:
-    1. Determine winner
+    Process auction closure:
+    1. Determine winners for each lot
     2. Update inventory status (sold/unsold)
-    3. Create payment transaction
+    3. Create payment transactions
     """
     try:
         with transaction.atomic():
-            # Get the highest bid for this inventory
-            winning_bid = inventory.bids.filter(
-                deleted_at__isnull=True
-            ).order_by('-bid_amount', 'created_at').first()
+            inventories = auction.inventory_set.filter(deleted_at__isnull=True)
+            total_lots = inventories.count()
+            sold_lots = 0
+            unsold_lots = 0
             
-            if winning_bid and winning_bid.bid_amount >= inventory.reserve_price:
-                # Item sold - winner found
-                inventory.winning_bid = winning_bid
-                inventory.winning_user = winning_bid.user
-                inventory.status = 'sold'
+            for inventory in inventories:
+                # Get the highest bid for this inventory
+                winning_bid = inventory.bids.filter(
+                    deleted_at__isnull=True
+                ).order_by('-bid_amount', 'created_at').first()
                 
-                # Calculate total amount (bid + buyer's premium)
-                total_amount = winning_bid.bid_amount
-                
-                # Create pending payment transaction
-                create_payment_transaction(
-                    user=winning_bid.user,
-                    inventory=inventory,
-                    amount=total_amount,
-                    winning_bid_amount=winning_bid.bid_amount,
-                )
-                
-                logger.info(f"Lot {inventory.id} sold to {winning_bid.user.username} "
-                           f"for ${winning_bid.bid_amount} (Total: ${total_amount})")
-                
-            else:
-                # Item unsold - no winning bid or bid below reserve
-                inventory.status = 'unsold'
-                inventory.winning_bid = None
-                inventory.winning_user = None
-                
-                if winning_bid:
-                    logger.info(f"Lot {inventory.id} unsold - highest bid ${winning_bid.bid_amount} "
-                               f"below reserve ${inventory.reserve_price}")
+                if winning_bid and winning_bid.bid_amount >= inventory.reserve_price:
+                    # Item sold - winner found
+                    inventory.winning_bid = winning_bid
+                    inventory.winning_user = winning_bid.user
+                    inventory.status = 'sold'
+                    sold_lots += 1
+                    
+                    # Calculate total amount (bid + buyer's premium)
+                    total_amount = winning_bid.bid_amount
+                    
+                    # Create pending payment transaction
+                    create_payment_transaction(
+                        user=winning_bid.user,
+                        inventory=inventory,
+                        amount=total_amount,
+                        winning_bid_amount=winning_bid.bid_amount,
+                    )
+                    
+                    logger.info(f"Lot {inventory.id} sold to {winning_bid.user.username} "
+                               f"for ${winning_bid.bid_amount} (Total: ${total_amount})")
+                    
                 else:
-                    logger.info(f"Lot {inventory.id} unsold - no bids received")
+                    # Item unsold - no winning bid or bid below reserve
+                    inventory.status = 'unsold'
+                    inventory.winning_bid = None
+                    inventory.winning_user = None
+                    unsold_lots += 1
+                    
+                    if winning_bid:
+                        logger.info(f"Lot {inventory.id} unsold - highest bid ${winning_bid.bid_amount} "
+                                   f"below reserve ${inventory.reserve_price}")
+                    else:
+                        logger.info(f"Lot {inventory.id} unsold - no bids received")
+                
+                inventory.save(update_fields=['status', 'winning_bid', 'winning_user'])
             
-            inventory.save(update_fields=['status', 'winning_bid', 'winning_user'])
+            logger.info(f"Auction {auction.id} processing complete: "
+                       f"{sold_lots} sold, {unsold_lots} unsold out of {total_lots} lots")
             
     except Exception as e:
-        logger.error(f"Error processing closed lot {inventory.id}: {e}")
+        logger.error(f"Error processing auction {auction.id} closure: {e}")
 
 
 def create_payment_transaction(user, inventory, amount, winning_bid_amount):
@@ -284,30 +299,6 @@ def check_lot_auto_extend():
         logger.info(f"Auto-extended {extended_count} lots")
     
     return f"Auto-extended {extended_count} lots"
-
-
-@shared_task
-def process_expired_lots():
-    """Process lots that have ended but haven't been marked as closed"""
-    now = timezone.now()
-    processed_count = 0
-    
-    # Get lots that have ended but are still marked as pending/auction
-    expired_lots = Inventory.objects.filter(
-        Q(lot_end_time__lte=now) &
-        Q(status__in=['pending', 'auction']) &
-        Q(deleted_at__isnull=True)
-    )
-    
-    for lot in expired_lots:
-        try:
-            process_closed_lot(lot)
-            processed_count += 1
-        except Exception as e:
-            logger.error(f"Failed to process expired lot {lot.id}: {e}")
-            continue
-    
-    return f"Processed {processed_count} expired lots"
 
 
 @shared_task

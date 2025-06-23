@@ -41,8 +41,13 @@ export const API_ENDPOINTS = {
   CATEGORY_LOTS: `${BASE_API_URL}lots/`, 
   
   // Search & Filters
-  SEARCH_AUCTIONS: `${BASE_API_URL}auctions/search/`,
-  FILTER_AUCTIONS: `${BASE_API_URL}auctions/filter/`,
+  // SEARCH_AUCTIONS: `${BASE_API_URL}auctions/search/`,
+  // FILTER_AUCTIONS: `${BASE_API_URL}auctions/filter/`,
 
   INVOICE: (paymentId: number) => `${BASE_API_URL}payments/${paymentId}/invoice/`,
+
+  // Watchlist Endpoints
+  WATCHLIST: `${BASE_API_URL}watchlist/`,
+  WATCHLIST_ADD: (inventoryId: number) => `${BASE_API_URL}watchlist/add/${inventoryId}/`,
+  WATCHLIST_REMOVE: (inventoryId: number) => `${BASE_API_URL}watchlist/remove/${inventoryId}/`,
 };

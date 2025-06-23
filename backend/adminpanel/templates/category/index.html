@@ -52,7 +52,13 @@
                         <input type="text" class="form-control mb-2" id="name" name="name">
                         <span id="NameError" class="text-danger"></span>
                     </div>
-                    <div id="bg_photo_category" style="display: none;"></div>                    
+                    
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Image</label>
+                        <input type="file" class="form-control mb-2" id="image" name="image" accept="image/*">
+                        <div id="bg_photo_category" style="display: none;"></div>
+                        <span id="ImageError" class="text-danger"></span>
+                    </div>
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
             </div>
@@ -212,6 +218,8 @@ function updateCategoryOrder(order) {
 function addFunction(element, name, id = null) {
     var parentId = element ? $(element).data('parent-id') : null;
     $('#NameError').text('');
+    $('#image').val(''); // Clear image input
+    $('#ImageError').text('');
     $('#parent').val(parentId);
     $('#categoryID').val(id || '');
     $('#addModal').modal('show');
@@ -226,7 +234,9 @@ function addFunction(element, name, id = null) {
             data: { 'category_id': id },
             success: function(response) {
                 if (response.status === 'success') {
-                    $('#name').val(response.category.name);                    
+                    $('#name').val(response.category.name);      
+                    var bgPhotoUrl = response.category.image ? '{{ MEDIA_URL }}' + response.category.image : '{% static "admin/img/member-img/1.png" %}';
+                        $('#bg_photo_category').html('<img src="' + bgPhotoUrl + '" style="max-width: 10%; height: auto;"/>').show();              
                 } else {
                     console.log('Failed to fetch category details');
                 }
@@ -325,25 +335,38 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
+                console.log(response.message);
                 if (response.status === 'success') {
                     console.log(response.message);
                     fetchAndDisplayCategories();
                     $('#addModal').modal('hide');
                     $('#name').val('');
                     $('#parent').val('');
+                    $('#image').val(''); // Clear image input
                     showToast("success", response.message);    
 
                 } else {
                     if (response.status === 'error' && response.errors) {
-                        var errors = JSON.parse(response.errors);
-                        $('#NameError').text(errors.name ? errors.name[0].message : response.message);
+                        var errors = response.errors;
+
+                        if (errors.name) {
+                            $('#NameError').text(typeof errors.name[0] === 'string' ? errors.name[0] : errors.name[0].message);
+                        } else {
+                            $('#NameError').text('');
+                        }
+
+                        if (errors.image) {
+                            $('#ImageError').text(typeof errors.image[0] === 'string' ? errors.image[0] : errors.image[0].message);
+                        } else {
+                            $('#ImageError').text('');
+                        }
                     } else {
-                        showToast("success", 'An unexpected error occurred.');    
+                        showToast("error", 'An unexpected error occurred.');    
                     }
                 }
             },
             error: function() {
-                showToast("success", 'An unexpected error occurred.');    
+                showToast("error", 'An unexpected error occurred.');    
             }
         });
     });
@@ -352,7 +375,10 @@ $(document).ready(function() {
     $('#closeModal').on('click', function(event) {  
         $('#addModal').modal('hide');
         $('#NameError').text('');
+        $('#ImageError').text('');
         $('#name').val('');
+        $('#bg_photo_category').val(''); // Clear image input
+        $('#image').val(''); // Clear image input
         $('#parent').val('');
         $('#addForm').find('button[type="submit"]').text('Submit'); // Reset button text
 
