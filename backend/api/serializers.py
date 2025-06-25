@@ -821,6 +821,7 @@ class InventoryDetailSerializer(serializers.ModelSerializer):
         return [
             {
                 "bidder": bid.user.username,
+                "profile": bid.user.profile.photo.url if bid.user.profile.photo else None,
                 "amount": bid.bid_amount,
                 "timestamp": bid.created_at
             } for bid in bids
@@ -1063,10 +1064,11 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 
 class WatchlistSerializer(serializers.ModelSerializer):
     inventory_details = serializers.SerializerMethodField()
+    current_bid = serializers.SerializerMethodField()
     
     class Meta:
         model = Watchlist
-        fields = ['id', 'user', 'inventory', 'inventory_details', 'created_at']
+        fields = ['id', 'user', 'inventory', 'inventory_details', 'created_at', 'current_bid']
         read_only_fields = ['user', 'created_at']
     
     def get_inventory_details(self, obj):
@@ -1077,5 +1079,11 @@ class WatchlistSerializer(serializers.ModelSerializer):
             'image_url': inventory.media_items.first().path if inventory.media_items.exists() else None,           
             'starting_bid': inventory.starting_bid,
             'lot_end_time': inventory.lot_end_time,
-            'status': inventory.status,
-        }    
+        }   
+
+    def get_current_bid(self, obj):
+        """Returns either highest bid or starting bid"""
+        highest_bid = obj.inventory.bids.filter(deleted_at__isnull=True) \
+                                      .order_by('-bid_amount') \
+                                      .first()
+        return float(highest_bid.bid_amount) if highest_bid else float(obj.inventory.starting_bid)
