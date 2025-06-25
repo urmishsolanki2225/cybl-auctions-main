@@ -5,6 +5,7 @@ import '../styles/WatchlistPage.css';
 import { useWatchlist } from '../context/WatchlistContext';
 import BASE_URL from "../api/endpoints";
 import { useNavigate } from 'react-router-dom';
+import { FaTrash, FaGavel } from 'react-icons/fa';
 
 interface WatchlistItem {
   id: number;
@@ -17,12 +18,12 @@ interface WatchlistItem {
     lot_end_time: string;
     status: string;
   };
+  current_bid?: number;
   created_at: string;
 }
 
 const WatchlistPage: React.FC = () => {
   const navigate = useNavigate();
-
   const { watchlist, removeFromWatchlist } = useWatchlist();
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,7 @@ const WatchlistPage: React.FC = () => {
   useEffect(() => {
     const fetchWatchlistItems = async () => {
       try {
+        setLoading(true);
         const data = await protectedApi.getWatchlist();
         setItems(data);
       } catch (err) {
@@ -42,7 +44,18 @@ const WatchlistPage: React.FC = () => {
     };
 
     fetchWatchlistItems();
-  }, [watchlist]); // Refresh when watchlist changes
+  }, [watchlist]);
+
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
 
   if (loading) {
     return <div className="loading-container">Loading your watchlist...</div>;
@@ -59,32 +72,49 @@ const WatchlistPage: React.FC = () => {
   return (
     <div className="watchlist-container">
       <h1>Your Watchlist</h1>
-      <div className="watchlist-items">
+      <div className="watchlist-grid">
         {items.map((item) => (
-          <div key={item.id} className="watchlist-item">
-            <div className="item-image">
+          <div key={item.id} className="watchlist-card">
+            <div className="card-image">
               {item.inventory_details.image_url ? (
                 <img 
-                  src={BASE_URL + '/media/' +item.inventory_details.image_url} 
+                  src={`${BASE_URL}/media/${item.inventory_details.image_url}`} 
                   alt={item.inventory_details.title}
+                  loading="lazy"
                 />
               ) : (
                 <div className="image-placeholder">No Image</div>
               )}
             </div>
-            <div className="item-details">
+            
+            <div className="card-content">
               <h3>{item.inventory_details.title}</h3>
-              <p>Starting Bid: ${item.inventory_details.starting_bid}</p>
-              <p>Ends: {new Date(item.inventory_details.lot_end_time).toLocaleString()}</p>
-              <p>Curreny bid: {item.current_bid}</p>
+              
+              <div className="price-info">
+                <span className="label">Current Bid:</span>
+                <span className="value">${item.current_bid || item.inventory_details.starting_bid}</span>
+              </div>
+              
+              <div className="time-info">
+                <span className="label">Ends:</span>
+                <span className="value">{formatDate(item.inventory_details.lot_end_time)}</span>
+              </div>
+              
+              <div className="card-actions">
+                <button
+                  onClick={() => removeFromWatchlist(item.inventory)}
+                  className="remove-btn"
+                >
+                  <FaTrash /> Remove
+                </button>
+                <button 
+                  onClick={() => navigate(`/lot/${item.inventory_details.id}`)}
+                  className="bid-btn"
+                >
+                  <FaGavel /> Place Bid
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => removeFromWatchlist(item.inventory)}
-              className="remove-button"
-            >
-              Remove
-            </button>
-            <button  onClick={() => navigate(`/lot/${item.inventory_details.id}`)}>Place bid</button>
           </div>
         ))}
       </div>

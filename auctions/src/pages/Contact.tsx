@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import '../styles/Contact.css';
 import BASE_URL from '../api/endpoints';
+import { toast } from 'react-toastify';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -20,7 +21,6 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    //alert(BASE_URL+'/api/contact/');
     const response = await fetch(BASE_URL+'/api/contact/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -28,14 +28,13 @@ const Contact = () => {
     });
 
     if (response.ok) {
-      alert('Message sent!');
+      toast.success(` Message sent!!`);
       setFormData({ name: '', email: '', subject: '', message: '' });
     } else {
       alert('Failed to send message');
     }
   };
 
-//////////////////////
 
   return (
     <div className="contact-page">

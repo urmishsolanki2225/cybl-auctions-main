@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import BASE_URL from "../../api/endpoints";
 import WatchlistButton from "../WatchlistButton";
+import { useNavigate } from "react-router-dom";
 
 interface Lot {
   id: number;
@@ -17,6 +18,8 @@ interface LotsCarouselProps {
 }
 
 const LotsCarousel: React.FC<LotsCarouselProps> = ({ lots, auctionId }) => {
+  const navigate = useNavigate();
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const itemsToShow = 4;
@@ -110,9 +113,9 @@ const LotsCarousel: React.FC<LotsCarouselProps> = ({ lots, auctionId }) => {
           }}
         >
           {visibleLots.map((lot, index) => (
-            <Link
+            <div
               key={`${lot?.id}-${index}`}
-              to={`lot/${lot?.id}`}
+               onClick={() => navigate(`/lot/${lot?.id}`)}
               style={{
                 position: "relative",
                 borderRadius: "8px",
@@ -144,7 +147,7 @@ const LotsCarousel: React.FC<LotsCarouselProps> = ({ lots, auctionId }) => {
               />
               <div className="watchlist-button-container">
                 <WatchlistButton
-                  inventoryId={lot.id}
+                  inventoryId={lot?.id}
                   size="small"
                   //onWatchlistChange={handleWatchlistChange}
                 />
@@ -185,7 +188,7 @@ const LotsCarousel: React.FC<LotsCarouselProps> = ({ lots, auctionId }) => {
                   )}
                 </div>
               )}
-            </Link>
+            </div>
           ))}
         </div>
 

@@ -2,78 +2,156 @@
 .watchlist-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 2rem 1rem;
 }
 
-.loading-container,
-.error-container,
-.empty-watchlist {
-  text-align: center;
-  padding: 40px;
-  font-size: 18px;
+.watchlist-container h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #333;
 }
 
-.watchlist-items {
+.watchlist-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 2rem;
 }
 
-.watchlist-item {
-  border: 1px solid #ddd;
+.watchlist-card {
+  background: white;
   border-radius: 8px;
-  padding: 15px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: flex;
+  transition: transform 0.2s;
+}
+
+.watchlist-card:hover {
+  transform: translateY(-3px);
+}
+
+.card-image {
+  width: 180px;
+  height: 180px;
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-placeholder {
+  color: #ccc;
+  padding: 1rem;
+  text-align: center;
+}
+
+.card-content {
+  padding: 1.5rem;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
-.item-image {
-  height: 200px;
-  background-color: #f5f5f5;
+.card-content h3 {
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  color: #333;
+}
+
+.price-info, .time-info {
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 15px;
-  overflow: hidden;
 }
 
-.item-image img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+.label {
+  font-weight: 500;
+  color: #666;
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
 }
 
-.image-placeholder {
-  color: #999;
+.value {
+  font-weight: 600;
+  color: #333;
 }
 
-.item-details {
-  flex-grow: 1;
+.card-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
 }
 
-.item-details h3 {
-  margin: 0 0 10px 0;
-  font-size: 18px;
-}
-
-.item-details p {
-  margin: 5px 0;
-  font-size: 14px;
-  color: #555;
-}
-
-.remove-button {
-  margin-top: 15px;
-  padding: 8px 12px;
-  background-color: #ff4444;
-  color: white;
+.remove-btn, .bid-btn {
+  padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
 }
 
-.remove-button:hover {
-  background-color: #cc0000;
+.remove-btn {
+  background: #f8f8f8;
+  color: #e74c3c;
+}
+
+.remove-btn:hover {
+  background: #f0f0f0;
+}
+
+.bid-btn {
+  background: #333;
+  color: white;
+}
+
+.bid-btn:hover {
+  background: #222;
+}
+
+.loading-container, .error-container, .empty-watchlist {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.error-container {
+  color: #e74c3c;
+}
+
+@media (max-width: 1000px) {
+  .watchlist-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .watchlist-card {
+    flex-direction: column;
+  }
+  
+  .card-image {
+    width: 100%;
+    height: 200px;
+  }
+}
+
+@media (max-width: 500px) {
+  .card-actions {
+    flex-direction: column;
+  }
+  
+  .remove-btn, .bid-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
