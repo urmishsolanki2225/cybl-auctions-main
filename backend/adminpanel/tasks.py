@@ -6,6 +6,8 @@ from .models import Auctions, Inventory, Bid, Payment_History
 from datetime import timedelta
 import logging
 import uuid
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +88,7 @@ def calculate_auction_end_date(auction):
         logger.error(f"Error calculating end date for auction {auction.id}: {e}")
 
 
+# Update the update_lot_times_with_auto_extend function
 def update_lot_times_with_auto_extend(auction):
     """Update lot times and handle auto-extend functionality"""
     try:
@@ -134,9 +137,9 @@ def update_lot_times_with_auto_extend(auction):
                 inv.lot_end_time = lot_end
                 inv.save(update_fields=['lot_start_time', 'lot_end_time'])
             
-            # Process closed lots immediately when they end
+            # ✅ Process closed lots immediately when they end
             if now >= inv.lot_end_time and inv.status in ['pending', 'auction']:
-                process_closed_lot(inv)
+                process_closed_lot(inv)  # This will now broadcast winner info
         
         # If any lot was extended, recalculate auction end date
         if auction_extended:
@@ -160,52 +163,115 @@ def process_closed_lot(inventory):
     1. Determine winner
     2. Update inventory status (sold/unsold)
     3. Create payment transaction
+    4. Broadcast winner via WebSocket
     """
+    winner_data = None
+    
     try:
         with transaction.atomic():
-            # Get the highest bid for this inventory
             winning_bid = inventory.bids.filter(
                 deleted_at__isnull=True
             ).order_by('-bid_amount', 'created_at').first()
-            
+
             if winning_bid and winning_bid.bid_amount >= inventory.reserve_price:
-                # Item sold - winner found
                 inventory.winning_bid = winning_bid
                 inventory.winning_user = winning_bid.user
                 inventory.status = 'sold'
-                
-                # Calculate total amount (bid + buyer's premium)
+
                 total_amount = winning_bid.bid_amount
-                
-                # Create pending payment transaction
+
                 create_payment_transaction(
                     user=winning_bid.user,
                     inventory=inventory,
                     amount=total_amount,
                     winning_bid_amount=winning_bid.bid_amount,
                 )
-                
+
+                profile_photo = None
+                try:
+                    if hasattr(winning_bid.user, 'profile') and winning_bid.user.profile.photo:
+                        profile_photo = winning_bid.user.profile.photo.url
+                except Exception as e:
+                    logger.warning(f"Failed to fetch profile photo: {e}")
+
+                winner_data = {
+                    'user_id': winning_bid.user.id,
+                    'username': winning_bid.user.username,
+                    'profile_photo': profile_photo,
+                    'winning_amount': str(winning_bid.bid_amount),
+                    'status': 'sold'
+                }
+
                 logger.info(f"Lot {inventory.id} sold to {winning_bid.user.username} "
-                           f"for ${winning_bid.bid_amount} (Total: ${total_amount})")
-                
+                            f"for ${winning_bid.bid_amount}")
             else:
-                # Item unsold - no winning bid or bid below reserve
                 inventory.status = 'unsold'
                 inventory.winning_bid = None
                 inventory.winning_user = None
-                
-                if winning_bid:
-                    logger.info(f"Lot {inventory.id} unsold - highest bid ${winning_bid.bid_amount} "
-                               f"below reserve ${inventory.reserve_price}")
-                else:
-                    logger.info(f"Lot {inventory.id} unsold - no bids received")
-            
+
+                winner_data = {
+                    'status': 'unsold',
+                    'reason': 'Reserve not met' if winning_bid else 'No bids received'
+                }
+
+                logger.info(f"Lot {inventory.id} unsold - "
+                            f"{'highest bid below reserve' if winning_bid else 'no bids'}")
+
             inventory.save(update_fields=['status', 'winning_bid', 'winning_user'])
-            
+
     except Exception as e:
-        logger.error(f"Error processing closed lot {inventory.id}: {e}")
+        logger.error(f"❌ Error processing closed lot {inventory.id}: {e}")
+        return
+
+    # ✅ IMPORTANT: Broadcast OUTSIDE the transaction
+    try:
+        if winner_data:
+            broadcast_lot_winner(inventory, winner_data)
+    except Exception as e:
+        logger.error(f"❌ Failed to broadcast winner for lot {inventory.id}: {e}")
 
 
+def broadcast_lot_winner(inventory, winner_data):
+    """Broadcast lot winner information to WebSocket clients"""
+    try:
+        channel_layer = get_channel_layer()
+        if not channel_layer:
+            logger.error("Channel layer is not configured.")
+            return
+
+        room_group_name = f'lot_{inventory.id}'
+        auction_group_name = f'auction_{inventory.auction.id}'
+
+        message_data = {
+            'lot_id': inventory.id,
+            'lot_title': inventory.title,
+            'winner': winner_data,
+            'ended_at': timezone.now().isoformat()
+        }
+
+        # Send to lot-specific room
+        async_to_sync(channel_layer.group_send)(
+            room_group_name,
+            {
+                'type': 'lot_ended',
+                'data': message_data
+            }
+        )
+
+        # Send to auction-wide room
+        async_to_sync(channel_layer.group_send)(
+            auction_group_name,
+            {
+                'type': 'lot_ended',
+                'data': message_data
+            }
+        )
+
+        logger.info(f"✅ Broadcasted winner for lot {inventory.id} to rooms: {room_group_name}, {auction_group_name}")
+
+    except Exception as e:
+        logger.exception(f"❌ Error broadcasting winner for lot {inventory.id}: {e}")
+        
 def create_payment_transaction(user, inventory, amount, winning_bid_amount):
     """Create a pending payment transaction for won inventory"""
     try:
@@ -286,6 +352,7 @@ def check_lot_auto_extend():
     return f"Auto-extended {extended_count} lots"
 
 
+# Update the process_expired_lots task
 @shared_task
 def process_expired_lots():
     """Process lots that have ended but haven't been marked as closed"""
@@ -301,7 +368,7 @@ def process_expired_lots():
     
     for lot in expired_lots:
         try:
-            process_closed_lot(lot)
+            process_closed_lot(lot)  # This will broadcast winner info
             processed_count += 1
         except Exception as e:
             logger.error(f"Failed to process expired lot {lot.id}: {e}")

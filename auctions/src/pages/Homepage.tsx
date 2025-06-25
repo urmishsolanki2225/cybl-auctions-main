@@ -111,7 +111,8 @@ const Index = () => {
             featuredAuction.slice(0, 6).map((auctions, index) => (
               <div
                 className="featured-auction-combined-card"
-                key={index}                
+                key={index}
+                onClick={() => navigate(`/auction/${auctions.id}`)}
               >
                 <div className="auction-header">
                   {/* Left - Company Info */}
@@ -133,7 +134,7 @@ const Index = () => {
 
                   {/* Center - Auction Details */}
                   <div className="auction-details">
-                    <h3 className="auction-name" onClick={() => navigate(`/auction/${auctions.id}`)}>{auctions.name}</h3>
+                    <h3 className="auction-name">{auctions.name}</h3>
                     <div className="auction-location">
                       <span>
                         {auctions.location_details.address},&nbsp;
@@ -172,7 +173,7 @@ const Index = () => {
               </div>
             ))}
         </div>
-      </section>     
+      </section>
     </div>
   );
 };

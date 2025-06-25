@@ -11,41 +11,47 @@ import LotDetails from "./pages/LotDetails";
 import Category from "./pages/Category";
 import Contact from "./pages/Contact";
 import UserProfile from "./pages/UserProfile";
+import Watchlist from "./pages/Watchlist"
 import CatLots from "./pages/CatLots.tsx";
 import NotFound from "./pages/NotFound";
 import "./styles/global.css";
 import PrivateRoute from "./routes/PrivateRoute";
 import ToastProvider from "./components/ToastProvider";
+import { WatchlistProvider } from "./context/WatchlistContext";
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ToastProvider />
-    <BrowserRouter>
-      <div className="app">
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Homepage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Registration />} />
-            <Route path="/auctions" element={<AuctionsListing />} />
-            <Route path="/auction/:id" element={<AuctionDetails />} />
-            <Route path="/category/lots" element={<CatLots />} />
-            <Route path="/lot/:id" element={<LotDetails />} />
-            <Route path="/category" element={<Category />} />
-            <Route path="/contact" element={<Contact />} />           
-            <Route path="/account" element={
-              <PrivateRoute>
-                <UserProfile />
-              </PrivateRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
-    </BrowserRouter>
+    <WatchlistProvider>
+      <ToastProvider />
+      <BrowserRouter>
+        <div className="app">
+          <Navbar />
+          <main className="main-content">
+            
+            <Routes>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Registration />} />
+              <Route path="/auctions" element={<AuctionsListing />} />
+              <Route path="/auction/:id" element={<AuctionDetails />} />
+              <Route path="/category/lots" element={<CatLots />} />
+              <Route path="/lot/:id" element={<LotDetails />} />
+              <Route path="/category" element={<Category />} />
+              <Route path="/contact" element={<Contact />} />      
+              <Route path="/watchlist" element={<Watchlist />} />     
+              <Route path="/account" element={
+                <PrivateRoute>
+                  <UserProfile />
+                </PrivateRoute>
+              } />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </main>
+          <Footer />
+        </div>
+      </BrowserRouter>    
+    </WatchlistProvider>
   </QueryClientProvider>
 );
 

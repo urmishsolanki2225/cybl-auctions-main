@@ -242,6 +242,8 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                         }
                     }
                 )
+
+            
                 
         except Exception as e:
             print(f"Error in place_bid: {str(e)}")
@@ -251,34 +253,6 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 'message': str(e)
             }))
 
-    # async def check_and_extend_timer(self, lot, current_time):
-    #     """
-    #     Check if timer should be extended and extend it if needed
-    #     Returns True if timer was extended
-    #     """
-    #     try:
-    #         if not lot.lot_end_time:
-    #             return False
-                
-    #         # Check if bid is placed within last 5 minutes
-    #         time_remaining = lot.lot_end_time - current_time
-    #         extension_threshold = timedelta(minutes=5)
-            
-    #         if time_remaining <= extension_threshold and time_remaining > timedelta(0):
-    #             # Extend timer by 5 minutes
-    #             new_end_time = lot.lot_end_time + timedelta(minutes=5)
-                
-    #             await database_sync_to_async(self.update_lot_end_time)(lot, new_end_time)
-                
-    #             print(f"Timer extended for lot {lot.id} to {new_end_time}")
-    #             return True
-                
-    #         return False
-            
-    #     except Exception as e:
-    #         print(f"Error in check_and_extend_timer: {str(e)}")
-    #         return False
-    # Replace the current check_and_extend_timer method with:
     async def check_and_extend_timer(self, lot, current_time):
         """
         Standard auto-extend logic:
@@ -318,7 +292,88 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
 
         except Exception as e:
             print(f"❌ Error in check_and_extend_timer: {str(e)}")
-            return False    
+            return False   
+
+    # Add this method to your LotBiddingConsumer class:
+    async def broadcast_lot_ended(self, lot):
+        """Broadcast lot ended with winner information"""
+        try:
+            # Get winner information
+            winning_bid = await database_sync_to_async(
+                lambda: lot.bids.filter(deleted_at__isnull=True)
+                .order_by('-bid_amount', 'created_at').first()
+            )()
+            
+            winner_data = None
+            if winning_bid and winning_bid.bid_amount >= lot.reserve_price:
+                # Get winner profile photo safely
+                profile_photo = None
+                try:
+                    profile_photo = await database_sync_to_async(
+                        lambda: winning_bid.user.profile.photo.url 
+                        if hasattr(winning_bid.user, 'profile') and winning_bid.user.profile.photo 
+                        else None
+                    )()
+                except Exception as e:
+                    print(f"Error getting profile photo: {e}")
+                
+                winner_data = {
+                    'user_id': winning_bid.user.id,
+                    'username': winning_bid.user.username,
+                    'profile_photo': profile_photo,
+                    'winning_amount': str(winning_bid.bid_amount),
+                    'status': 'sold'
+                }
+            else:
+                winner_data = {
+                    'status': 'unsold',
+                    'reason': 'Reserve not met' if winning_bid else 'No bids received'
+                }
+            
+            # Broadcast to all users in the lot room
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'lot_ended',
+                    'data': {
+                        'lot_id': lot.id,
+                        'lot_title': lot.title,
+                        'winner': winner_data,
+                        'ended_at': timezone.now().isoformat()
+                    }
+                }
+            )
+            
+            # Also broadcast to auction group
+            if hasattr(self, 'auction_group_name'):
+                await self.channel_layer.group_send(
+                    self.auction_group_name,
+                    {
+                        'type': 'lot_ended',
+                        'data': {
+                            'lot_id': lot.id,
+                            'lot_title': lot.title,
+                            'winner': winner_data,
+                            'ended_at': timezone.now().isoformat()
+                        }
+                    }
+                )
+            
+            print(f"✅ Broadcasted lot ended for lot {lot.id}")
+            
+        except Exception as e:
+            print(f"❌ Error broadcasting lot ended: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+
+    @database_sync_to_async
+    def get_user_profile_photo(user):
+        try:
+            return user.profile.photo.url if user.profile.photo else None
+        except Exception as e:
+            print(f"Error fetching profile photo: {e}")
+            return None
+ 
     
     def update_lot_end_time(self, lot, new_end_time):
         """Update lot end time and cascade to subsequent lots"""
@@ -385,6 +440,13 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             'data': event['data']
         }))
 
+    async def lot_ended(self, event):
+        """Handle lot ended event and send winner information"""
+        await self.send(text_data=json.dumps({
+            'type': 'lot_ended',
+            'data': event['data']
+        }))
+
     # Add this helper method
     @database_sync_to_async
     def get_bid_history(self, lot):
@@ -397,6 +459,7 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 bid_history_data.append({
                     'id': bid.id,
                     'bidder': bid.user.username,
+                    'profile': getattr(bid.user.profile.photo, 'url', None),
                     'user_id': bid.user.id,
                     'amount': str(bid.bid_amount),
                     'timestamp': bid.created_at.isoformat(),
@@ -432,6 +495,7 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 bid_history_data.append({
                     'id': bid.id,
                     'bidder': bid.user.username,
+                    'profile': getattr(bid.user.profile.photo, 'url', None),
                     'user_id': bid.user.id,
                     'amount': str(bid.bid_amount),
                     'timestamp': bid.created_at.isoformat(),

@@ -49,7 +49,7 @@ const UserProfile = () => {
   });
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('bidding');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -232,22 +232,6 @@ const UserProfile = () => {
         <div className="tabs-container">
           <div className="tabs-list">
             <button 
-              className={`tab-trigger ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
-            >
-              <User className="tab-icon" />
-              <span className="tab-text">Profile Details</span>
-              <span className="tab-text-mobile">Profile</span>
-            </button>
-            <button 
-              className={`tab-trigger ${activeTab === 'password' ? 'active' : ''}`}
-              onClick={() => setActiveTab('password')}
-            >
-              <Lock className="tab-icon" />
-              <span className="tab-text">Password</span>
-              <span className="tab-text-mobile">Security</span>
-            </button>
-            <button 
               className={`tab-trigger ${activeTab === 'bidding' ? 'active' : ''}`}
               onClick={() => setActiveTab('bidding')}
             >
@@ -263,6 +247,23 @@ const UserProfile = () => {
               <span className="tab-text">Payment History</span>
               <span className="tab-text-mobile">Payments</span>
             </button>
+            <button 
+              className={`tab-trigger ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
+            >
+              <User className="tab-icon" />
+              <span className="tab-text">Profile Details</span>
+              <span className="tab-text-mobile">Profile</span>
+            </button>
+            <button 
+              className={`tab-trigger ${activeTab === 'password' ? 'active' : ''}`}
+              onClick={() => setActiveTab('password')}
+            >
+              <Lock className="tab-icon" />
+              <span className="tab-text">Password</span>
+              <span className="tab-text-mobile">Security</span>
+            </button>
+            
           </div>
 
           <div className="tab-content">

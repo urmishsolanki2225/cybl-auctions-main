@@ -1,15 +1,15 @@
 // WatchlistButton.tsx
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Heart } from "lucide-react";
-import { protectedApi } from "../api/apiUtils";
+import { toast } from "react-toastify"; // ADD THIS MISSING IMPORT
 import "../styles/WatchlistButton.css";
+import { useWatchlist } from "../context/WatchlistContext";
 
 interface WatchlistButtonProps {
   inventoryId: number;
   size?: "small" | "medium" | "large";
   showText?: boolean;
   className?: string;
-  onWatchlistChange?: (inventoryId: number, isInWatchlist: boolean) => void;
 }
 
 const WatchlistButton: React.FC<WatchlistButtonProps> = ({
@@ -17,64 +17,32 @@ const WatchlistButton: React.FC<WatchlistButtonProps> = ({
   size = "medium",
   showText = false,
   className = "",
-  onWatchlistChange = null,
 }) => {
-  const [isInWatchlist, setIsInWatchlist] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { watchlist, loading, addToWatchlist, removeFromWatchlist, isInitialized } = useWatchlist();
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  useEffect(() => {
-    checkWatchlistStatus();
-  }, [inventoryId]);
+  const isInWatchlist = watchlist.includes(inventoryId);
 
-  const checkWatchlistStatus = async () => {
-    try {
-      const watchlist = await protectedApi.getWatchlist();
-      const isItemInWatchlist = watchlist.some(
-        (item: any) => item.inventory_details.id === inventoryId
-      );
-      setIsInWatchlist(isItemInWatchlist);
-    } catch (err: any) {
-      if (err.status !== 401) {
-        console.error("Error checking watchlist status:", err);
-      }
-    }
-  };
-
-  const handleWatchlistToggle = async () => {
+  const handleWatchlistToggle = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation if button is inside a link
+    e.stopPropagation(); // Prevent event bubbling
+    
     const token = localStorage.getItem("authToken");
     if (!token) {
-      alert("Please login to add items to your watchlist");
+      toast.warning("Please login to manage your watchlist");
       return;
     }
 
     setIsLoading(true);
-    setError(null);
-
     try {
       if (isInWatchlist) {
-        await protectedApi.removeFromWatchlist(inventoryId);
-        if (showText) alert("Item removed from watchlist");
+        await removeFromWatchlist(inventoryId);
       } else {
-        await protectedApi.addToWatchlist(inventoryId);
-        if (showText) alert("Item added to watchlist");
+        await addToWatchlist(inventoryId);
       }
-
-      // Refresh the watchlist status after the operation
-      await checkWatchlistStatus();
-
-      // Call the callback with the new state (we get this from checkWatchlistStatus)
-      if (onWatchlistChange) {
-        onWatchlistChange(inventoryId, isInWatchlist);
-      }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Watchlist operation failed:", err);
-      if (err.status === 401) {
-        setError("Please login to manage your watchlist");
-        alert("Please login to manage your watchlist");
-      } else {
-        setError(err.message || "Failed to update watchlist");
-      }
+      toast.error("Failed to update watchlist. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -82,19 +50,28 @@ const WatchlistButton: React.FC<WatchlistButtonProps> = ({
 
   const getSizeClass = () => {
     switch (size) {
-      case "small":
-        return "watchlist-btn-small";
-      case "large":
-        return "watchlist-btn-large";
-      default:
-        return "watchlist-btn-medium";
+      case "small": return "watchlist-btn-small";
+      case "large": return "watchlist-btn-large";
+      default: return "watchlist-btn-medium";
     }
   };
+
+  // Don't render until watchlist is initialized
+  if (!isInitialized) {
+    return (
+      <button
+        className={`watchlist-button ${getSizeClass()} ${className}`}
+        disabled
+      >
+        <Heart className="heart-icon" fill="none" />
+      </button>
+    );
+  }
 
   return (
     <button
       onClick={handleWatchlistToggle}
-      disabled={isLoading}
+      disabled={loading || isLoading}
       className={`watchlist-button ${getSizeClass()} ${
         isInWatchlist ? "active" : ""
       } ${className}`}
@@ -116,7 +93,7 @@ const WatchlistButton: React.FC<WatchlistButtonProps> = ({
         </span>
       )}
 
-      {isLoading && <span className="loading-spinner"></span>}
+      {(loading || isLoading) && <span className="loading-spinner"></span>}
     </button>
   );
 };

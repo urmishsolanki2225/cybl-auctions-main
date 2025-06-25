@@ -8,6 +8,8 @@ import LiveTimer from "../components/LiveTimer";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import LoginModal from "../components/LoginModal";
+import WatchlistButton from "../components/WatchlistButton";
+import SocialShare from "../components/SocialShare";
 
 const LotDetails = () => {
   const { id } = useParams();
@@ -18,8 +20,12 @@ const LotDetails = () => {
   const [bidHistory, setBidHistory] = useState<any[]>(lot?.bid_history || []);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [lotStatus, setLotStatus] = useState<string>("unsold");
-  const [winner, setWinner] = useState<string | null>(null);
-  const [winningAmount, setWinningAmount] = useState<string | null>(null);
+
+  const [winner, setWinner] = useState(null);
+  const [winningAmount, setWinningAmount] = useState(null);
+  const [showWinnerAnnouncement, setShowWinnerAnnouncement] = useState(false);
+  const [winnerData, setWinnerData] = useState(null);
+
   // Inside the LotDetails component, add these state variables
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -111,6 +117,46 @@ const LotDetails = () => {
         } catch (error) {
           console.error("Error refreshing lot data:", error);
         }
+      } else if (message.type === "lot_ended") {
+        console.log("🏆 Lot ended with winner data:", message.data);
+
+        const { winner } = message.data;
+        setWinnerData(winner);
+        setShowWinnerAnnouncement(true);
+
+        // Update lot status
+        setLotStatus(winner.status);
+
+        if (winner.status === "sold") {
+          setWinner(winner.username);
+          setWinningAmount(winner.winning_amount);
+
+          // Show different toasts based on whether the user won
+          if (winner.user_id === user?.id) {
+            toast.success(
+              `🎉 Congratulations! You won this lot for $${winner.winning_amount}!`,
+              {
+                autoClose: 8000,
+              }
+            );
+          } else {
+            toast.info(
+              `🏆 Lot sold to ${winner.username} for $${winner.winning_amount}`,
+              {
+                autoClose: 5000,
+              }
+            );
+          }
+        } else {
+          toast.warning(`❌ Lot ended without a sale. ${winner.reason || ""}`, {
+            autoClose: 5000,
+          });
+        }
+
+        // Auto-hide winner announcement after 10 seconds
+        setTimeout(() => {
+          setShowWinnerAnnouncement(false);
+        }, 10000);
       } else if (message.type === "error") {
         setIsPlacingBid(false); // Reset loading state on error
         toast.error(message.message || "An error occurred");
@@ -172,36 +218,63 @@ const LotDetails = () => {
     }
   };
 
-  const WinnerDisplay = ({ lotStatus, winner, winningAmount, user }) => {
-    if (!lotStatus) return null;
+  // Fix the WinnerAnnouncement component positioning
+  const WinnerAnnouncement = ({ winnerData, onClose }) => {
+    if (!winnerData || !showWinnerAnnouncement) return null;
 
     return (
-      <div
-        className={`winner-section ${
-          lotStatus === "sold" ? "winner-found" : "no-winner"
-        }`}
-      >
-        {lotStatus === "sold" ? (
-          <div className="winner-info">
-            <div className="winner-badge">🏆 SOLD</div>
-            <div className="winner-details">
-              <div className="winner-name">
-                Winner: <strong>{winner}</strong>
-                {winner === user?.username && " (You!)"}
+      <div className="winner-announcement-overlay">
+        <div className="winner-announcement-modal">
+          <button className="close-announcement" onClick={onClose}>
+            ×
+          </button>
+
+          {winnerData.status === "sold" ? (
+            <div className="winner-content">
+              <div className="winner-crown">👑</div>
+              <h2>Auction Ended!</h2>
+
+              <div className="winner-profile">
+                <img
+                  src={
+                    winnerData.profile_photo
+                      ? BASE_URL + winnerData.profile_photo
+                      : "/default-avatar.png"
+                  }
+                  alt={winnerData.username}
+                  className="winner-avatar"
+                />
+                <div className="winner-info">
+                  <h3>{winnerData.username}</h3>
+                  {winnerData.user_id === user?.id && (
+                    <span className="you-won-badge">🎉 You Won!</span>
+                  )}
+                </div>
               </div>
+
               <div className="winning-amount">
-                Winning Bid: <strong>₹{winningAmount}</strong>
+                <span className="amount-label">Winning Bid:</span>
+                <span className="amount">${winnerData.winning_amount}</span>
               </div>
+
+              {winnerData.user_id === user?.id && (
+                <div className="next-steps">
+                  <p>Congratulations! Please proceed to payment.</p>
+                  <button className="proceed-payment-btn">
+                    Proceed to Payment
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        ) : lotStatus === "unsold" ? (
-          <div className="unsold-info">
-            <div className="unsold-badge">❌ UNSOLD</div>
-            <div className="unsold-message">
-              This lot did not meet the reserve price
+          ) : (
+            <div className="unsold-content">
+              <div className="unsold-icon">❌</div>
+              <h2>Auction Ended</h2>
+              <p>This lot was not sold</p>
+              <p className="reason">{winnerData.reason}</p>
             </div>
-          </div>
-        ) : null}
+          )}
+        </div>
       </div>
     );
   };
@@ -209,13 +282,18 @@ const LotDetails = () => {
   return (
     <div className="lot-details-page">
       <div className="container">
-        <div className="lot-header">
+        <div className="lot-details-header">
+            <WinnerAnnouncement 
+              winnerData={winnerData} 
+              onClose={() => setShowWinnerAnnouncement(false)} 
+            />
           <div className="breadcrumb">
-            <span>Auctions</span> ---{" "}
-            <span>{lot?.category?.name || "Category"}</span> ---{" "}
-            <span>{lot?.title}</span>
+            <strong>{lot?.title} --- </strong>
+            <span>{lot?.category?.name || "Category"}</span>
           </div>
-          <div className="lot-number">Lot #{lot?.lot_number || lot?.id}</div>
+          <div className="">
+            <WatchlistButton inventoryId={lot.id} size="small" />
+          </div>
         </div>
 
         <div className="lot-main">
@@ -278,40 +356,41 @@ const LotDetails = () => {
                 />
               </div>
               <div className="bid-history-section">
-                <h3>Bid History</h3>
+                <h3 className="section-title">Bid History</h3>
                 <div className="bid-history-container">
                   {bidHistory && bidHistory.length > 0 ? (
                     <div className="bid-history-list">
-                      <div className="bid-history-item">
-                        <table width="100%">
-                          <thead>
-                            <tr>
-                              <th>bidder</th>
-                              <th>amount</th>
-                              <th>created_at</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {bidHistory.map((bid, index) => (
-                              <tr key={bid.id || index}>
-                                <td align="center">
-                                  {bid.bidder}
-                                  {bid.user_id === user?.id && " (You)"}
-                                </td>
-                                <td align="center">
-                                  {" "}
-                                  <span className="bid-amount">
-                                    ${bid.amount}
-                                  </span>
-                                </td>
-                                <td align="center">
-                                  {new Date(bid.timestamp).toLocaleString()}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      {bidHistory.map((bid, index) => (
+                        <div
+                          className={`bid-history-item ${
+                            bid.user_id === user?.id ? "your-bid" : ""
+                          }`}
+                          key={bid.id || index}
+                        >
+                          <img
+                            src={
+                              BASE_URL + bid.profile ||
+                              BASE_URL + "/default-avatar.png"
+                            } // fallback image
+                            alt={bid.bidder}
+                            className="bidder-avatar"
+                          />
+                          <div className="bid-info">
+                            <div className="bidder-name">
+                              {bid.bidder}
+                              {bid.user_id === user?.id && (
+                                <span className="you-tag"> (You)</span>
+                              )}
+                            </div>
+                            <div className="bid-meta">
+                              <span className="bid-amount">${bid.amount}</span>
+                              <span className="bid-time">
+                                {new Date(bid.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="no-bids">No bids placed yet</div>
@@ -325,7 +404,6 @@ const LotDetails = () => {
               <div className="auction-timer">
                 <LiveTimer endTime={lot?.lot_end_time || lot?.endTime} />
               </div>
-              <WinnerDisplay />
               <div>
                 <div className="current-bid">
                   {/* Reserve Status */}
@@ -340,7 +418,6 @@ const LotDetails = () => {
                           ? "✓ Reserve Met"
                           : "⚠ Reserve Not Met"}
                       </span>
-
                       <div>
                         {!lot.reserve_met && (
                           <span className="label">
@@ -359,6 +436,19 @@ const LotDetails = () => {
                   <div className="current-bid">
                     <span className="label">Current Bid</span>
                     <span className="amount">${currentBid || "0"}</span>
+                  </div>
+                  <div>
+                    <SocialShare
+                      title={lot?.title}
+                      currentBid={currentBid}
+                      nextBid={lot?.next_required_bid}
+                      imageUrl={
+                        BASE_URL +
+                        `/media/` +
+                        (lot?.media_items?.[0]?.path?.replace(/\\/g, "/") || "")
+                      }
+                      itemUrl={window.location.href}
+                    />
                   </div>
                 </div>
                 <div className="next-bid-info">
@@ -383,16 +473,16 @@ const LotDetails = () => {
           </div>
         </div>
       </div>
-       {showLoginModal && (
-      <LoginModal
-        onClose={() => setShowLoginModal(false)}
-        onLoginSuccess={() => {
-          setShowLoginModal(false);
-          // Optionally automatically place the bid after login
-          // handlePlaceBid();
-        }}
-      />
-    )}
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => setShowLoginModal(false)}
+          onLoginSuccess={() => {
+            setShowLoginModal(false);
+            // Optionally automatically place the bid after login
+            // handlePlaceBid();
+          }}
+        />
+      )}
     </div>
   );
 };
