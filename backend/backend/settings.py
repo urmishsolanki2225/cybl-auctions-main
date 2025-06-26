@@ -231,27 +231,28 @@ DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_BEAT_SCHEDULE = {
-    'update_auction_status_every_minute': {
-        'task': 'adminpanel.tasks.update_auction_status',
-        'schedule': 60.0,  # every minute
-    },
-}
+
 
 # In your settings.py or celery.py file
 
 
 CELERY_BEAT_SCHEDULE = {
-    # Main auction status update - every minute
-    'update_auction_status_every_minute': {
+    # Main auction management - every 5 seconds (more reasonable)
+    'update_auction_status_every_5_seconds': {
         'task': 'adminpanel.tasks.update_auction_status',
-        'schedule': 1.0,  # Every 1 second
+        'schedule': 1.0,  # Every 5 seconds
     },
     
-    # Auto-extend check - every 10 seconds for better responsiveness
-    'check_lot_auto_extend_every_10_seconds': {
+    # Auto-extend check - every 2 seconds for responsiveness
+    'check_lot_auto_extend_every_2_seconds': {
         'task': 'adminpanel.tasks.check_lot_auto_extend',
-        'schedule': 1.0,  # Every 1 second
+        'schedule': 1.0,  # Every 2 seconds
+    },
+    
+    # Backup expired lots processor - every 10 seconds
+    'process_expired_lots_every_10_seconds': {
+        'task': 'adminpanel.tasks.process_expired_lots',
+        'schedule': 1.0,  # Every 10 seconds
     },
     
     # Cleanup old auctions - once daily at 2 AM

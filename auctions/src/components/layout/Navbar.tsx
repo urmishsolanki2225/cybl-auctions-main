@@ -88,6 +88,12 @@ const Navbar = () => {
               >
                 My Account
               </Link>
+              <Link
+                to="/seller-activity"
+                className={`navbar-link ${isActive("/seller-activity")}`}
+              >
+                Seller Activity
+              </Link>
               <button
                 className="btn btn-link nav-link"
                 onClick={() => {

@@ -1,3 +1,8 @@
+function capitalizeLabel(field) {
+    return field
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase()); // Capitalizes every word
+}
 $(document).ready(function () {
     function showError(inputId, message) {
         $(`#error_${inputId}`).text(message);
@@ -92,11 +97,7 @@ $(document).ready(function () {
         }
     });
 
-    function capitalizeLabel(field) {
-        return field
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, char => char.toUpperCase()); // Capitalizes every word
-    }
+    
 
 
     // On submit

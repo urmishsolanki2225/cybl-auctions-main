@@ -16,7 +16,7 @@
                          src="{% if auction.user.profile.company and auction.user.profile.company.company_logo %}{{ auction.user.profile.company.company_logo.url }}{% else %}{% static 'admin/img/member-img/1.png' %}{% endif %}"
                          alt="user" style="width: 50px; height: 50px;">
                     <div class="ml-2">
-                        <a href="{% url 'editauction' auction.id %}?tabId={{ tabId }}" class="btn btn-link" style="color: #480c57;"><strong>{{ auction.name }}</strong></a>
+                        <strong style="color: #480c57;">{{ auction.name }}</strong>
                     </div>
                 </div>
             </td>

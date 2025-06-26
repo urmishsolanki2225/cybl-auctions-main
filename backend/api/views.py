@@ -7,8 +7,8 @@ from datetime import datetime, time, timedelta
 from rest_framework.pagination import PageNumberPagination
 from django.db.models.functions import TruncDate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, WatchlistSerializer, CountrySerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer
-from adminpanel.models import Group, Category, Watchlist, Country, State, Inventory, User, Profile, Auctions, Media, Payment_History, Company
+from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, WatchlistSerializer, CountrySerializer, CommentSerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer
+from adminpanel.models import Group, Category, Watchlist, Country, State, Inventory, User, Comment, Profile, Auctions, Media, Payment_History, Company
 from rest_framework import generics 
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
@@ -404,20 +404,19 @@ class AuctionListView(generics.ListAPIView):
 
         return queryset
 
-class ClosingSoonAuctionsView(generics.ListAPIView):
+class ClosingSoonAuctionsView(APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = AuctionSerializer
-    pagination_class = AuctionPagination
 
-    def get_queryset(self):
+    def get(self, request):
         now = timezone.now()
-        next_24_hours = now + timedelta(hours=24)
 
-        return Auctions.objects.filter(
+        auctions = Auctions.objects.filter(
             status='current',
-            end_date__gt=now,              # Still active
-            end_date__lte=next_24_hours    # Ends within next 24 hours
-        ).order_by('end_date')
+            end_date__gt=now
+        ).order_by('end_date').values('id', 'name', 'end_date')[:5]
+
+        return Response(auctions)
+
 ################################################################################################################
 # class AuctionDetailView(RetrieveAPIView):
 #     queryset = Auctions.objects.select_related('user__profile__company').prefetch_related(
@@ -1137,3 +1136,65 @@ class WatchlistAPIView(generics.GenericAPIView):
             {'message': 'Item removed from watchlist'}, 
             status=status.HTTP_200_OK
         )
+#######################################################################    
+class LotCommentsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, lot_id):
+        """Get all comments for a specific lot"""
+        try:
+            # Get the inventory item (lot)
+            inventory = get_object_or_404(Inventory, id=lot_id)
+            
+            # Get all comments for this lot
+            comments = Comment.objects.filter(inventory=inventory)
+            serializer = CommentSerializer(comments, many=True)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def post(self, request, lot_id):
+        """Add a new comment to a specific lot"""
+        try:
+            # Get the inventory item (lot)
+            inventory = get_object_or_404(Inventory, id=lot_id)
+            
+            # Get the auction from the inventory
+            auction = inventory.auction
+            
+            # Get comment text from request
+            content = request.data.get('text') or request.data.get('content')
+            
+            if not content:
+                return Response(
+                    {'error': 'Comment text is required'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create the comment
+            comment = Comment.objects.create(
+                auction=auction,
+                inventory=inventory,
+                user=request.user,
+                content=content
+            )
+            
+            # Serialize and return the comment
+            serializer = CommentSerializer(comment)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Inventory.DoesNotExist:
+            return Response(
+                {'error': 'Lot not found'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

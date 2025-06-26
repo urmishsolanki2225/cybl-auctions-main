@@ -27,7 +27,7 @@ const Index = () => {
         );
         setCategory(allSubcategories.slice(0, 6));
         SetFeaturedAuction(response.results);
-        setClosingSoonAuctions(closedAuctions.results);
+        setClosingSoonAuctions(closedAuctions);
       } catch (err) {
         console.error("Failed to load bidding history", err);
         setError("Failed to load bidding history");
@@ -50,7 +50,7 @@ const Index = () => {
           <h2>Next Auctions to Close</h2>
           <div className="featured-auction-combined-card">
             {closingSoonAuctions?.length > 0 &&
-              closingSoonAuctions.slice(0, 6).map((auction, index) => {
+              closingSoonAuctions.map((auction, index) => {
                 const endDate = new Date(auction.end_date);
 
                 const formattedDate = new Intl.DateTimeFormat("en-US", {

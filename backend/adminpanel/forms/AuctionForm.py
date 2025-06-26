@@ -67,14 +67,14 @@ class AuctionForm(forms.ModelForm):
 
         # 4. Start date must be in the future
         if start_date and start_date <= timezone.now():
-            self.add_error('start_date', "Start date must be in the future.")
+            self.add_error('start_date', "Start datetime must be in the future.")
 
         # 5. Prebid date must be before start date
         if prebid_start_date:
             if not start_date:
-                self.add_error('start_date', "Start date is required when using Prebid Start Date.")
+                self.add_error('start_date', "Start datetime is required when using Prebid Start Date.")
             elif prebid_start_date >= start_date:
-                self.add_error('prebid_start_date', "Prebid start date must be before auction start date.")
+                self.add_error('prebid_start_date', "Prebid start datetime must be before auction start date.")
 
         # 6. Auto extend logic
         if auto_extend_time and not auto_extend_duration:

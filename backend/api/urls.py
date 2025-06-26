@@ -75,5 +75,8 @@ urlpatterns = [
     path('watchlist/', views.WatchlistAPIView.as_view(), name='watchlist-list'),
     path('watchlist/add/<int:inventory_id>/', views.WatchlistAPIView.as_view(), name='watchlist-add'),
     path('watchlist/remove/<int:inventory_id>/', views.WatchlistAPIView.as_view(), name='watchlist-remove'),
+    
+    #LOT COMMENTS
+    path('lots/<int:lot_id>/comments/', views.LotCommentsView.as_view(), name='lot-comments'),
 
 ]

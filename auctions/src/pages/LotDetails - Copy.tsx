@@ -38,8 +38,7 @@ const LotDetails = () => {
   const [winner, setWinner] = useState(null);
   const [winningAmount, setWinningAmount] = useState(null);
   const [showWinnerAnnouncement, setShowWinnerAnnouncement] = useState(false);
-  const [winnerData, setWinnerData] = useState([]);
-  const [auctionEnded, setAuctionEnded] = useState(false); // NEW STATE
+  const [winnerData, setWinnerData] = useState(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -204,7 +203,6 @@ const LotDetails = () => {
         const { winner } = message.data;
         setWinnerData(winner);
         setShowWinnerAnnouncement(true);
-        setAuctionEnded(true); // SET AUCTION ENDED STATE
 
         // Update lot status
         setLotStatus(winner.status);
@@ -261,17 +259,6 @@ const LotDetails = () => {
         setLotStatus(data.status || "");
         setWinner(data.winner || null);
         setWinningAmount(data.winning_amount || null);
-        
-        // Check if auction has already ended
-        if (data.status === "sold" || data.status === "unsold") {
-          setAuctionEnded(true);
-
-          if (data.winner_data) {
-            setWinnerData(data.winner_data);
-            console.log("Urmish solanki", data.winner_data)
-          }
-
-        }
       } catch (err) {
         console.error("Error loading lot:", err);
       }
@@ -311,43 +298,6 @@ const LotDetails = () => {
       navigate("/login");
     }
   };
-
-  // Winner Display Component for Right Side
-  const WinnerDisplay = ({ winnerData }) => {
-    if (!winnerData) return null;
-console.log("Username debug", winnerData.username);
-    return (
-      <div className="winner-display">
-        <div className="winner-trophy">🏆</div>
-        <div className="winner-header">
-          <h3>Auction Ended</h3>
-          {winnerData.status === "sold" ? (
-            <div className="winner-info">
-              <div className="winner-name">
-                Won by: <strong>{winnerData.username}</strong>
-              </div>
-              <div className="winning-bid">
-                Final Bid: <strong>${winnerData.winning_amount}</strong>
-              </div>
-              <div className="sold-badge">SOLD</div>
-            </div>
-          ) : (
-            <div className="unsold-info">
-              <div className="unsold-status">NOT SOLD</div>
-              <div className="unsold-reason">
-                {winnerData.reason || "Reserve not met"}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-
-
-
-  console.log("Urmishsolanki",winnerData)
 
   // Fix the WinnerAnnouncement component positioning
   const WinnerAnnouncement = ({ winnerData, onClose }) => {
@@ -429,6 +379,48 @@ console.log("Username debug", winnerData.username);
 
         <div className="lot-main">
           <div className="lot-left">
+            {/*<div className="image-gallery">
+              <div className="main-image">nnnnnnnnnnnnnnnn
+                {lot?.media_items && lot.media_items?.length > 0 ? (
+                  <img
+                    src={
+                      BASE_URL +
+                      `/media/` +
+                      lot.media_items[selectedImage]?.path?.replace(/\\/g, "/")
+                    }
+                    alt={lot?.title}
+                    onError={(e) => {
+                      e.target.src = "/placeholder-image.jpg"; // Add a placeholder image
+                    }}
+                  />
+                ) : (
+                  <div className="no-image">No Image Available</div>
+                )}
+              </div>
+              {lot?.media_items && lot.media_items?.length > 1 && (
+                <div className="thumbnail-list">
+                  {lot.media_items.map((image, index) => (
+                    <div
+                      key={index}
+                      className={`thumbnail ${
+                        selectedImage === index ? "active" : ""
+                      }`}
+                      onClick={() => setSelectedImage(index)}
+                    >
+                      12333333333333333333333333<img
+                        src={
+                          BASE_URL + `/media/` + image.path?.replace(/\\/g, "/")
+                        }
+                        alt={`View ${index + 1}`}
+                        onError={(e) => {
+                          e.target.src = "/placeholder-image.jpg";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>*/}
             <div className="image-gallery" style={{ width: '737px', height: '557px' }}>
               {lot?.media_items && lot.media_items.length > 0 ? (
                 <>
@@ -633,8 +625,8 @@ console.log("Username debug", winnerData.username);
                         </div>
                       )}
 
-                      {/* Comment form - Hide if auction ended */}
-                      {!auctionEnded && isAuthenticated ? (
+                      {/* Comment form */}
+                      {isAuthenticated ? (
                         <form
                           onSubmit={handleCommentSubmit}
                           className="comment-form"
@@ -665,7 +657,7 @@ console.log("Username debug", winnerData.username);
                             </button>
                           </div>
                         </form>
-                      ) : !auctionEnded && !isAuthenticated ? (
+                      ) : (
                         <div className="login-to-comment">
                           <button
                             onClick={() => setShowLoginModal(true)}
@@ -690,7 +682,7 @@ console.log("Username debug", winnerData.username);
                             Login to comment
                           </button>
                         </div>
-                      ) : null}
+                      )}
                     </div>
                   )}
                 </div>
@@ -698,83 +690,75 @@ console.log("Username debug", winnerData.username);
             </div>
           </div>
           <div className="lot-right">
-            {/* CONDITIONAL RENDERING: Show bidding section OR winner display */}
-            {!auctionEnded ? (
-              <div className="bidding-section">
-                <div className="auction-timer">
-                  <LiveTimer endTime={lot?.lot_end_time || lot?.endTime} />
-                </div>
-                <div>
-                  <div className="current-bid">
-                    {lot?.reserve_price && (
-                      <div>
-                        <span
-                          className={`reserve-badge ${
-                            lot.reserve_met ? "met" : "not-met"
-                          }`}
-                        >
-                          {lot.reserve_met
-                            ? "✓ Reserve Met"
-                            : "⚠ Reserve Not Met"}
-                        </span>
-                        <div>
-                          {!lot.reserve_met && (
-                            <span className="label">
-                              Reserve: ${lot.reserve_price.toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="current-bid-info">
-                    <div className="current-bid">
-                      <span className="label">Starting bid</span>
-                      <span className="amount">${lot.starting_bid || "0"}</span>
-                    </div>
-                    <div className="current-bid">
-                      <span className="label">Current Bid</span>
-                      <span className="amount">${currentBid || "0"}</span>
-                    </div>
+            <div className="bidding-section">
+              <div className="auction-timer">
+                <LiveTimer endTime={lot?.lot_end_time || lot?.endTime} />
+              </div>
+              <div>
+                <div className="current-bid">
+                  {lot?.reserve_price && (
                     <div>
-                      <SocialShare
-                        title={lot?.title}
-                        currentBid={currentBid}
-                        nextBid={lot?.next_required_bid}
-                        imageUrl={
-                          BASE_URL +
-                          `/media/` +
-                          (lot?.media_items?.[0]?.path?.replace(/\\/g, "/") || "")
-                        }
-                        itemUrl={window.location.href}
-                      />
+                      <span
+                        className={`reserve-badge ${
+                          lot.reserve_met ? "met" : "not-met"
+                        }`}
+                      >
+                        {lot.reserve_met
+                          ? "✓ Reserve Met"
+                          : "⚠ Reserve Not Met"}
+                      </span>
+                      <div>
+                        {!lot.reserve_met && (
+                          <span className="label">
+                            Reserve: ${lot.reserve_price.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                  )}
+                </div>
+                <div className="current-bid-info">
+                  <div className="current-bid">
+                    <span className="label">Starting bid</span>
+                    <span className="amount">${lot.starting_bid || "0"}</span>
                   </div>
-                  <div className="next-bid-info">
-                    <span className="next-bid-label">Next Bid:</span>
-                    <span className="next-bid-amount">
-                      ${lot?.next_required_bid?.toLocaleString() || "0"}
-                    </span>
+                  <div className="current-bid">
+                    <span className="label">Current Bid</span>
+                    <span className="amount">${currentBid || "0"}</span>
                   </div>
                   <div>
-                    <button
-                      className="bid-btn primary"
-                      onClick={handlePlaceBid}
-                      disabled={isPlacingBid}
-                    >
-                      {isPlacingBid
-                        ? "Placing Bid..."
-                        : `Place $${lot.next_required_bid} Bid`}
-                    </button>
+                    <SocialShare
+                      title={lot?.title}
+                      currentBid={currentBid}
+                      nextBid={lot?.next_required_bid}
+                      imageUrl={
+                        BASE_URL +
+                        `/media/` +
+                        (lot?.media_items?.[0]?.path?.replace(/\\/g, "/") || "")
+                      }
+                      itemUrl={window.location.href}
+                    />
                   </div>
                 </div>
+                <div className="next-bid-info">
+                  <span className="next-bid-label">Next Bid:</span>
+                  <span className="next-bid-amount">
+                    ${lot?.next_required_bid?.toLocaleString() || "0"}
+                  </span>
+                </div>
+                <div>
+                  <button
+                    className="bid-btn primary"
+                    onClick={handlePlaceBid}
+                    disabled={isPlacingBid}
+                  >
+                    {isPlacingBid
+                      ? "Placing Bid..."
+                      : `Place $${lot.next_required_bid} Bid`}
+                  </button>
+                </div>
               </div>
-            ) : (
-              <WinnerDisplay 
-                winnerData={winnerData} 
-                winningAmount={winningAmount}
-              />
-            )}
+            </div>
           </div>
         </div>
       </div>

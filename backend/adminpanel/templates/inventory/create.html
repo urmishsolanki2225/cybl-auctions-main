@@ -1,6 +1,12 @@
 {% extends 'layouts/default.html' %}
 {% load static %}
 {% block content %}
+<style>
+    .ck.ck-editor__editable:not(.ck-editor__nested-editable) {
+    min-height: 300px !important;
+    font-size: 16px !important;
+}
+</style>
 <script src="{% static 'admin-custom/inventory_validation.js' %}"></script>
 <link rel="stylesheet" href="{% static 'admin/css/dropzone.min.css' %}">
 <div class="container-fluid">

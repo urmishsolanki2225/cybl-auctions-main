@@ -11,15 +11,6 @@ import LoginModal from "../components/LoginModal";
 import WatchlistButton from "../components/WatchlistButton";
 import SocialShare from "../components/SocialShare";
 
-// Import Swiper React components
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/free-mode';
-import 'swiper/css/navigation';
-import 'swiper/css/thumbs';
-import { FreeMode, Navigation, Thumbs } from 'swiper/modules';
-
-
 const LotDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -38,60 +29,46 @@ const LotDetails = () => {
   const [winner, setWinner] = useState(null);
   const [winningAmount, setWinningAmount] = useState(null);
   const [showWinnerAnnouncement, setShowWinnerAnnouncement] = useState(false);
-  const [winnerData, setWinnerData] = useState([]);
-  const [auctionEnded, setAuctionEnded] = useState(false); // NEW STATE
+  const [winnerData, setWinnerData] = useState(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated } = useAuth();
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const [thumbsSwiper, setThumbsSwiper] = useState(null);
-
-  // Load comments when component mounts - ONLY ONCE on initial load
+  // Load comments when component mounts or when switching to comments tab
   useEffect(() => {
-    if (isAuthenticated && id) {
-      loadInitialComments();
+    if (activeTab === "comments" && isAuthenticated && id) {
+      loadComments();
     }
-  }, [isAuthenticated, id]);
+  }, [activeTab, isAuthenticated, id]);
 
-  const loadInitialComments = async () => {
+  const loadComments = async () => {
     try {
       const commentsData = await protectedApi.getLotComments(id);
       setComments(commentsData);
     } catch (error) {
-      console.error("Error loading initial comments:", error);
-      // Don't show error toast for initial load failure
+      console.error("Error loading comments:", error);
+      toast.error("Failed to load comments");
     }
   };
 
-  // REMOVE the old handleCommentSubmit function and replace with WebSocket version
+  // Add this function to handle comment submission
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || !isAuthenticated) return;
 
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-
-    const socket = getSocket();
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      setIsSubmittingComment(true);
-      
-      const message = {
-        type: "post_comment",
-        comment_text: newComment.trim(),
-        user_id: user.id,
-      };
-
-      socket.send(JSON.stringify(message));
-      console.log("📤 Comment sent via WebSocket:", message);
-      
-      // Clear the input immediately for better UX
+    setIsSubmittingComment(true);
+    try {
+      const response = await protectedApi.postComment(id, newComment);
+      setComments([response, ...comments]); // Add new comment at the top
       setNewComment("");
-    } else {
-      toast.error("Connection lost. Please refresh the page.");
+      toast.success("Comment posted successfully");
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      toast.error("Failed to post comment");
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -111,24 +88,6 @@ const LotDetails = () => {
 
         if (message.data?.bid_history) {
           setBidHistory(message.data.bid_history);
-        }
-      }
-
-      // ADD NEW HANDLER FOR COMMENT POSTED
-      if (message.type === "comment_posted") {
-        console.log("💬 New comment received:", message.data);
-        
-        setComments((prevComments) => [message.data, ...prevComments]);
-        
-        // Reset submitting state
-        setIsSubmittingComment(false);
-        
-        // Show success toast only for the user who posted
-        if (message?.data?.user_id === user?.id) {
-          toast.success("Comment posted successfully!");
-        } else {
-          // Optional: Show notification for new comments from others
-          toast.info(`New comment from ${message?.data?.username}`);
         }
       }
 
@@ -204,7 +163,6 @@ const LotDetails = () => {
         const { winner } = message.data;
         setWinnerData(winner);
         setShowWinnerAnnouncement(true);
-        setAuctionEnded(true); // SET AUCTION ENDED STATE
 
         // Update lot status
         setLotStatus(winner.status);
@@ -241,7 +199,6 @@ const LotDetails = () => {
         }, 10000);
       } else if (message.type === "error") {
         setIsPlacingBid(false); // Reset loading state on error
-        setIsSubmittingComment(false); // Reset comment loading state on error
         toast.error(message.message || "An error occurred");
         console.error("❌ WebSocket Error:", message.message);
       }
@@ -261,17 +218,6 @@ const LotDetails = () => {
         setLotStatus(data.status || "");
         setWinner(data.winner || null);
         setWinningAmount(data.winning_amount || null);
-        
-        // Check if auction has already ended
-        if (data.status === "sold" || data.status === "unsold") {
-          setAuctionEnded(true);
-
-          if (data.winner_data) {
-            setWinnerData(data.winner_data);
-            console.log("Urmish solanki", data.winner_data)
-          }
-
-        }
       } catch (err) {
         console.error("Error loading lot:", err);
       }
@@ -312,43 +258,6 @@ const LotDetails = () => {
     }
   };
 
-  // Winner Display Component for Right Side
-  const WinnerDisplay = ({ winnerData }) => {
-    if (!winnerData) return null;
-console.log("Username debug", winnerData.username);
-    return (
-      <div className="winner-display">
-        <div className="winner-trophy">🏆</div>
-        <div className="winner-header">
-          <h3>Auction Ended</h3>
-          {winnerData.status === "sold" ? (
-            <div className="winner-info">
-              <div className="winner-name">
-                Won by: <strong>{winnerData.username}</strong>
-              </div>
-              <div className="winning-bid">
-                Final Bid: <strong>${winnerData.winning_amount}</strong>
-              </div>
-              <div className="sold-badge">SOLD</div>
-            </div>
-          ) : (
-            <div className="unsold-info">
-              <div className="unsold-status">NOT SOLD</div>
-              <div className="unsold-reason">
-                {winnerData.reason || "Reserve not met"}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-
-
-
-  console.log("Urmishsolanki",winnerData)
-
   // Fix the WinnerAnnouncement component positioning
   const WinnerAnnouncement = ({ winnerData, onClose }) => {
     if (!winnerData || !showWinnerAnnouncement) return null;
@@ -370,7 +279,7 @@ console.log("Username debug", winnerData.username);
                   src={
                     winnerData.profile_photo
                       ? BASE_URL + winnerData.profile_photo
-                      : "../assets/default-avatar.png"
+                      : "/default-avatar.png"
                   }
                   alt={winnerData.username}
                   className="winner-avatar"
@@ -429,65 +338,46 @@ console.log("Username debug", winnerData.username);
 
         <div className="lot-main">
           <div className="lot-left">
-            <div className="image-gallery" style={{ width: '737px', height: '557px' }}>
-              {lot?.media_items && lot.media_items.length > 0 ? (
-                <>
-                  {/* Main Image Swiper */}
-                  <Swiper
-                    style={{ width: '100%', height: '400px' }}
-                    spaceBetween={10}
-                    thumbs={{ swiper: thumbsSwiper }}
-                    modules={[Thumbs, Navigation]} // ✅ Add Navigation here
-                    navigation={true} // ✅ Enable arrows
-                    className="main-image-swiper"
-                  >
-                    {lot.media_items.map((image, index) => (
-                      <SwiperSlide key={index}>
-                        <img
-                          src={BASE_URL + `/media/` + image.path?.replace(/\\/g, "/")}
-                          alt={lot?.title || `Image ${index + 1}`}
-                          onError={(e) => {
-                            e.target.src = "/placeholder-image.jpg";
-                          }}
-                          style={{ width: '500px', height: '500px', objectFit: 'cover' }}
-                        />
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
-
-                  {/* Thumbnail Swiper */}
-                  {lot.media_items.length > 1 && (
-                    <Swiper
-                      onSwiper={setThumbsSwiper}
-                      spaceBetween={10}
-                      slidesPerView={5}
-                      watchSlidesProgress={true}
-                      modules={[Thumbs]}
-                      className="thumbnail-swiper"
-                      style={{ marginTop: '10px' }}
+            <div className="image-gallery">
+              <div className="main-image">
+                {lot?.media_items && lot.media_items.length > 0 ? (
+                  <img
+                    src={
+                      BASE_URL +
+                      `/media/` +
+                      lot.media_items[selectedImage]?.path?.replace(/\\/g, "/")
+                    }
+                    alt={lot?.title}
+                    onError={(e) => {
+                      e.target.src = "/placeholder-image.jpg"; // Add a placeholder image
+                    }}
+                  />
+                ) : (
+                  <div className="no-image">No Image Available</div>
+                )}
+              </div>
+              {lot?.media_items && lot.media_items.length > 1 && (
+                <div className="thumbnail-list">
+                  {lot.media_items.map((image, index) => (
+                    <div
+                      key={index}
+                      className={`thumbnail ${
+                        selectedImage === index ? "active" : ""
+                      }`}
+                      onClick={() => setSelectedImage(index)}
                     >
-                      {lot.media_items.map((image, index) => (
-                        <SwiperSlide key={`thumb-${index}`}>
-                          <img
-                            src={BASE_URL + `/media/` + image.path?.replace(/\\/g, "/")}
-                            alt={`Thumb ${index + 1}`}
-                            onError={(e) => {
-                              e.target.src = "/placeholder-image.jpg";
-                            }}
-                            style={{
-                              width: '100px',
-                              height: '100px',
-                              objectFit: 'cover',
-                              borderRadius: '8px',
-                            }}
-                          />
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
-                  )}
-                </>
-              ) : (
-                <div className="no-image">No Image Available</div>
+                      <img
+                        src={
+                          BASE_URL + `/media/` + image.path?.replace(/\\/g, "/")
+                        }
+                        alt={`View ${index + 1}`}
+                        onError={(e) => {
+                          e.target.src = "/placeholder-image.jpg";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
             <div className="lot-description">
@@ -522,7 +412,7 @@ console.log("Username debug", winnerData.username);
                     }`}
                     onClick={() => setActiveTab("comments")}
                   >
-                    Comments ({comments?.length})
+                    Comments ({comments.length})
                   </button>
                 </div>
 
@@ -538,7 +428,7 @@ console.log("Username debug", winnerData.username);
 
                   {activeTab === "bids" && (
                     <div className="bid-history-container">
-                      {bidHistory && bidHistory?.length > 0 ? (
+                      {bidHistory && bidHistory.length > 0 ? (
                         <div className="bid-history-list">
                           {bidHistory.map((bid, index) => (
                             <div
@@ -550,7 +440,7 @@ console.log("Username debug", winnerData.username);
                               <img
                                 src={
                                   BASE_URL + bid.profile ||
-                                  BASE_URL + "../assets/default-avatar.png"
+                                  BASE_URL + "/default-avatar.png"
                                 }
                                 alt={bid.bidder}
                                 className="bidder-avatar"
@@ -583,32 +473,32 @@ console.log("Username debug", winnerData.username);
                   {activeTab === "comments" && (
                     <div className="comments-section">
                       {/* Comments list */}
-                      {comments?.length > 0 ? (
+                      {comments.length > 0 ? (
                         <div className="comments-list">
                           {comments.map((comment) => (
-                            <div key={comment?.id} className="comment-item">
+                            <div key={comment.id} className="comment-item">
                               <div className="comment-avatar-container">
                                 <img
                                   src={
-                                    comment?.profile_photo
-                                      ? `${BASE_URL}${comment?.profile_photo}`
-                                      : "../assets/default-avatar.png"
+                                    comment.profile_photo
+                                      ? `${BASE_URL}/media/${comment.profile_photo}`
+                                      : "/default-avatar.png"
                                   }
-                                  alt={comment?.username}
+                                  alt={comment.username}
                                   className="comment-avatar"
+                                  onError={(e) => {
+                                    e.target.src = "/default-avatar.png";
+                                  }}
                                 />
                               </div>
                               <div className="comment-content">
                                 <div className="comment-header">
                                   <span className="comment-username">
-                                    {comment?.username}
-                                    {comment?.user_id === user?.id && (
-                                      <span className="you-tag"> (You)</span>
-                                    )}
+                                    {comment.username}
                                   </span>
                                   <span className="comment-time">
                                     {new Date(
-                                      comment?.created_at
+                                      comment.created_at
                                     ).toLocaleString([], {
                                       year: "numeric",
                                       month: "short",
@@ -619,7 +509,7 @@ console.log("Username debug", winnerData.username);
                                   </span>
                                 </div>
                                 <p className="comment-text">
-                                  {comment?.content}
+                                  {comment.text || comment.content}
                                 </p>
                               </div>
                             </div>
@@ -633,8 +523,8 @@ console.log("Username debug", winnerData.username);
                         </div>
                       )}
 
-                      {/* Comment form - Hide if auction ended */}
-                      {!auctionEnded && isAuthenticated ? (
+                      {/* Comment form */}
+                      {isAuthenticated ? (
                         <form
                           onSubmit={handleCommentSubmit}
                           className="comment-form"
@@ -645,7 +535,6 @@ console.log("Username debug", winnerData.username);
                             placeholder="Share your thoughts about this lot..."
                             rows={4}
                             required
-                            disabled={isSubmittingComment}
                           />
                           <div className="comment-form-footer">
                             <button
@@ -665,7 +554,7 @@ console.log("Username debug", winnerData.username);
                             </button>
                           </div>
                         </form>
-                      ) : !auctionEnded && !isAuthenticated ? (
+                      ) : (
                         <div className="login-to-comment">
                           <button
                             onClick={() => setShowLoginModal(true)}
@@ -690,7 +579,7 @@ console.log("Username debug", winnerData.username);
                             Login to comment
                           </button>
                         </div>
-                      ) : null}
+                      )}
                     </div>
                   )}
                 </div>
@@ -698,83 +587,75 @@ console.log("Username debug", winnerData.username);
             </div>
           </div>
           <div className="lot-right">
-            {/* CONDITIONAL RENDERING: Show bidding section OR winner display */}
-            {!auctionEnded ? (
-              <div className="bidding-section">
-                <div className="auction-timer">
-                  <LiveTimer endTime={lot?.lot_end_time || lot?.endTime} />
-                </div>
-                <div>
-                  <div className="current-bid">
-                    {lot?.reserve_price && (
-                      <div>
-                        <span
-                          className={`reserve-badge ${
-                            lot.reserve_met ? "met" : "not-met"
-                          }`}
-                        >
-                          {lot.reserve_met
-                            ? "✓ Reserve Met"
-                            : "⚠ Reserve Not Met"}
-                        </span>
-                        <div>
-                          {!lot.reserve_met && (
-                            <span className="label">
-                              Reserve: ${lot.reserve_price.toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="current-bid-info">
-                    <div className="current-bid">
-                      <span className="label">Starting bid</span>
-                      <span className="amount">${lot.starting_bid || "0"}</span>
-                    </div>
-                    <div className="current-bid">
-                      <span className="label">Current Bid</span>
-                      <span className="amount">${currentBid || "0"}</span>
-                    </div>
+            <div className="bidding-section">
+              <div className="auction-timer">
+                <LiveTimer endTime={lot?.lot_end_time || lot?.endTime} />
+              </div>
+              <div>
+                <div className="current-bid">
+                  {lot?.reserve_price && (
                     <div>
-                      <SocialShare
-                        title={lot?.title}
-                        currentBid={currentBid}
-                        nextBid={lot?.next_required_bid}
-                        imageUrl={
-                          BASE_URL +
-                          `/media/` +
-                          (lot?.media_items?.[0]?.path?.replace(/\\/g, "/") || "")
-                        }
-                        itemUrl={window.location.href}
-                      />
+                      <span
+                        className={`reserve-badge ${
+                          lot.reserve_met ? "met" : "not-met"
+                        }`}
+                      >
+                        {lot.reserve_met
+                          ? "✓ Reserve Met"
+                          : "⚠ Reserve Not Met"}
+                      </span>
+                      <div>
+                        {!lot.reserve_met && (
+                          <span className="label">
+                            Reserve: ${lot.reserve_price.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
+                  )}
+                </div>
+                <div className="current-bid-info">
+                  <div className="current-bid">
+                    <span className="label">Starting bid</span>
+                    <span className="amount">${lot.starting_bid || "0"}</span>
                   </div>
-                  <div className="next-bid-info">
-                    <span className="next-bid-label">Next Bid:</span>
-                    <span className="next-bid-amount">
-                      ${lot?.next_required_bid?.toLocaleString() || "0"}
-                    </span>
+                  <div className="current-bid">
+                    <span className="label">Current Bid</span>
+                    <span className="amount">${currentBid || "0"}</span>
                   </div>
                   <div>
-                    <button
-                      className="bid-btn primary"
-                      onClick={handlePlaceBid}
-                      disabled={isPlacingBid}
-                    >
-                      {isPlacingBid
-                        ? "Placing Bid..."
-                        : `Place $${lot.next_required_bid} Bid`}
-                    </button>
+                    <SocialShare
+                      title={lot?.title}
+                      currentBid={currentBid}
+                      nextBid={lot?.next_required_bid}
+                      imageUrl={
+                        BASE_URL +
+                        `/media/` +
+                        (lot?.media_items?.[0]?.path?.replace(/\\/g, "/") || "")
+                      }
+                      itemUrl={window.location.href}
+                    />
                   </div>
                 </div>
+                <div className="next-bid-info">
+                  <span className="next-bid-label">Next Bid:</span>
+                  <span className="next-bid-amount">
+                    ${lot?.next_required_bid?.toLocaleString() || "0"}
+                  </span>
+                </div>
+                <div>
+                  <button
+                    className="bid-btn primary"
+                    onClick={handlePlaceBid}
+                    disabled={isPlacingBid}
+                  >
+                    {isPlacingBid
+                      ? "Placing Bid..."
+                      : `Place $${lot.next_required_bid} Bid`}
+                  </button>
+                </div>
               </div>
-            ) : (
-              <WinnerDisplay 
-                winnerData={winnerData} 
-                winningAmount={winningAmount}
-              />
-            )}
+            </div>
           </div>
         </div>
       </div>

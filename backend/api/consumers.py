@@ -3,7 +3,7 @@ import traceback
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import User
-from adminpanel.models import Inventory, Bid, Auctions
+from adminpanel.models import Inventory, Bid, Auctions, Comment
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from datetime import timedelta
@@ -82,6 +82,10 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 user_id = text_data_json.get('user_id')
                 bid_amount = Decimal(str(text_data_json.get('bid_amount', 0)))
                 await self.place_bid(bid_amount, user_id)
+            elif message_type == 'post_comment':
+                user_id = text_data_json.get('user_id')
+                comment_text = text_data_json.get('comment_text')
+                await self.post_comment(comment_text, user_id)
             elif message_type == 'get_status':
                 lot_data = await self.get_lot_data()
                 await self.send(text_data=json.dumps({
@@ -93,6 +97,84 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'type': 'error',
                 'message': f'Receive error: {str(e)}'
+            }))
+        
+    async def post_comment(self, comment_text, user_id=None):
+        """Handle posting a new comment via WebSocket"""
+        try:
+            print(f"Posting comment: {comment_text} for user: {user_id}")
+            
+            if not user_id:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'User ID is required to post a comment'
+                }))
+                return
+                
+            if not comment_text or not comment_text.strip():
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Comment text cannot be empty'
+                }))
+                return
+            
+            try:
+                user = await database_sync_to_async(User.objects.get)(id=user_id)
+                print(f"Found user: {user.username}")
+            except User.DoesNotExist:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Invalid user ID'
+                }))
+                return
+            
+            lot = await database_sync_to_async(Inventory.objects.get)(id=self.lot_id)
+            auction = await database_sync_to_async(lambda: lot.auction)()
+            
+            # Create the comment
+            comment = await database_sync_to_async(Comment.objects.create)(
+                auction=auction,
+                inventory=lot,
+                user=user,
+                content=comment_text.strip()
+            )
+            
+            # Get user profile photo safely
+            profile_photo = None
+            try:
+                profile_photo = await database_sync_to_async(
+                    lambda: user.profile.photo.url if hasattr(user, 'profile') and user.profile.photo else None
+                )()
+            except:
+                profile_photo = None
+            
+            # Prepare comment data for broadcasting
+            comment_data = {
+                'id': comment.id,
+                'content': comment.content,
+                'username': user.username,
+                'user_id': user.id,
+                'profile_photo': profile_photo,
+                'created_at': comment.created_at.isoformat(),
+            }
+            
+            # Broadcast the new comment to all users in the lot room
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'comment_posted',
+                    'comment_data': comment_data
+                }
+            )
+            
+            print(f"✅ Comment broadcast for lot {self.lot_id}")
+            
+        except Exception as e:
+            print(f"Error in post_comment: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f'Failed to post comment: {str(e)}'
             }))
 
     async def place_bid(self, bid_amount, user_id=None):
@@ -330,7 +412,7 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                     'reason': 'Reserve not met' if winning_bid else 'No bids received'
                 }
             
-            # Broadcast to all users in the lot room
+            ##Broadcast to all users in the lot room
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -419,6 +501,15 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'bid_placed',
             'data': bid_data
+        }))
+
+    # Add the missing comment_posted handler method
+    async def comment_posted(self, event):
+        """Handle comment_posted message type from group_send"""
+        comment_data = event['comment_data']
+        await self.send(text_data=json.dumps({
+            'type': 'comment_posted',
+            'data': comment_data
         }))
 
     async def timer_extended(self, event):

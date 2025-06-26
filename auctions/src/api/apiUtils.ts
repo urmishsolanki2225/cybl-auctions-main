@@ -314,4 +314,13 @@ export const protectedApi = {
   removeFromWatchlist: async (inventoryId: number): Promise<{ message: string }> => {
     return makeRequest(API_ENDPOINTS.WATCHLIST_REMOVE(inventoryId), 'DELETE', null, true);
   },  
+
+  // Add these to your protectedApi object
+  getLotComments: async (lotId) => {
+    return makeRequest(API_ENDPOINTS.LOT_COMMENTS(lotId), 'GET', null, true);
+  },
+
+  postComment: async (lotId, text) => {
+    return makeRequest(API_ENDPOINTS.LOT_COMMENTS(lotId), 'POST', { text }, true);
+  },
 };

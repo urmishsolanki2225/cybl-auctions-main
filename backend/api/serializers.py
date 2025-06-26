@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from adminpanel.models import Country, State, Media, Inventory, Profile, Auctions, Company, Category, Bid, Payment_History, Watchlist, PaymentChargeDetail, ContactMessage
+from adminpanel.models import Country, State, Media, Inventory, Profile, Auctions, Company, Comment, Category, Bid, Payment_History, Watchlist, PaymentChargeDetail, ContactMessage
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from django.db import models
@@ -788,15 +788,16 @@ class InventoryDetailSerializer(serializers.ModelSerializer):
     high_bidder = serializers.SerializerMethodField()
     reserve_met = serializers.SerializerMethodField()
     bid_history = serializers.SerializerMethodField()
-    winner = serializers.SerializerMethodField()  # ✅ Add this line
-    winning_amount = serializers.SerializerMethodField()  # ✅ Add this line
+    winner_data = serializers.SerializerMethodField()  # ✅ Add this line
+    # winning_amount = serializers.SerializerMethodField()  # ✅ Add this line
     category = CategorySerializer(read_only=True)  # Add this line
+    remaining_lots = serializers.SerializerMethodField()
 
     class Meta:
         model = Inventory
         fields = [
             'id', 'title', 'status', 'description', 'starting_bid', 'reserve_price', 'lot_start_time', 'lot_end_time',
-            'media_items', 'current_bid', 'next_required_bid', 'high_bidder', 'reserve_met', 'bid_history', 'winner', 'winning_amount', 'category'
+            'media_items', 'current_bid', 'next_required_bid', 'high_bidder', 'reserve_met', 'bid_history', 'winner_data', 'category', 'remaining_lots'
         ]
 
     def get_current_bid(self, obj):
@@ -827,12 +828,43 @@ class InventoryDetailSerializer(serializers.ModelSerializer):
             } for bid in bids
         ]
     
-    def get_winner(self, obj):
-        # ✅ Return winner's username if present
-        return obj.winning_user.username if obj.winning_user else None
+    def get_winner_data(self, obj):
+        winning_bid = obj.winning_bid
+        if winning_bid and winning_bid.user:
+            user = winning_bid.user
+            profile_photo = user.profile.photo.url if hasattr(user, 'profile') and user.profile.photo else None
+            return {
+                'user_id': user.id,
+                'username': user.username,
+                'profile_photo': profile_photo,
+                'winning_amount': str(winning_bid.bid_amount),
+                'status': 'sold'
+            }
+        return None
 
-    def get_winning_amount(self, obj):
-        return obj.winning_bid.bid_amount if obj.winning_bid else None
+    def get_remaining_lots(self, obj):
+        # Get all lots in the same auction that come after the current lot
+        remaining_lots = Inventory.objects.filter(
+            auction=obj.auction,
+            deleted_at__isnull=True,
+            id__gt=obj.id  # Only lots with ID greater than current lot
+        ).order_by('id')  # Or 'lot_number' if you have that field
+        
+        return [
+            {
+                'id': lot.id,
+                'title': lot.title,
+                'thumbnail': lot.media_items.first().path if lot.media_items.exists() else None,
+                'current_bid': self.get_current_bid(lot),  # Reuse your existing method
+                'lot_end_time': lot.lot_end_time
+            }
+            for lot in remaining_lots
+        ]
+
+
+
+    # def get_winning_amount(self, obj):
+    #     return obj.winning_bid.bid_amount if obj.winning_bid else None
 ################################################################################################################
 class BiddingHistorySerializer(serializers.ModelSerializer):
     """Updated serializer for user's bidding history"""
@@ -1087,3 +1119,21 @@ class WatchlistSerializer(serializers.ModelSerializer):
                                       .order_by('-bid_amount') \
                                       .first()
         return float(highest_bid.bid_amount) if highest_bid else float(obj.inventory.starting_bid)
+    
+###################################################################################
+class CommentSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    profile_photo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'created_at', 'username', 'profile_photo', 'user']
+        read_only_fields = ['id', 'created_at', 'username', 'profile_photo']
+
+    def get_profile_photo(self, obj):
+        photo = getattr(obj.user.profile, 'photo', None)
+
+        if photo and hasattr(photo, 'url'):
+            return f"/media/{photo.name}"  # Ensures /media/ prefix
+        else:
+            return "/media/defaults/user-default.png"  # Fallback default

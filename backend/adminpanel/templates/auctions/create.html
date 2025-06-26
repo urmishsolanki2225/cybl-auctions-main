@@ -22,7 +22,7 @@
                         </button>
                     </div>
                     
-                    <form class="auction-form" id="auction-form" method="post" action="{% url 'createauction' %}" enctype="multipart/form-data">
+                    <form class="auction-form" id="auction-form" method="post" action="{% url 'createauction' %}" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
                         <div class="row">
                             <!-- Featured Auction Toggle -->
@@ -380,10 +380,15 @@ $(document).ready(function() {
             error: function(xhr) {
                 if(xhr.status === 400) {
                     var errors = xhr.responseJSON.errors;
-                    
+                    $('.text-danger').show();
                     // Display errors for each field
                     $.each(errors, function(key, value) {
                         $('#error_' + key).text(value.join(', '));
+
+                        console.log("Checking key:", key);  // <-- See if 'start_date' appears
+                        const $errorEl = $('#error_' + key);
+                        $errorEl.text(value.join(', '));
+                        console.log("Inserted error for", key, ":", $errorEl.text());
                     });
                     
                     // Scroll to first error
@@ -409,5 +414,14 @@ $(document).ready(function() {
         }
     });
 });
+$(document).ready(function () {
+  const now = new Date();
+  now.setSeconds(0, 0);
+  const formatted = now.toISOString().slice(0, 16);
+  console.log("Setting min datetime:", formatted);
+  $('#start_date').attr('min', formatted);
+  $('#prebid_start_date').attr('min', formatted);
+});
+
 </script>
 {% endblock %}

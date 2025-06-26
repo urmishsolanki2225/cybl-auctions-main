@@ -50,4 +50,6 @@ export const API_ENDPOINTS = {
   WATCHLIST: `${BASE_API_URL}watchlist/`,
   WATCHLIST_ADD: (inventoryId: number) => `${BASE_API_URL}watchlist/add/${inventoryId}/`,
   WATCHLIST_REMOVE: (inventoryId: number) => `${BASE_API_URL}watchlist/remove/${inventoryId}/`,
+
+  LOT_COMMENTS: (lotId) => `${BASE_API_URL}lots/${lotId}/comments/`,
 };

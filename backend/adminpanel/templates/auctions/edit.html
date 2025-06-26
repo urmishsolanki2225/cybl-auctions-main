@@ -22,7 +22,7 @@
                         </button>
                     </div>
                     
-                    <form class="auction-form" id="auction-form" method="post"  enctype="multipart/form-data">
+                    <form class="auction-form" id="auction-form" method="post"  enctype="multipart/form-data" novalidates>
                         {% csrf_token %}
                         <input type="hidden" name="tabId" value="{{ tabId }}">
                         <div class="row">
@@ -448,6 +448,14 @@ $(document).ready(function() {
     {% if auction.seller_location %}
         $('input[name="seller_location"][value="{{ auction.seller_location }}"]').prop('checked', true);
     {% endif %}
+});
+$(document).ready(function () {
+  const now = new Date();
+  now.setSeconds(0, 0);
+  const formatted = now.toISOString().slice(0, 16);
+  console.log("Setting min datetime:", formatted);
+  $('#start_date').attr('min', formatted);
+  $('#prebid_start_date').attr('min', formatted);
 });
 </script>
 {% endblock %}

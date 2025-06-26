@@ -1,10 +1,3 @@
-# MAIN ISSUES IDENTIFIED AND FIXED:
-
-# 1. RACE CONDITIONS - Multiple tasks running every 1 second
-# 2. MISSING process_expired_lots task in schedule
-# 3. TIMING PRECISION ISSUES
-# 4. AUTO-EXTEND LOGIC CONFLICTS
-
 from celery import shared_task
 from django.utils import timezone
 from django.db import transaction
@@ -21,14 +14,12 @@ logger = logging.getLogger(__name__)
 @shared_task
 def update_auction_status():
     """
-    Main auction management task:
-    - Updates auction statuses (next -> current -> closed)
-    - Calculates lot times
-    - Processes expired lots immediately
+    Comprehensive auction status management including:
+    - Status updates (next -> current -> closed)
+    - Lot timing calculations with auto-extend
     """
     now = timezone.now()
     updated_count = 0
-    processed_lots = 0
 
     with transaction.atomic():
         auctions = Auctions.objects.select_for_update().all()
@@ -68,19 +59,15 @@ def update_auction_status():
                 auction.status = new_status
                 auction.save(update_fields=['status'])
                 updated_count += 1
+
                 logger.info(f"Auction {auction.id} status updated from '{old_status}' to '{new_status}'")
 
-            # Process current auctions
+            # Update lot times and handle auto-extend for current auctions
             if auction.status == 'current':
-                # Update lot times first
-                update_lot_times_for_auction(auction)
-                
-                # Process expired lots immediately
-                expired_lots = process_expired_lots_for_auction(auction, now)
-                processed_lots += expired_lots
+                update_lot_times_with_auto_extend(auction)
 
-    logger.info(f"Updated {updated_count} auction statuses, processed {processed_lots} expired lots")
-    return f"Updated {updated_count} auctions, processed {processed_lots} lots"
+    logger.info(f"Updated {updated_count} auction statuses")
+    return f"Updated {updated_count} auctions"
 
 
 def calculate_auction_end_date(auction):
@@ -101,12 +88,16 @@ def calculate_auction_end_date(auction):
         logger.error(f"Error calculating end date for auction {auction.id}: {e}")
 
 
-def update_lot_times_for_auction(auction):
-    """Update lot times for a specific auction without auto-extend logic"""
+# Update the update_lot_times_with_auto_extend function
+def update_lot_times_with_auto_extend(auction):
+    """Update lot times and handle auto-extend functionality"""
     try:
+        now = timezone.now()
         inventories = auction.inventory_set.filter(
             deleted_at__isnull=True
         ).order_by('id')
+        
+        auction_extended = False
         
         for index, inv in enumerate(inventories):
             # Calculate base lot times
@@ -117,115 +108,53 @@ def update_lot_times_for_auction(auction):
                 seconds=auction.lots_time_duration
             )
             
+            # Check for auto-extend if enabled
+            if auction.auto_extend_time and auction.auto_extend_duration:
+                # Get the last bid for this inventory
+                last_bid = inv.bids.filter(
+                    deleted_at__isnull=True
+                ).order_by('-created_at').first()
+                
+                if last_bid:
+                    # Check if bid was placed in the last few seconds (configurable threshold)
+                    extend_threshold = 30  # seconds - you can make this configurable
+                    time_since_bid = (now - last_bid.created_at).total_seconds()
+                    time_until_lot_end = (lot_end - now).total_seconds()
+                    
+                    # If bid was recent and lot is about to end, extend it
+                    if (time_since_bid <= extend_threshold and 
+                        0 <= time_until_lot_end <= extend_threshold):
+                        
+                        lot_end = lot_end + timedelta(seconds=auction.auto_extend_duration)
+                        auction_extended = True
+                        
+                        logger.info(f"Auto-extended lot {inv.id} by {auction.auto_extend_duration}s "
+                                   f"due to recent bid by {last_bid.user.username}")
+            
             # Update lot times if changed
             if inv.lot_start_time != lot_start or inv.lot_end_time != lot_end:
                 inv.lot_start_time = lot_start
                 inv.lot_end_time = lot_end
                 inv.save(update_fields=['lot_start_time', 'lot_end_time'])
-                logger.debug(f"Updated lot {inv.id} times: {lot_start} to {lot_end}")
+            
+            # ✅ Process closed lots immediately when they end
+            if now >= inv.lot_end_time and inv.status in ['pending', 'auction']:
+                process_closed_lot(inv)  # This will now broadcast winner info
+        
+        # If any lot was extended, recalculate auction end date
+        if auction_extended:
+            # Find the latest lot end time
+            latest_lot_end = inventories.aggregate(
+                latest_end=Max('lot_end_time')
+            )['latest_end']
+            
+            if latest_lot_end and latest_lot_end > auction.end_date:
+                auction.end_date = latest_lot_end
+                auction.save(update_fields=['end_date'])
+                logger.info(f"Auction {auction.id} end date extended to {auction.end_date}")
                 
     except Exception as e:
         logger.error(f"Error updating lot times for auction {auction.id}: {e}")
-
-
-def process_expired_lots_for_auction(auction, current_time):
-    """Process expired lots for a specific auction"""
-    processed_count = 0
-    
-    try:
-        # Get lots that have ended but are still marked as pending/auction
-        # Add a small buffer (1 second) to handle timing precision issues
-        buffer_time = current_time - timedelta(seconds=1)
-        
-        expired_lots = auction.inventory_set.filter(
-            Q(lot_end_time__lte=buffer_time) &
-            Q(status__in=['pending', 'auction']) &
-            Q(deleted_at__isnull=True)
-        )
-        
-        for lot in expired_lots:
-            try:
-                logger.info(f"Processing expired lot {lot.id} (ended at {lot.lot_end_time}, now is {current_time})")
-                process_closed_lot(lot)
-                processed_count += 1
-            except Exception as e:
-                logger.error(f"Failed to process expired lot {lot.id}: {e}")
-                continue
-                
-    except Exception as e:
-        logger.error(f"Error processing expired lots for auction {auction.id}: {e}")
-    
-    return processed_count
-
-
-@shared_task
-def check_lot_auto_extend():
-    """
-    Separate task for auto-extension - runs more frequently
-    Only handles auto-extension logic, not lot processing
-    """
-    now = timezone.now()
-    extended_count = 0
-    
-    try:
-        # Get all current auctions with auto-extend enabled
-        current_auctions = Auctions.objects.filter(
-            status='current',
-            auto_extend_time=True,
-            auto_extend_duration__isnull=False
-        )
-        
-        for auction in current_auctions:
-            try:
-                # Get lots that are about to end (within next 15 seconds) and haven't been extended recently
-                threshold_time = now + timedelta(seconds=15)
-                
-                ending_soon_lots = auction.inventory_set.filter(
-                    deleted_at__isnull=True,
-                    lot_end_time__lte=threshold_time,
-                    lot_end_time__gt=now,  # Not already ended
-                    status__in=['pending', 'auction']  # Still active
-                )
-                
-                for lot in ending_soon_lots:
-                    # Check for very recent bids (within last 15 seconds)
-                    recent_bid_threshold = now - timedelta(seconds=15)
-                    recent_bid = lot.bids.filter(
-                        deleted_at__isnull=True,
-                        created_at__gte=recent_bid_threshold
-                    ).order_by('-created_at').first()
-                    
-                    if recent_bid:
-                        # Check if we're in the extend window (last 10 seconds)
-                        time_until_end = (lot.lot_end_time - now).total_seconds()
-                        
-                        if 0 < time_until_end <= 10:  # Extend only in last 10 seconds
-                            # Extend the lot
-                            extension_duration = timedelta(seconds=auction.auto_extend_duration)
-                            old_end_time = lot.lot_end_time
-                            lot.lot_end_time = lot.lot_end_time + extension_duration
-                            lot.save(update_fields=['lot_end_time'])
-                            extended_count += 1
-                            
-                            logger.info(f"Auto-extended lot {lot.id} from {old_end_time} to {lot.lot_end_time} "
-                                       f"due to recent bid by {recent_bid.user.username}")
-                            
-                            # Update auction end date if necessary
-                            if lot.lot_end_time > auction.end_date:
-                                auction.end_date = lot.lot_end_time
-                                auction.save(update_fields=['end_date'])
-                                logger.info(f"Extended auction {auction.id} end date to {auction.end_date}")
-                        
-            except Exception as e:
-                logger.error(f"Error checking auto-extend for auction {auction.id}: {e}")
-        
-        if extended_count > 0:
-            logger.info(f"Auto-extended {extended_count} lots")
-            
-    except Exception as e:
-        logger.error(f"Error in check_lot_auto_extend: {e}")
-    
-    return f"Auto-extended {extended_count} lots"
 
 
 def process_closed_lot(inventory):
@@ -240,14 +169,6 @@ def process_closed_lot(inventory):
     
     try:
         with transaction.atomic():
-            # Lock the inventory to prevent race conditions
-            inventory = Inventory.objects.select_for_update().get(id=inventory.id)
-            
-            # Skip if already processed
-            if inventory.status in ['sold', 'unsold']:
-                logger.info(f"Lot {inventory.id} already processed with status: {inventory.status}")
-                return
-            
             winning_bid = inventory.bids.filter(
                 deleted_at__isnull=True
             ).order_by('-bid_amount', 'created_at').first()
@@ -297,13 +218,12 @@ def process_closed_lot(inventory):
                             f"{'highest bid below reserve' if winning_bid else 'no bids'}")
 
             inventory.save(update_fields=['status', 'winning_bid', 'winning_user'])
-            logger.info(f"✅ Successfully processed lot {inventory.id} with status: {inventory.status}")
 
     except Exception as e:
         logger.error(f"❌ Error processing closed lot {inventory.id}: {e}")
         return
 
-    # ✅ Broadcast OUTSIDE the transaction
+    # ✅ IMPORTANT: Broadcast OUTSIDE the transaction
     try:
         if winner_data:
             broadcast_lot_winner(inventory, winner_data)
@@ -338,7 +258,7 @@ def broadcast_lot_winner(inventory, winner_data):
             }
         )
 
-        # Send to auction-wide room
+        #Send to auction-wide room
         async_to_sync(channel_layer.group_send)(
             auction_group_name,
             {
@@ -351,8 +271,7 @@ def broadcast_lot_winner(inventory, winner_data):
 
     except Exception as e:
         logger.exception(f"❌ Error broadcasting winner for lot {inventory.id}: {e}")
-
-
+        
 def create_payment_transaction(user, inventory, amount, winning_bid_amount):
     """Create a pending payment transaction for won inventory"""
     try:
@@ -365,7 +284,7 @@ def create_payment_transaction(user, inventory, amount, winning_bid_amount):
             user=user,
             inventory=inventory,
             status=Payment_History.PaymentStatus.PENDING,
-            payment_method=Payment_History.PaymentMethod.ONLINE
+            payment_method=Payment_History.PaymentMethod.ONLINE  # Default, can be updated later
         )
         
         logger.info(f"Created payment transaction {transaction_id} for user {user.username} "
@@ -379,40 +298,81 @@ def create_payment_transaction(user, inventory, amount, winning_bid_amount):
 
 
 @shared_task
+def check_lot_auto_extend():
+    """
+    Separate task to specifically handle lot auto-extension
+    This can run more frequently (every 5-10 seconds) for better responsiveness
+    """
+    now = timezone.now()
+    extended_count = 0
+    
+    # Get all current auctions with auto-extend enabled
+    current_auctions = Auctions.objects.filter(
+        status='current',
+        auto_extend_time=True,
+        auto_extend_duration__isnull=False
+    )
+    
+    for auction in current_auctions:
+        try:
+            # Get lots that are about to end (within next 30 seconds)
+            ending_soon_lots = auction.inventory_set.filter(
+                deleted_at__isnull=True,
+                lot_end_time__lte=now + timedelta(seconds=30),
+                lot_end_time__gt=now
+            )
+            
+            for lot in ending_soon_lots:
+                # Check for recent bids (within last 30 seconds)
+                recent_bid = lot.bids.filter(
+                    deleted_at__isnull=True,
+                    created_at__gte=now - timedelta(seconds=30)
+                ).order_by('-created_at').first()
+                
+                if recent_bid:
+                    # Extend the lot
+                    lot.lot_end_time = lot.lot_end_time + timedelta(seconds=auction.auto_extend_duration)
+                    lot.save(update_fields=['lot_end_time'])
+                    extended_count += 1
+                    
+                    logger.info(f"Auto-extended lot {lot.id} by {auction.auto_extend_duration}s "
+                               f"due to recent bid by {recent_bid.user.username}")
+                    
+                    # Update auction end date if necessary
+                    if lot.lot_end_time > auction.end_date:
+                        auction.end_date = lot.lot_end_time
+                        auction.save(update_fields=['end_date'])
+                        
+        except Exception as e:
+            logger.error(f"Error checking auto-extend for auction {auction.id}: {e}")
+    
+    if extended_count > 0:
+        logger.info(f"Auto-extended {extended_count} lots")
+    
+    return f"Auto-extended {extended_count} lots"
+
+
+# Update the process_expired_lots task
+@shared_task
 def process_expired_lots():
-    """
-    Standalone task to process expired lots across all auctions
-    This is a backup to catch any lots that might have been missed
-    """
+    """Process lots that have ended but haven't been marked as closed"""
     now = timezone.now()
     processed_count = 0
     
-    try:
-        # Get lots that have ended but are still marked as pending/auction
-        # Add buffer to handle timing precision
-        buffer_time = now - timedelta(seconds=5)
-        
-        expired_lots = Inventory.objects.filter(
-            Q(lot_end_time__lte=buffer_time) &
-            Q(status__in=['pending', 'auction']) &
-            Q(deleted_at__isnull=True)
-        )
-        
-        logger.info(f"Found {expired_lots.count()} expired lots to process")
-        
-        for lot in expired_lots:
-            try:
-                logger.info(f"Processing expired lot {lot.id} (ended at {lot.lot_end_time}, buffer time: {buffer_time})")
-                process_closed_lot(lot)
-                processed_count += 1
-            except Exception as e:
-                logger.error(f"Failed to process expired lot {lot.id}: {e}")
-                continue
-        
-        logger.info(f"Processed {processed_count} expired lots")
-        
-    except Exception as e:
-        logger.error(f"Error in process_expired_lots: {e}")
+    # Get lots that have ended but are still marked as pending/auction
+    expired_lots = Inventory.objects.filter(
+        Q(lot_end_time__lte=now) &
+        Q(status__in=['pending', 'auction']) &
+        Q(deleted_at__isnull=True)
+    )
+    
+    for lot in expired_lots:
+        try:
+            process_closed_lot(lot)  # This will broadcast winner info
+            processed_count += 1
+        except Exception as e:
+            logger.error(f"Failed to process expired lot {lot.id}: {e}")
+            continue
     
     return f"Processed {processed_count} expired lots"
 
@@ -431,6 +391,7 @@ def cleanup_expired_auctions():
     for auction in old_closed_auctions:
         try:
             # Additional cleanup logic can go here
+            # For now, just log the old auctions
             logger.info(f"Old closed auction found: {auction.id} (ended {auction.end_date})")
             cleanup_count += 1
             

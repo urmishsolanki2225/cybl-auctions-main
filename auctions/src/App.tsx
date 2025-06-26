@@ -11,6 +11,7 @@ import LotDetails from "./pages/LotDetails";
 import Category from "./pages/Category";
 import Contact from "./pages/Contact";
 import UserProfile from "./pages/UserProfile";
+import SellerActivity from "./pages/SellerActivity";
 import Watchlist from "./pages/Watchlist"
 import CatLots from "./pages/CatLots.tsx";
 import NotFound from "./pages/NotFound";
@@ -45,6 +46,14 @@ const App = () => (
                   <UserProfile />
                 </PrivateRoute>
               } />
+
+
+              <Route path="/seller-activity" element={
+                <PrivateRoute>
+                  <SellerActivity />
+                </PrivateRoute>
+              } />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
