@@ -41,16 +41,10 @@ const App = () => (
               <Route path="/category" element={<Category />} />
               <Route path="/contact" element={<Contact />} />      
               <Route path="/watchlist" element={<Watchlist />} />     
+              <Route path="/seller/dashbaord" element={<SellerActivity />} />     
               <Route path="/account" element={
                 <PrivateRoute>
                   <UserProfile />
-                </PrivateRoute>
-              } />
-
-
-              <Route path="/seller-activity" element={
-                <PrivateRoute>
-                  <SellerActivity />
                 </PrivateRoute>
               } />
 

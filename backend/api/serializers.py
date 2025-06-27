@@ -1137,3 +1137,33 @@ class CommentSerializer(serializers.ModelSerializer):
             return f"/media/{photo.name}"  # Ensures /media/ prefix
         else:
             return "/media/defaults/user-default.png"  # Fallback default
+        
+        
+        
+################################################################################################################
+# SELLER DASHBORD #
+################################################################################################################
+class InventorySerializerForSeller(serializers.ModelSerializer):
+    buyer = serializers.SerializerMethodField()
+    category = serializers.CharField(source='category.name')
+    
+    class Meta:
+        model = Inventory
+        fields = ['id', 'title', 'category', 'starting_bid', 'status', 'buyer']
+    
+    def get_buyer(self, obj):
+        if obj.winning_user:
+            return obj.winning_user.username
+        return None
+    
+class BidHistorySerializerForSeller(serializers.ModelSerializer):
+    bidder = serializers.CharField(source='user.username')
+    bid_amount = serializers.SerializerMethodField()
+    date = serializers.DateTimeField(source='created_at', format='%Y-%m-%d')
+    
+    class Meta:
+        model = Bid
+        fields = ['bidder', 'bid_amount', 'date']
+    
+    def get_bid_amount(self, obj):  # Changed from get_amount to get_bid_amount
+        return f"${obj.amount:.2f}"  # Assuming the field in Bid model is 'amount'

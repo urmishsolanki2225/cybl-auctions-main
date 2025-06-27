@@ -11,6 +11,16 @@ interface ValidationErrors {
   [key: string]: string[] | undefined;
 }
 
+interface User {
+  id: number;
+  email: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  groups?: string[]; // Assuming groups contains role names like 'Buyer' or 'Seller'
+}
+
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -82,7 +92,20 @@ const Login = () => {
 
       login(response.authToken, response.user);
 
-      navigate('/');
+      // Check user role and redirect accordingly
+      const user = response.user as User;
+      console.log('User groups:', user.groups); // Debug log
+      
+      // Case-insensitive check and trim whitespace
+      const normalizedGroups = user.groups?.map(group => group.trim().toLowerCase());
+      
+      if (normalizedGroups?.includes('seller')) {
+         console.log('Redirecting to seller activity');
+          navigate('/seller/dashbaord', { replace: true });
+      } else {
+        console.log('Redirecting to account');
+        navigate('/account', { replace: true });
+      }
     } catch (error) {
       const apiError = error as ApiError;
       

@@ -7,7 +7,7 @@ from datetime import datetime, time, timedelta
 from rest_framework.pagination import PageNumberPagination
 from django.db.models.functions import TruncDate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, WatchlistSerializer, CountrySerializer, CommentSerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer
+from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, WatchlistSerializer, CountrySerializer, CommentSerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer, InventorySerializerForSeller, BidHistorySerializerForSeller
 from adminpanel.models import Group, Category, Watchlist, Country, State, Inventory, User, Comment, Profile, Auctions, Media, Payment_History, Company
 from rest_framework import generics 
 from django.utils import timezone
@@ -49,6 +49,9 @@ class LoginView(APIView):
             serializer.is_valid(raise_exception=True)
             user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
+            
+            # Get user groups
+            groups = list(user.groups.values_list('name', flat=True))
 
             return Response({
                 "message": "Login successful",
@@ -60,6 +63,7 @@ class LoginView(APIView):
                     "username": user.username,
                     "first_name": user.first_name,
                     "last_name": user.last_name,
+                    "groups": groups  # Include groups in response
                 }
             }, status=status.HTTP_200_OK)
             
@@ -1198,3 +1202,23 @@ class LotCommentsView(APIView):
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+################################################################################################################
+# SELLER DASHBORD #
+################################################################################################################          
+@api_view(['GET'])
+def seller_inventory(request, seller_id):
+    # Get all inventory items from auctions created by this seller
+    inventory = Inventory.objects.filter(
+        auction__user_id=seller_id
+    ).select_related('auction', 'winning_user')
+    
+    serializer = InventorySerializerForSeller(inventory, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def item_bid_history(request, item_id):
+    # Get bid history for a specific inventory item
+    bids = Bid.objects.filter(inventory_id=item_id).order_by('-created_at')
+    serializer = BidHistorySerializerForSeller(bids, many=True)
+    return Response(serializer.data)

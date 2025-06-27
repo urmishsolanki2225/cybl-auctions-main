@@ -78,5 +78,13 @@ urlpatterns = [
     
     #LOT COMMENTS
     path('lots/<int:lot_id>/comments/', views.LotCommentsView.as_view(), name='lot-comments'),
+    
+    
+    
+    ###########################################################################################################
+    #SELLER DASHBOARD
+    path('seller_inventory/<int:seller_id>/', views.seller_inventory),
+    path('item_bid_history/<int:item_id>/', views.item_bid_history),
+    ############################################################################################################
 
 ]

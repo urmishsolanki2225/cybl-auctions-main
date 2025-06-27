@@ -89,8 +89,8 @@ const Navbar = () => {
                 My Account
               </Link>
               <Link
-                to="/seller-activity"
-                className={`navbar-link ${isActive("/seller-activity")}`}
+                to="/seller/dashbaord"
+                className={`navbar-link ${isActive("/seller/dashbaord")}`}
               >
                 Seller Activity
               </Link>
