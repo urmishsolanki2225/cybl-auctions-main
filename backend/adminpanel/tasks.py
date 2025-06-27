@@ -155,11 +155,11 @@ def process_expired_lots_for_auction(auction, current_time):
     
     try:
         # Add buffer to handle timing precision issues
-        buffer_time = current_time - timedelta(seconds=2)  # Reduced buffer
+        # buffer_time = current_time - timedelta(seconds=2)  # Reduced buffer
         
-        logger.debug(f"🔍 Checking for expired lots in auction {auction.id}:\n"
-                    f"  Current time: {current_time}\n"
-                    f"  Buffer time: {buffer_time}")
+        # logger.debug(f"🔍 Checking for expired lots in auction {auction.id}:\n"
+        #             f"  Current time: {current_time}\n"
+        #             f"  Buffer time: {buffer_time}")
         
         expired_lots = auction.inventory_set.filter(
             Q(lot_end_time__lte=current_time) &  # Use current_time instead of buffer_time
