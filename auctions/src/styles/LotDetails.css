@@ -831,3 +831,90 @@
 .comments-list::-webkit-scrollbar-thumb:hover {
   background: #aaa;
 }
+/*///LOt dteaisl sllider*/
+/* Remaining Lots Section */
+.remaining-lots-section {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #eaeaea;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.remaining-lots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.remaining-lot-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.remaining-lot-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.lot-image-container-next-lot {
+  width: 100%;
+  height: 200px;
+  background-color: #f5f5f5;
+  overflow: hidden;
+}
+
+.lot-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lot-thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #eee;
+  color: #999;
+}
+
+.lot-info {
+  padding: 15px;
+}
+
+.lot-title {
+  font-size: 1rem;
+  margin: 0 0 10px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lot-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.current-bid {
+  font-weight: bold;
+  color: #2a52be;
+}
+
+.lot-end-time {
+  color: #666;
+}
+.its-me{
+      padding: 50px;
+}

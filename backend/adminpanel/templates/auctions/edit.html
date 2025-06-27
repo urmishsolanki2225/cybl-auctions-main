@@ -415,11 +415,15 @@ $(document).ready(function() {
             error: function(xhr) {
                 if(xhr.status === 400) {
                     var errors = xhr.responseJSON.errors;
+
+
                     
                     // Display errors for each field
                     $.each(errors, function(key, value) {
-                        $('#error_' + key).text(value.join(', '));
+                        $('#error_' + key).text(value.join(', ')).show();
                     });
+
+
                     
                     // Scroll to first error
                     $('html, body').animate({

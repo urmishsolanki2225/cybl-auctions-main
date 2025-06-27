@@ -380,15 +380,9 @@ $(document).ready(function() {
             error: function(xhr) {
                 if(xhr.status === 400) {
                     var errors = xhr.responseJSON.errors;
-                    $('.text-danger').show();
                     // Display errors for each field
                     $.each(errors, function(key, value) {
-                        $('#error_' + key).text(value.join(', '));
-
-                        console.log("Checking key:", key);  // <-- See if 'start_date' appears
-                        const $errorEl = $('#error_' + key);
-                        $errorEl.text(value.join(', '));
-                        console.log("Inserted error for", key, ":", $errorEl.text());
+                        $('#error_' + key).text(value.join(', ')).show();
                     });
                     
                     // Scroll to first error

@@ -244,10 +244,10 @@ CELERY_BEAT_SCHEDULE = {
     },
     
     # Auto-extend check - every 2 seconds for responsiveness
-    'check_lot_auto_extend_every_2_seconds': {
-        'task': 'adminpanel.tasks.check_lot_auto_extend',
-        'schedule': 1.0,  # Every 2 seconds
-    },
+    # 'check_lot_auto_extend_every_2_seconds': {
+    #     'task': 'adminpanel.tasks.check_lot_auto_extend',
+    #     'schedule': 1.0,  # Every 2 seconds
+    # },
     
     # Backup expired lots processor - every 10 seconds
     'process_expired_lots_every_10_seconds': {

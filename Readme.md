@@ -1,120 +1,120 @@
-Here is your corrected and professionally formatted **Step-by-Step Backend Run Guide**, with proper sequencing, grammar, and technical accuracy:
+    Here is your corrected and professionally formatted **Step-by-Step Backend Run Guide**, with proper sequencing, grammar, and technical accuracy:
 
----
+    ---
 
-### ✅ Backend Setup Guide
+    ### ✅ Backend Setup Guide
 
-#### 1. Navigate to the Backend Directory
+    #### 1. Navigate to the Backend Directory
 
-```bash
-cd backend
-```
+    ```bash
+    cd backend
+    ```
 
----
+    ---
 
-#### 2. Create a Virtual Environment
+    #### 2. Create a Virtual Environment
 
-```bash
-python -m venv venv
-```
+    ```bash
+    python -m venv venv
+    ```
 
----
+    ---
 
-#### 3. Activate the Virtual Environment
+    #### 3. Activate the Virtual Environment
 
-| Platform      | Command                    |
-| ------------- | -------------------------- |
-| Linux / macOS | `source venv/bin/activate` |
-| Windows (CMD) | `venv\Scripts\activate`    |
+    | Platform      | Command                    |
+    | ------------- | -------------------------- |
+    | Linux / macOS | `source venv/bin/activate` |
+    | Windows (CMD) | `venv\Scripts\activate`    |
 
----
+    ---
 
-#### 4. Install Python Dependencies
+    #### 4. Install Python Dependencies
 
-```bash
-pip install -r requirements.txt
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
----
+    ---
 
-#### 5. Update MySQL Configuration (Optional)
+    #### 5. Update MySQL Configuration (Optional)
 
-Update your `my.cnf` or `my.ini` file to enable required settings like `max_allowed_packet`, etc., if needed.
+    Update your `my.cnf` or `my.ini` file to enable required settings like `max_allowed_packet`, etc., if needed.
 
----
+    ---
 
-#### 6. Run Migrations
+    #### 6. Run Migrations
 
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
+    ```bash
+    python manage.py makemigrations
+    python manage.py migrate
+    ```
 
----
+    ---
 
-#### 7. Run the Django Development Server
+    #### 7. Run the Django Development Server
 
-```bash
-python manage.py runserver 192.168.201.35:8000
-```
+    ```bash
+    python manage.py runserver 192.168.201.35:8000
+    ```
 
----
+    ---
 
-#### 8. Run the Project with WebSocket Support (ASGI)
+    #### 8. Run the Project with WebSocket Support (ASGI)
 
-```bash
-daphne -b 192.168.201.35 -p 8000 backend.asgi:application
-```
+    ```bash
+    daphne -b 192.168.201.35 -p 8000 backend.asgi:application
+    ```
 
----
+    ---
 
-#### 9. Start Celery for Automated Auction Start/End
+    #### 9. Start Celery for Automated Auction Start/End
 
-**Option 1: Standard (WSL/Linux recommended)**
+    **Option 1: Standard (WSL/Linux recommended)**
 
-```bash
+    ```bash
 
-#run this First
-    wsl -d Ubuntu
-    sudo service redis-server start
-#Verify it's running:
-    redis-cli ping
-    # Output should be: PONG
+    #run this First
+        wsl -d Ubuntu
+        sudo service redis-server start
+    #Verify it's running:
+        redis-cli ping
+        # Output should be: PONG
 
 
-celery -A backend worker -l info
-celery -A backend beat -l info
-```
+    celery -A backend worker -l info
+    celery -A backend beat -l info
+    ```
 
-**Option 2: fallback WSL (Windows fallback)**
+    **Option 2: fallback WSL (Windows fallback)**
 
-```bash
-celery -A backend worker --pool=solo --loglevel=info
-```
+    ```bash
+    celery -A backend worker --pool=solo --loglevel=info
+    ```
 
----
+    ---
 
-#### 10. Update `requirements.txt` After Installing New Packages
+    #### 10. Update `requirements.txt` After Installing New Packages
 
-```bash
-pip freeze > requirements.txt
-```
+    ```bash
+    pip freeze > requirements.txt
+    ```
 
----
+    ---
 
-### ✅ React Frontend (Vite)
+    ### ✅ React Frontend (Vite)
 
-Navigate to the frontend project and run:
+    Navigate to the frontend project and run:
 
-```bash
-npm run dev -- --host
-```
+    ```bash
+    npm run dev -- --host
+    ```
 
----
-### ✅ Get CCS/JS Change.
+    ---
+    ### ✅ Get CCS/JS Change.
 
-```bash
-python manage.py collectstatic
-```
+    ```bash
+    python manage.py collectstatic
+    ```
 
-Let me know if you'd like this saved as a markdown `.md` file or converted into a project `README.md` style.
+    Let me know if you'd like this saved as a markdown `.md` file or converted into a project `README.md` style.

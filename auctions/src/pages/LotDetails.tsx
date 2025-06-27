@@ -10,6 +10,8 @@ import { useAuth } from "../context/AuthContext";
 import LoginModal from "../components/LoginModal";
 import WatchlistButton from "../components/WatchlistButton";
 import SocialShare from "../components/SocialShare";
+import RemainingLots from '../components/RemainingLots';
+
 
 // Import Swiper React components
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -345,79 +347,10 @@ console.log("Username debug", winnerData.username);
   };
 
 
-
-
-  console.log("Urmishsolanki",winnerData)
-
-  // Fix the WinnerAnnouncement component positioning
-  const WinnerAnnouncement = ({ winnerData, onClose }) => {
-    if (!winnerData || !showWinnerAnnouncement) return null;
-
-    return (
-      <div className="winner-announcement-overlay">
-        <div className="winner-announcement-modal">
-          <button className="close-announcement" onClick={onClose}>
-            ×
-          </button>
-
-          {winnerData.status === "sold" ? (
-            <div className="winner-content">
-              <div className="winner-crown">👑</div>
-              <h2>Auction Ended!</h2>
-
-              <div className="winner-profile">
-                <img
-                  src={
-                    winnerData.profile_photo
-                      ? BASE_URL + winnerData.profile_photo
-                      : "../assets/default-avatar.png"
-                  }
-                  alt={winnerData.username}
-                  className="winner-avatar"
-                />
-                <div className="winner-info">
-                  <h3>{winnerData.username}</h3>
-                  {winnerData.user_id === user?.id && (
-                    <span className="you-won-badge">🎉 You Won!</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="winning-amount">
-                <span className="amount-label">Winning Bid:</span>
-                <span className="amount">${winnerData.winning_amount}</span>
-              </div>
-
-              {winnerData.user_id === user?.id && (
-                <div className="next-steps">
-                  <p>Congratulations! Please proceed to payment.</p>
-                  <button className="proceed-payment-btn">
-                    Proceed to Payment
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="unsold-content">
-              <div className="unsold-icon">❌</div>
-              <h2>Auction Ended</h2>
-              <p>This lot was not sold</p>
-              <p className="reason">{winnerData.reason}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="lot-details-page">
       <div className="container">
-        <div className="lot-details-header">
-          <WinnerAnnouncement
-            winnerData={winnerData}
-            onClose={() => setShowWinnerAnnouncement(false)}
-          />
+        <div className="lot-details-header">         
           <div className="breadcrumb">
             <strong>{lot?.title} --- </strong>
             <span>{lot?.category?.name || "Category"}</span>
@@ -788,6 +721,9 @@ console.log("Username debug", winnerData.username);
           }}
         />
       )}
+      <div className="its-me">
+        <RemainingLots lots={lot.remaining_lots} />
+      </div>
     </div>
   );
 };

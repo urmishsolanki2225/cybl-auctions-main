@@ -112,7 +112,7 @@ const Index = () => {
               <div
                 className="featured-auction-combined-card"
                 key={index}
-                onClick={() => navigate(`/auction/${auctions.id}`)}
+                
               >
                 <div className="auction-header">
                   {/* Left - Company Info */}
@@ -145,6 +145,7 @@ const Index = () => {
                       <span>pincode: {auctions.location_details.zipcode}</span>
                     </div>
                     <span>{auctions.lot_count} Lots Open for Bidding </span>
+                                    
                   </div>
 
                   {/* Right - Countdown */}
@@ -157,6 +158,9 @@ const Index = () => {
                     <div>
                       <LiveTimer endTime={auctions.end_date} />
                     </div>
+                    <span className="mt-2">
+                       <button className="bid-btn" onClick={() => navigate(`/auction/${auctions.id}`)}>View Details </button> 
+                    </span>   
                   </div>
                 </div>
 
