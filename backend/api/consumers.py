@@ -176,7 +176,8 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 'type': 'error',
                 'message': f'Failed to post comment: {str(e)}'
             }))
-
+            
+            
     async def place_bid(self, bid_amount, user_id=None):
         try:
             print(f"Placing bid: {bid_amount} for user: {user_id}")
@@ -199,20 +200,55 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
                 return
             
             lot = await database_sync_to_async(Inventory.objects.get)(id=self.lot_id)
+            print(f"✅ DB Connection OK - Got lot {lot.id}")
             auction = await database_sync_to_async(lambda: lot.auction)()
             print(f"Found lot: {lot.title}")
             
             now = timezone.now()
             
-            # Check if we need to extend the timer BEFORE checking if bidding ended
+            # 1. FIRST check if bidding has ended (with current end time)
+            if lot.lot_end_time and lot.lot_end_time < now:
+                await self.send(text_data=json.dumps({
+                    'type': 'error', 
+                    'message': 'Bidding has ended for this lot'
+                }))
+                return
+            
+            # 2. Check if we need to extend the timer
             should_extend, extension_amount = await self.check_and_extend_timer(lot, now)
             
-            # If timer was extended, update the lot and all subsequent lots
+            # 3. If extension needed, update times FIRST
             if should_extend:
-                await database_sync_to_async(self.update_lot_end_time)(lot, extension_amount)
-                # Refresh lot object after extension
+                 # Get fresh lot data before extension to avoid race conditions
                 lot = await database_sync_to_async(Inventory.objects.get)(id=self.lot_id)
-                print(f"✅ Lot refreshed after extension. New end time: {lot.lot_end_time}")
+                original_end_time = lot.lot_end_time
+                expected_new_end_time = original_end_time + timedelta(seconds=extension_amount)
+                
+                print(f"🔄 BEFORE UPDATE:")
+                print(f"   Current end time: {original_end_time}")
+                print(f"   Expected new time: {expected_new_end_time}")
+                
+                # Update the time
+                await database_sync_to_async(self.update_lot_end_time)(lot, extension_amount)
+                
+                # Verify the update worked
+                update_success, actual_end_time = await self.verify_lot_time_update(
+                    self.lot_id, expected_new_end_time
+                )
+                
+                if not update_success:
+                    print(f"❌ TIME UPDATE FAILED! Expected: {expected_new_end_time}, Got: {actual_end_time}")
+                    await self.send(text_data=json.dumps({
+                        'type': 'error',
+                        'message': 'Failed to extend timer - please try again'
+                    }))
+                    return
+                
+                # Refresh lot object after successful extension
+                lot = await database_sync_to_async(Inventory.objects.get)(id=self.lot_id)
+                print(f"✅ TIMER EXTENSION SUCCESSFUL:")
+                print(f"   New end time: {lot.lot_end_time}")
+                print(f"   Extension amount: {extension_amount} seconds")
             
             # Now check if bidding has ended (using updated end time)
             if lot.lot_end_time and lot.lot_end_time < now:
@@ -284,6 +320,9 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             
             # Send timer extension notification if applicable
             if should_extend:
+                
+                lot = await database_sync_to_async(Inventory.objects.get)(id=self.lot_id)
+                print(f"✅ Lot refreshed after extension. New end time: {lot.lot_end_time}")
                 # Broadcast to current lot
                 await self.channel_layer.group_send(
                     self.room_group_name,
@@ -335,10 +374,18 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
 
     async def check_and_extend_timer(self, lot, current_time):
         """
-        FIXED: Standard auto-extend logic with proper return values
+        Check if we should extend the timer based on auction settings
+        Returns tuple: (should_extend: bool, extension_amount: int)
         """
         try:
+            
+            print(f"🔍 EXTENSION CHECK FOR LOT {lot.id}")
+            print(f"  Current DB time: {lot.lot_end_time}")
+            print(f"  System time: {current_time}")
+            print(f"  Time remaining: {(lot.lot_end_time - current_time).total_seconds()}s")
+            
             if not lot.lot_end_time:
+                print("❌ No end time set - cannot extend")
                 return False, 0
 
             # Fetch related auction with auto extend settings
@@ -346,27 +393,27 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             
             # Check if auto-extend is enabled
             if not auction.auto_extend_time or not auction.auto_extend_duration:
-                print(f"Auto-extend disabled for auction {auction.id}")
+                print("❌ Auto-extend disabled in auction settings")
                 return False, 0
 
             # Calculate time remaining until lot ends
-            time_remaining = lot.lot_end_time - current_time
+            time_remaining = (lot.lot_end_time - current_time).total_seconds()
+            print(f"  Time remaining: {time_remaining}s (threshold: 10s)")
             
             # Convert to seconds for easier comparison
-            time_remaining_seconds = time_remaining.total_seconds()
             extension_threshold_seconds = 10  # 10 seconds threshold
             extension_amount_seconds = auction.auto_extend_duration
 
-            print(f"🕐 Time remaining: {time_remaining_seconds} seconds")
+            print(f"🕐 Time remaining: {time_remaining} seconds")
             print(f"🕐 Extension threshold: {extension_threshold_seconds} seconds")
             print(f"🕐 Extension amount: {extension_amount_seconds} seconds")
 
             # If bid placed within the last 10 seconds, extend
-            if 0 < time_remaining_seconds <= extension_threshold_seconds:
+            if 0 < time_remaining <= extension_threshold_seconds:
                 print(f"✅ Timer extension triggered for lot {lot.id}")
                 return True, extension_amount_seconds
             else:
-                print(f"❌ No timer extension needed. Time remaining: {time_remaining_seconds}s")
+                print(f"❌ No timer extension needed. Time remaining: {time_remaining}s")
                 return False, 0
 
         except Exception as e:
@@ -375,86 +422,85 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
 
     def update_lot_end_time(self, lot, extension_seconds):
         """
-        FIXED: Update lot end time and properly cascade to subsequent lots
+        PROPERLY update lot end time and cascade to subsequent lots
+        with transaction safety and error handling
         """
         from django.db import transaction
+        from django.db.models import F
         
-        try:        
+        try:
             with transaction.atomic():
-                # Get original end time before any changes
-                original_end_time = lot.lot_end_time
-                print(f"🔄 Original end time: {original_end_time}")
-                
-                # Calculate new end time
-                extension_amount = timedelta(seconds=extension_seconds)
-                new_end_time = original_end_time + extension_amount
-                
-                print(f"🔄 Extending lot {lot.id} by {extension_seconds} seconds")
-                print(f"🔄 New end time: {new_end_time}")
-                
-                # Update current lot
-                lot.lot_end_time = new_end_time
-                lot.save(update_fields=['lot_end_time'])
-                
-                # Verify the save worked
-                lot.refresh_from_db()
-                print(f"✅ Lot {lot.id} end time updated to: {lot.lot_end_time}")
-                
-                # Get auction
+                # Get fresh lock on the lot and related auction
+                lot = Inventory.objects.select_for_update().get(id=lot.id)
+                auction = Auctions.objects.select_for_update().get(id=lot.auction.id)
                 auction = lot.auction
                 
-                # CRITICAL FIX: Find all subsequent lots that START after the ORIGINAL end time
-                # This ensures we don't miss any lots that should be rescheduled
+                # Store original end time for comparison
+                original_end_time = lot.lot_end_time
+                original_auction_end = auction.end_date
+                
+                # Calculate new end time
+                new_end_time = lot.lot_end_time + timedelta(seconds=extension_seconds)
+                
+                print(f"🔄 Updating lot {lot.id}")
+                print(f"   Original end time: {original_end_time}")
+                print(f"   New end time: {new_end_time}")
+                print(f"   Extension: {extension_seconds} seconds")
+                
+                # Update current lot
+                updated_rows = Inventory.objects.filter(id=lot.id).update(
+                    lot_end_time=new_end_time
+                )
+                print(f"✅ Updated {updated_rows} lot(s) with new end time")
+                
+                # Find subsequent lots that need to be updated
                 subsequent_lots = Inventory.objects.filter(
                     auction=auction,
-                    lot_start_time__gte=original_end_time,  # Changed from __gt to __gte
-                    deleted_at__isnull=True
-                ).exclude(id=lot.id).order_by('lot_start_time')
+                    lot_start_time__gte=original_end_time  # Use original end time
+                ).exclude(id=lot.id)
                 
-                print(f"🔄 Found {subsequent_lots.count()} subsequent lots to reschedule")
+                print(f"🔍 Found {subsequent_lots.count()} subsequent lots to update")
                 
-                # Update subsequent lots' start and end times
-                for subsequent_lot in subsequent_lots:
-                    old_start = subsequent_lot.lot_start_time
-                    old_end = subsequent_lot.lot_end_time
+                if subsequent_lots.exists():
+                    # Update subsequent lots using F() to avoid race conditions
+                    updated_subsequent = subsequent_lots.update(
+                        lot_start_time=F('lot_start_time') + timedelta(seconds=extension_seconds),
+                        lot_end_time=F('lot_end_time') + timedelta(seconds=extension_seconds)
+                    )
+                    print(f"✅ Updated {updated_subsequent} subsequent lots")
                     
-                    # Extend start time
-                    subsequent_lot.lot_start_time += extension_amount
-                    # Extend end time
-                    if subsequent_lot.lot_end_time:
-                        subsequent_lot.lot_end_time += extension_amount
-                    
-                    subsequent_lot.save(update_fields=['lot_start_time', 'lot_end_time'])
-                    
-                    print(f"✅ Lot {subsequent_lot.id} rescheduled:")
-                    print(f"   Start: {old_start} -> {subsequent_lot.lot_start_time}")
-                    print(f"   End: {old_end} -> {subsequent_lot.lot_end_time}")
+                    # Verify the updates (optional debug)
+                    for subsequent_lot in subsequent_lots.all()[:3]:  # Check first 3
+                        subsequent_lot.refresh_from_db()
+                        print(f"   Lot {subsequent_lot.id}: {subsequent_lot.lot_start_time} - {subsequent_lot.lot_end_time}")
                 
-                # Update auction end date if necessary
-                if auction.end_date:
-                    # Check if auction end date needs to be extended
-                    last_lot = Inventory.objects.filter(
-                        auction=auction,
-                        deleted_at__isnull=True
-                    ).order_by('-lot_end_time').first()
+                # 3. Update auction end time if needed
+                if auction.end_date and new_end_time > auction.end_date:
+                    new_auction_end = auction.end_date + (new_end_time - original_auction_end)
+                    auction.end_date = new_auction_end
+                    auction.save(update_fields=['end_date'])
+                    print(f"✅ Updated auction end time to {new_auction_end}")
                     
-                    if last_lot and last_lot.lot_end_time:
-                        # Extend auction end date to match the last lot's end time
-                        if auction.end_date < last_lot.lot_end_time:
-                            old_auction_end = auction.end_date
-                            auction.end_date = last_lot.lot_end_time
-                            auction.save(update_fields=['end_date'])
-                            print(f"✅ Auction {auction.id} end time extended:")
-                            print(f"   {old_auction_end} -> {auction.end_date}")
+                # Refresh the original lot to get updated time
+                lot.refresh_from_db()
+                print(f"🔧 Final verification - Lot {lot.id} end time: {lot.lot_end_time}")
                 
-                print(f"✅ Successfully extended lot {lot.id} and rescheduled subsequent lots")
-                
+                # Double-check the update worked
+                if lot.lot_end_time == new_end_time:
+                    print(f"✅ SUCCESS: Lot {lot.id} end time updated correctly")
+                else:
+                    print(f"❌ ERROR: Expected {new_end_time}, got {lot.lot_end_time}")
+                    raise Exception(f"Time update verification failed")
+                    
+            # Final verification outside transaction
+            lot.refresh_from_db()
+            print(f"🎯 FINAL CHECK: Lot {lot.id} end time is now: {lot.lot_end_time}")
+            
         except Exception as e:
-            print(f"❌ Error in update_lot_end_time: {str(e)}")
-            import traceback
+            print(f"❌ CRITICAL ERROR in update_lot_end_time: {str(e)}")
             print(traceback.format_exc())
-            raise
-
+            raise  # Re-raise to ensure the bid fails if time can't be updated
+        
     # Add the missing broadcast_lot_ended method
     async def broadcast_lot_ended(self, lot):
         """Broadcast lot ended with winner information"""
@@ -526,6 +572,27 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             print(f"❌ Error broadcasting lot ended: {str(e)}")
             import traceback
             print(traceback.format_exc())
+            
+    @database_sync_to_async
+    def verify_lot_time_update(self, lot_id, expected_end_time):
+        """
+        Verify that the lot end time was actually updated in the database
+        """
+        try:
+            # Fresh query from database
+            fresh_lot = Inventory.objects.get(id=lot_id)
+            actual_end_time = fresh_lot.lot_end_time
+            
+            print(f"🔍 VERIFICATION:")
+            print(f"   Expected: {expected_end_time}")
+            print(f"   Actual:   {actual_end_time}")
+            print(f"   Match:    {actual_end_time == expected_end_time}")
+            
+            return actual_end_time == expected_end_time, actual_end_time
+            
+        except Exception as e:
+            print(f"❌ Error in verification: {str(e)}")
+            return False, None
 
     @database_sync_to_async
     def get_user_profile_photo(user):

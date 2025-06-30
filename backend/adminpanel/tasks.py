@@ -1,5 +1,5 @@
 # Enhanced tasks.py with comprehensive logging and fixes
-
+#D:\xampp\htdocs\urmish-dev\cybl-auctions-main\backend\adminpanel\tasks.py
 from celery import shared_task
 from django.utils import timezone
 from django.db import transaction
@@ -89,6 +89,10 @@ def update_auction_status():
 def calculate_auction_end_date(auction):
     """Calculate and set auction end date with enhanced logging"""
     try:
+        if auction.end_date:
+            logger.debug(f"⏩ Auction {auction.id} already has end_date: {auction.end_date}")
+            return
+        
         lot_count = auction.inventory_set.filter(deleted_at__isnull=True).count()
         logger.info(f"📊 Auction {auction.id} has {lot_count} active lots")
         
@@ -113,7 +117,9 @@ def update_lot_times_for_auction(auction):
     """Update lot times with detailed logging"""
     try:
         inventories = auction.inventory_set.filter(
-            deleted_at__isnull=True
+            deleted_at__isnull=True,
+            lot_start_time__isnull=True,
+            lot_end_time__isnull=True
         ).order_by('id')
         
         logger.debug(f"🔄 Updating times for {inventories.count()} lots in auction {auction.id}")
@@ -154,16 +160,10 @@ def process_expired_lots_for_auction(auction, current_time):
     processed_count = 0
     
     try:
-        # Add buffer to handle timing precision issues
-        # buffer_time = current_time - timedelta(seconds=2)  # Reduced buffer
-        
-        # logger.debug(f"🔍 Checking for expired lots in auction {auction.id}:\n"
-        #             f"  Current time: {current_time}\n"
-        #             f"  Buffer time: {buffer_time}")
         
         expired_lots = auction.inventory_set.filter(
             Q(lot_end_time__lte=current_time) &  # Use current_time instead of buffer_time
-            Q(status__in=['pending', 'auction']) &
+            Q(status__in=['auction']) &
             Q(deleted_at__isnull=True)
         ).order_by('lot_end_time')
         

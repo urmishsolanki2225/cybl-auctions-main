@@ -35,7 +35,7 @@ export const WatchlistProvider: React.FC<{children: React.ReactNode}> = ({ child
       const inventoryIds = response.map((item: any) => item.inventory_details.id);
       
       setWatchlist(inventoryIds);
-      console.log("Watchlist loaded:", inventoryIds); // Debug log
+      //console.log("Watchlist loaded:", inventoryIds); // Debug log
     } catch (err) {
       console.error("Failed to fetch watchlist", err);
       setWatchlist([]); // Reset on error

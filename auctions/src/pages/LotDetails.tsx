@@ -10,17 +10,15 @@ import { useAuth } from "../context/AuthContext";
 import LoginModal from "../components/LoginModal";
 import WatchlistButton from "../components/WatchlistButton";
 import SocialShare from "../components/SocialShare";
-import RemainingLots from '../components/RemainingLots';
-
+import RemainingLots from "../components/RemainingLots";
 
 // Import Swiper React components
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/free-mode';
-import 'swiper/css/navigation';
-import 'swiper/css/thumbs';
-import { FreeMode, Navigation, Thumbs } from 'swiper/modules';
-
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/free-mode";
+import "swiper/css/navigation";
+import "swiper/css/thumbs";
+import { FreeMode, Navigation, Thumbs } from "swiper/modules";
 
 const LotDetails = () => {
   const { id } = useParams();
@@ -80,7 +78,7 @@ const LotDetails = () => {
     const socket = getSocket();
     if (socket && socket.readyState === WebSocket.OPEN) {
       setIsSubmittingComment(true);
-      
+
       const message = {
         type: "post_comment",
         comment_text: newComment.trim(),
@@ -89,7 +87,7 @@ const LotDetails = () => {
 
       socket.send(JSON.stringify(message));
       console.log("📤 Comment sent via WebSocket:", message);
-      
+
       // Clear the input immediately for better UX
       setNewComment("");
     } else {
@@ -119,12 +117,12 @@ const LotDetails = () => {
       // ADD NEW HANDLER FOR COMMENT POSTED
       if (message.type === "comment_posted") {
         console.log("💬 New comment received:", message.data);
-        
+
         setComments((prevComments) => [message.data, ...prevComments]);
-        
+
         // Reset submitting state
         setIsSubmittingComment(false);
-        
+
         // Show success toast only for the user who posted
         if (message?.data?.user_id === user?.id) {
           toast.success("Comment posted successfully!");
@@ -203,44 +201,49 @@ const LotDetails = () => {
       } else if (message.type === "lot_ended") {
         console.log("🏆 Lot ended with winner data:", message.data);
 
-        const { winner } = message.data;
-        setWinnerData(winner);
-        setShowWinnerAnnouncement(true);
-        setAuctionEnded(true); // SET AUCTION ENDED STATE
+        if (message.data && message.data.lot_id == id) {
+          const { winner } = message.data;
+          setWinnerData(winner);
+          setShowWinnerAnnouncement(true);
+          setAuctionEnded(true); // SET AUCTION ENDED STATE
 
-        // Update lot status
-        setLotStatus(winner.status);
+          // Update lot status
+          setLotStatus(winner.status);
 
-        if (winner.status === "sold") {
-          setWinner(winner.username);
-          setWinningAmount(winner.winning_amount);
+          if (winner.status === "sold") {
+            setWinner(winner.username);
+            setWinningAmount(winner.winning_amount);
 
-          // Show different toasts based on whether the user won
-          if (winner.user_id === user?.id) {
-            toast.success(
-              `🎉 Congratulations! You won this lot for $${winner.winning_amount}!`,
-              {
-                autoClose: 8000,
-              }
-            );
+            // Show different toasts based on whether the user won
+            if (winner.user_id === user?.id) {
+              toast.success(
+                `🎉 Congratulations! You won this lot for $${winner.winning_amount}!`,
+                {
+                  autoClose: 8000,
+                }
+              );
+            } else {
+              toast.info(
+                `🏆 Lot sold to ${winner.username} for $${winner.winning_amount}`,
+                {
+                  autoClose: 5000,
+                }
+              );
+            }
           } else {
-            toast.info(
-              `🏆 Lot sold to ${winner.username} for $${winner.winning_amount}`,
+            toast.warning(
+              `❌ Lot ended without a sale. ${winner.reason || ""}`,
               {
                 autoClose: 5000,
               }
             );
           }
-        } else {
-          toast.warning(`❌ Lot ended without a sale. ${winner.reason || ""}`, {
-            autoClose: 5000,
-          });
-        }
 
-        // Auto-hide winner announcement after 10 seconds
-        setTimeout(() => {
-          setShowWinnerAnnouncement(false);
-        }, 10000);
+          // Auto-hide winner announcement after 10 seconds
+          setTimeout(() => {
+            setShowWinnerAnnouncement(false);
+          }, 10000);
+        }
       } else if (message.type === "error") {
         setIsPlacingBid(false); // Reset loading state on error
         setIsSubmittingComment(false); // Reset comment loading state on error
@@ -263,16 +266,15 @@ const LotDetails = () => {
         setLotStatus(data.status || "");
         setWinner(data.winner || null);
         setWinningAmount(data.winning_amount || null);
-        
+
         // Check if auction has already ended
         if (data.status === "sold" || data.status === "unsold") {
           setAuctionEnded(true);
 
           if (data.winner_data) {
             setWinnerData(data.winner_data);
-            console.log("Urmish solanki", data.winner_data)
+            console.log("Urmish solanki", data.winner_data);
           }
-
         }
       } catch (err) {
         console.error("Error loading lot:", err);
@@ -317,7 +319,7 @@ const LotDetails = () => {
   // Winner Display Component for Right Side
   const WinnerDisplay = ({ winnerData }) => {
     if (!winnerData) return null;
-console.log("Username debug", winnerData.username);
+    console.log("Username debug", winnerData.username);
     return (
       <div className="winner-display">
         <div className="winner-trophy">🏆</div>
@@ -346,11 +348,10 @@ console.log("Username debug", winnerData.username);
     );
   };
 
-
   return (
     <div className="lot-details-page">
       <div className="container">
-        <div className="lot-details-header">         
+        <div className="lot-details-header">
           <div className="breadcrumb">
             <strong>{lot?.title} --- </strong>
             <span>{lot?.category?.name || "Category"}</span>
@@ -362,12 +363,15 @@ console.log("Username debug", winnerData.username);
 
         <div className="lot-main">
           <div className="lot-left">
-            <div className="image-gallery" style={{ width: '737px', height: '557px' }}>
+            <div
+              className="image-gallery"
+              style={{ width: "737px", height: "557px" }}
+            >
               {lot?.media_items && lot.media_items.length > 0 ? (
                 <>
                   {/* Main Image Swiper */}
                   <Swiper
-                    style={{ width: '100%', height: '400px' }}
+                    style={{ width: "100%", height: "400px" }}
                     spaceBetween={10}
                     thumbs={{ swiper: thumbsSwiper }}
                     modules={[Thumbs, Navigation]} // ✅ Add Navigation here
@@ -377,12 +381,20 @@ console.log("Username debug", winnerData.username);
                     {lot.media_items.map((image, index) => (
                       <SwiperSlide key={index}>
                         <img
-                          src={BASE_URL + `/media/` + image.path?.replace(/\\/g, "/")}
+                          src={
+                            BASE_URL +
+                            `/media/` +
+                            image.path?.replace(/\\/g, "/")
+                          }
                           alt={lot?.title || `Image ${index + 1}`}
                           onError={(e) => {
                             e.target.src = "/placeholder-image.jpg";
                           }}
-                          style={{ width: '500px', height: '500px', objectFit: 'cover' }}
+                          style={{
+                            width: "500px",
+                            height: "500px",
+                            objectFit: "cover",
+                          }}
                         />
                       </SwiperSlide>
                     ))}
@@ -397,21 +409,25 @@ console.log("Username debug", winnerData.username);
                       watchSlidesProgress={true}
                       modules={[Thumbs]}
                       className="thumbnail-swiper"
-                      style={{ marginTop: '10px' }}
+                      style={{ marginTop: "10px" }}
                     >
                       {lot.media_items.map((image, index) => (
                         <SwiperSlide key={`thumb-${index}`}>
                           <img
-                            src={BASE_URL + `/media/` + image.path?.replace(/\\/g, "/")}
+                            src={
+                              BASE_URL +
+                              `/media/` +
+                              image.path?.replace(/\\/g, "/")
+                            }
                             alt={`Thumb ${index + 1}`}
                             onError={(e) => {
                               e.target.src = "/placeholder-image.jpg";
                             }}
                             style={{
-                              width: '100px',
-                              height: '100px',
-                              objectFit: 'cover',
-                              borderRadius: '8px',
+                              width: "100px",
+                              height: "100px",
+                              objectFit: "cover",
+                              borderRadius: "8px",
                             }}
                           />
                         </SwiperSlide>
@@ -677,7 +693,8 @@ console.log("Username debug", winnerData.username);
                         imageUrl={
                           BASE_URL +
                           `/media/` +
-                          (lot?.media_items?.[0]?.path?.replace(/\\/g, "/") || "")
+                          (lot?.media_items?.[0]?.path?.replace(/\\/g, "/") ||
+                            "")
                         }
                         itemUrl={window.location.href}
                       />
@@ -703,8 +720,8 @@ console.log("Username debug", winnerData.username);
                 </div>
               </div>
             ) : (
-              <WinnerDisplay 
-                winnerData={winnerData} 
+              <WinnerDisplay
+                winnerData={winnerData}
                 winningAmount={winningAmount}
               />
             )}
