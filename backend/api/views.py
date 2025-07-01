@@ -735,7 +735,7 @@ def user_bidding_history(request):
                 'last_bid_time': user_last_bid.created_at if user_last_bid else None,
                 'starting_bid': str(inventory.starting_bid),
                 'reserve_price': str(inventory.reserve_price),
-                'winning_user_id': highest_bid.user.id if not is_auction_active and highest_bid else None,
+                'winning_user_id': highest_bid.user.id if not is_lot_active and highest_bid else None,
                 'winning_bid_amount': str(highest_bid.bid_amount) if highest_bid else None,
             }
 
