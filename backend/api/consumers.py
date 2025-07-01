@@ -651,10 +651,17 @@ class LotBiddingConsumer(AsyncWebsocketConsumer):
             bid_history_data = []
 
             for bid in bid_history:
+                profile_photo = ''
+                try:
+                    if bid.user.profile.photo and hasattr(bid.user.profile.photo, 'url'):
+                        profile_photo = bid.user.profile.photo.url
+                except Exception:
+                    profile_photo = None
+                    
                 bid_history_data.append({
                     'id': bid.id,
                     'bidder': bid.user.username,
-                    'profile': getattr(bid.user.profile.photo, 'url', None),
+                    'profile': profile_photo,
                     'user_id': bid.user.id,
                     'amount': str(bid.bid_amount),
                     'timestamp': bid.created_at.isoformat(),

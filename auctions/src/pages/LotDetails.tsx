@@ -11,6 +11,8 @@ import LoginModal from "../components/LoginModal";
 import WatchlistButton from "../components/WatchlistButton";
 import SocialShare from "../components/SocialShare";
 import RemainingLots from "../components/RemainingLots";
+import { Helmet } from "react-helmet";
+
 
 // Import Swiper React components
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -498,9 +500,10 @@ const LotDetails = () => {
                             >
                               <img
                                 src={
-                                  BASE_URL + bid?.profile ||
-                                  BASE_URL + "../assets/default-avatar.png"
-                                }
+                                    bid?.profile
+                                      ? BASE_URL + bid.profile
+                                      : "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"
+                                  }
                                 alt={bid.bidder}
                                 className="bidder-avatar"
                               />
@@ -651,7 +654,7 @@ const LotDetails = () => {
             {!auctionEnded ? (
               <div className="bidding-section">
                 <div className="auction-timer">
-                  <LiveTimer endTime={lot?.lot_end_time || lot?.endTime} />
+                  <LiveTimer endTime={lot?.lot_end_time} />
                 </div>
                 <div>
                   <div className="current-bid">
