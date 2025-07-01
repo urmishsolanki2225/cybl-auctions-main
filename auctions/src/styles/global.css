@@ -20,7 +20,7 @@ body {
 
 .main-content {
   flex: 1;
-  padding-top: 80px; /* Account for fixed navbar */
+  padding-top: 70px; /* Account for fixed navbar */
 }
 
 /* Container */

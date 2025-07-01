@@ -11,9 +11,8 @@ import LoginModal from "../components/LoginModal";
 import WatchlistButton from "../components/WatchlistButton";
 import SocialShare from "../components/SocialShare";
 import RemainingLots from "../components/RemainingLots";
+import { Helmet } from "react-helmet";
 
-import bidSuccessSounds from "../sounds/Jungle Confirm Button.mp3"
-import Congratulationswinners from "../sounds/Congratulations-Youre-A-Winner.mp3"
 
 // Import Swiper React components
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -37,62 +36,19 @@ const LotDetails = () => {
   const [bidHistory, setBidHistory] = useState([]);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [lotStatus, setLotStatus] = useState("unsold");
+
   const [winner, setWinner] = useState(null);
   const [winningAmount, setWinningAmount] = useState(null);
   const [showWinnerAnnouncement, setShowWinnerAnnouncement] = useState(false);
   const [winnerData, setWinnerData] = useState([]);
   const [auctionEnded, setAuctionEnded] = useState(false); // NEW STATE
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated } = useAuth();
+
   const user = JSON.parse(localStorage.getItem("user"));
+
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
-  //##################################################################################
-  // 1. Add these imports at the top of your file (after existing imports)
-  const bidSuccessSound = new Audio(bidSuccessSounds);
-  const Congratulationswinner = new Audio(Congratulationswinners); 
-  const newBidSound = new Audio('../sounds/new-bid.mp3');
-
-  // 3. Add this useEffect to preload sounds (after existing useEffects)
-  useEffect(() => {
-    // Preload audio files
-    bidSuccessSound.preload = 'auto';
-    Congratulationswinner.preload = 'auto';
-    newBidSound.preload = 'auto';
-    
-    // Set volume
-    bidSuccessSound.volume = 0.6;
-    Congratulationswinner.volume = 0.6;
-    newBidSound.volume = 0.4;
-  }, []);
-
-  // 2. Keep your Web Audio API playSound function as is (it's correct)
-  const playSound = (type) => {
-    try {
-      let soundToPlay;
-      
-      switch(type) {
-        case 'bidSuccess':
-          soundToPlay = bidSuccessSound;
-          break;
-        case 'winner':
-          soundToPlay = Congratulationswinner;
-          break;
-        case 'newBid':
-          soundToPlay = newBidSound;
-          break;
-        default:
-          return;
-      }
-      
-      // Reset and play
-      soundToPlay.currentTime = 0;
-      soundToPlay.play().catch(e => console.log('Audio play failed:', e));
-    } catch (error) {
-      console.error('Sound error:', error);
-    }
-  };
-
-  //##################################################################################
 
   // Load comments when component mounts - ONLY ONCE on initial load
   useEffect(() => {
@@ -206,7 +162,6 @@ const LotDetails = () => {
             toastMessage += ` Timer extended!`;
           }
           toast.success(toastMessage);
-          playSound('bidSuccess');
         } else {
           // Show info toast for other users
           let toastMessage = `New bid placed: $${bidAmount}`;
@@ -263,7 +218,6 @@ const LotDetails = () => {
 
             // Show different toasts based on whether the user won
             if (winner.user_id === user?.id) {
-              playSound('winner');
               toast.success(
                 `🎉 Congratulations! You won this lot for $${winner.winning_amount}!`,
                 {
