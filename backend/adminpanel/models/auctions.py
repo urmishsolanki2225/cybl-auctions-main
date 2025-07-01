@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from adminpanel.models import Country, State
 from datetime import timedelta
 
-
 class Auctions(models.Model):
     TIME_DURATION_CHOICES = [
         (5, "5 Seconds"),
@@ -72,7 +71,6 @@ class Auctions(models.Model):
     zipcode = models.CharField(max_length=20, blank=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-
 
     # Auction Status
     status = models.CharField(

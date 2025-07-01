@@ -2,8 +2,6 @@ from django import forms
 from django.utils import timezone
 from adminpanel.models import Auctions
 
-
-
 class AuctionForm(forms.ModelForm):
     class Meta:
         model = Auctions

@@ -6,10 +6,6 @@ class PaymentChargeDetail(models.Model):
     class ChargeType(models.TextChoices):
         STORAGE = 'Storage', 'Storage Charge'
         LABEL = 'Label', 'Labeling Charge'
-        # PROCESSING = 'Processing', 'Processing Fee'
-        # HANDLING = 'Handling', 'Handling Charge'
-        # PACKAGING = 'Packaging', 'Packaging Fee'
-        # INSURANCE = 'Insurance', 'Insurance Charge'
 
     payment = models.ForeignKey('Payment_History', on_delete=models.CASCADE, related_name='charge_details')
     charge_type = models.CharField(max_length=50, choices=ChargeType.choices)

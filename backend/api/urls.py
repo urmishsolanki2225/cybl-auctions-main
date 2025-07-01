@@ -38,9 +38,9 @@ urlpatterns = [
 
     #LOT URLS
     path('lots/<int:id>/', views.InventoryDetailAPIView.as_view(), name='inventory-detail'),
-    path('lots/<int:lot_id>/bid/', views.place_bid_api, name='place_bid'),
-    path('lots/<int:lot_id>/bids/', views.get_bid_history, name='bid_history'),
-    path('lots/<int:lot_id>/status/', views.get_lot_status, name='lot_status'),   
+    # path('lots/<int:lot_id>/bid/', views.place_bid_api, name='place_bid'),
+    # path('lots/<int:lot_id>/bids/', views.get_bid_history, name='bid_history'),
+    # path('lots/<int:lot_id>/status/', views.get_lot_status, name='lot_status'),   
 
     # AUCTIONS
     path('auctions/', views.AuctionListView.as_view(), name='auction_view'),   

@@ -39,9 +39,6 @@ from xhtml2pdf import pisa
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.contrib.auth import update_session_auth_hash
-
-
-
 ################################################################################################################
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
@@ -409,7 +406,7 @@ class AuctionListView(generics.ListAPIView):
                 raise ValidationError(f"Geo lookup error: {str(e)}")
 
         return queryset
-
+################################################################################################################
 class ClosingSoonAuctionsView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -422,45 +419,7 @@ class ClosingSoonAuctionsView(APIView):
         ).order_by('end_date').values('id', 'name', 'end_date')[:5]
 
         return Response(auctions)
-
 ################################################################################################################
-# class AuctionDetailView(RetrieveAPIView):
-#     queryset = Auctions.objects.select_related('user__profile__company').prefetch_related(
-#         'inventory_set__category',
-#         'inventory_set__media_items',
-#         'inventory_set__bids'
-#     ).all()
-#     serializer_class = AuctionDetailSerializer  # Use the new serializer
-#     permission_classes = [AllowAny]
-
-#     def get_serializer_context(self):
-#         """Pass request context to serializer for filtering"""
-#         context = super().get_serializer_context()
-#         context['request'] = self.request
-#         return context
-
-#     def get_object(self):
-#         """Custom sorting for bid-based sorting"""
-#         obj = super().get_object()
-#         sort_by = self.request.GET.get('sort_by')
-        
-#         if sort_by in ['lowest_bid', 'highest_bid']:
-#             # Get inventory items and sort by current bid
-#             inventory_items = list(obj.inventory_set.filter(deleted_at__isnull=True))
-            
-#             def get_current_bid(item):
-#                 highest_bid = item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
-#                 return float(highest_bid.bid_amount) if highest_bid else float(item.starting_bid)
-            
-#             if sort_by == 'lowest_bid':
-#                 inventory_items.sort(key=get_current_bid)
-#             else:  # highest_bid
-#                 inventory_items.sort(key=get_current_bid, reverse=True)
-            
-#             # Store sorted items on the object (this is a workaround)
-#             obj._sorted_inventory = inventory_items
-        
-#         return obj
 class AuctionDetailView(RetrieveAPIView):
     queryset = Auctions.objects.select_related('user__profile__company').prefetch_related(
         'inventory_set__category',
@@ -503,181 +462,180 @@ class InventoryDetailAPIView(RetrieveAPIView):
     permission_classes = [AllowAny]
     lookup_field = 'id'
 ################################################################################################################
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def place_bid_api(request, lot_id):
-    """
-    API endpoint to place a bid on a lot
-    """
-    try:
-        lot = Inventory.objects.get(id=lot_id, deleted_at__isnull=True)
-        bid_amount = Decimal(str(request.data.get('amount', 0)))
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def place_bid_api(request, lot_id):
+#     """
+#     API endpoint to place a bid on a lot
+#     """
+#     try:
+#         lot = Inventory.objects.get(id=lot_id, deleted_at__isnull=True)
+#         bid_amount = Decimal(str(request.data.get('amount', 0)))
         
-        # Validate lot timing - Updated logic for pre-bids
-        now = timezone.now()
+#         # Validate lot timing - Updated logic for pre-bids
+#         now = timezone.now()
         
-        # Check if bidding has ended (this applies to both live bids and pre-bids)
-        if lot.lot_end_time and lot.lot_end_time < now:
-            return Response({
-                'error': 'Bidding has ended for this lot'
-            }, status=status.HTTP_400_BAD_REQUEST)
+#         # Check if bidding has ended (this applies to both live bids and pre-bids)
+#         if lot.lot_end_time and lot.lot_end_time < now:
+#             return Response({
+#                 'error': 'Bidding has ended for this lot'
+#             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Determine bid type based on timing
-        bid_type = 'Pre Bid'  # Default to pre-bid
+#         # Determine bid type based on timing
+#         bid_type = 'Pre Bid'  # Default to pre-bid
         
-        if lot.lot_start_time and lot.lot_start_time <= now:
-            # Lot has started, this is a live bid
-            bid_type = 'Live Bid'
-        elif lot.lot_start_time and lot.lot_start_time > now:
-            # Lot hasn't started yet, this is a pre-bid (allowed)
-            bid_type = 'Pre Bid'
+#         if lot.lot_start_time and lot.lot_start_time <= now:
+#             # Lot has started, this is a live bid
+#             bid_type = 'Live Bid'
+#         elif lot.lot_start_time and lot.lot_start_time > now:
+#             # Lot hasn't started yet, this is a pre-bid (allowed)
+#             bid_type = 'Pre Bid'
         
-        # Get current highest bid
-        latest_bid = lot.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
-        current_bid = latest_bid.bid_amount if latest_bid else lot.starting_bid
-        required_bid = current_bid + lot.auction.bid_increment
+#         # Get current highest bid
+#         latest_bid = lot.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+#         current_bid = latest_bid.bid_amount if latest_bid else lot.starting_bid
+#         required_bid = current_bid + lot.auction.bid_increment
         
-        if bid_amount < required_bid:
-            return Response({
-                'error': f'Bid must be at least ₹{required_bid}',
-                'required_bid': str(required_bid)
-            }, status=status.HTTP_400_BAD_REQUEST)
+#         if bid_amount < required_bid:
+#             return Response({
+#                 'error': f'Bid must be at least ₹{required_bid}',
+#                 'required_bid': str(required_bid)
+#             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create bid with appropriate type
-        bid = Bid.objects.create(
-            user=request.user,
-            auction=lot.auction,
-            inventory=lot,
-            bid_amount=bid_amount,
-            type=bid_type  # Use determined bid type
-        )
+#         # Create bid with appropriate type
+#         bid = Bid.objects.create(
+#             user=request.user,
+#             auction=lot.auction,
+#             inventory=lot,
+#             bid_amount=bid_amount,
+#             type=bid_type  # Use determined bid type
+#         )
         
-        # Check if reserve is met
-        reserve_met = bid_amount >= lot.reserve_price
-        was_reserve_met_before = current_bid >= lot.reserve_price
+#         # Check if reserve is met
+#         reserve_met = bid_amount >= lot.reserve_price
+#         was_reserve_met_before = current_bid >= lot.reserve_price
         
-        # Send WebSocket notification
-        channel_layer = get_channel_layer()
-        room_group_name = f'lot_{lot_id}'
+#         # Send WebSocket notification
+#         channel_layer = get_channel_layer()
+#         room_group_name = f'lot_{lot_id}'
         
-        # Broadcast bid placed
-        async_to_sync(channel_layer.group_send)(
-            room_group_name,
-            {
-                'type': 'bid_placed',
-                'bid_data': {
-                    'bidder': request.user.username,
-                    'amount': str(bid_amount),
-                    'timestamp': bid.created_at.isoformat(),
-                    'reserve_met': reserve_met,
-                    'next_required_bid': str(bid_amount + lot.auction.bid_increment),
-                    'bid_type': bid_type
-                }
-            }
-        )
+#         # Broadcast bid placed
+#         async_to_sync(channel_layer.group_send)(
+#             room_group_name,
+#             {
+#                 'type': 'bid_placed',
+#                 'bid_data': {
+#                     'bidder': request.user.username,
+#                     'amount': str(bid_amount),
+#                     'timestamp': bid.created_at.isoformat(),
+#                     'reserve_met': reserve_met,
+#                     'next_required_bid': str(bid_amount + lot.auction.bid_increment),
+#                     'bid_type': bid_type
+#                 }
+#             }
+#         )
         
-        # Send reserve met notification if applicable
-        if reserve_met and not was_reserve_met_before:
-            async_to_sync(channel_layer.group_send)(
-                room_group_name,
-                {
-                    'type': 'reserve_met',
-                    'data': {
-                        'lot_id': lot_id,
-                        'reserve_price': str(lot.reserve_price)
-                    }
-                }
-            )
+#         # Send reserve met notification if applicable
+#         if reserve_met and not was_reserve_met_before:
+#             async_to_sync(channel_layer.group_send)(
+#                 room_group_name,
+#                 {
+#                     'type': 'reserve_met',
+#                     'data': {
+#                         'lot_id': lot_id,
+#                         'reserve_price': str(lot.reserve_price)
+#                     }
+#                 }
+#             )
         
-        return Response({
-            'success': True,
-            'bid': {
-                'id': bid.id,
-                'amount': str(bid.bid_amount),
-                'timestamp': bid.created_at.isoformat(),
-                'bidder': request.user.username,
-                'type': bid_type
-            },
-            'lot_status': {
-                'current_bid': str(bid_amount),
-                'next_required_bid': str(bid_amount + lot.auction.bid_increment),
-                'reserve_met': reserve_met
-            }
-        }, status=status.HTTP_201_CREATED)
+#         return Response({
+#             'success': True,
+#             'bid': {
+#                 'id': bid.id,
+#                 'amount': str(bid.bid_amount),
+#                 'timestamp': bid.created_at.isoformat(),
+#                 'bidder': request.user.username,
+#                 'type': bid_type
+#             },
+#             'lot_status': {
+#                 'current_bid': str(bid_amount),
+#                 'next_required_bid': str(bid_amount + lot.auction.bid_increment),
+#                 'reserve_met': reserve_met
+#             }
+#         }, status=status.HTTP_201_CREATED)
         
-    except Inventory.DoesNotExist:
-        return Response({
-            'error': 'Lot not found'
-        }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+#     except Inventory.DoesNotExist:
+#         return Response({
+#             'error': 'Lot not found'
+#         }, status=status.HTTP_404_NOT_FOUND)
+#     except Exception as e:
+#         return Response({
+#             'error': str(e)
+#         }, status=status.HTTP_400_BAD_REQUEST)
 ################################################################################################################    
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_bid_history(request, lot_id):
-    """
-    Get bid history for a specific lot
-    """
-    try:
-        lot = Inventory.objects.get(id=lot_id, deleted_at__isnull=True)
-        bids = lot.bids.filter(deleted_at__isnull=True).order_by('-created_at')
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_bid_history(request, lot_id):
+#     """
+#     Get bid history for a specific lot
+#     """
+#     try:
+#         lot = Inventory.objects.get(id=lot_id, deleted_at__isnull=True)
+#         bids = lot.bids.filter(deleted_at__isnull=True).order_by('-created_at')
         
-        bid_history = [
-            {
-                'id': bid.id,
-                'bidder': bid.user.username,
-                'amount': str(bid.bid_amount),
-                'timestamp': bid.created_at.isoformat(),
-                'is_current_user': bid.user == request.user
-            } for bid in bids
-        ]
+#         bid_history = [
+#             {
+#                 'id': bid.id,
+#                 'bidder': bid.user.username,
+#                 'amount': str(bid.bid_amount),
+#                 'timestamp': bid.created_at.isoformat(),
+#                 'is_current_user': bid.user == request.user
+#             } for bid in bids
+#         ]
         
-        return Response({
-            'bid_history': bid_history,
-            'total_bids': len(bid_history)
-        }, status=status.HTTP_200_OK)
+#         return Response({
+#             'bid_history': bid_history,
+#             'total_bids': len(bid_history)
+#         }, status=status.HTTP_200_OK)
         
-    except Inventory.DoesNotExist:
-        return Response({
-            'error': 'Lot not found'
-        }, status=status.HTTP_404_NOT_FOUND)
-    
+#     except Inventory.DoesNotExist:
+#         return Response({
+#             'error': 'Lot not found'
+#         }, status=status.HTTP_404_NOT_FOUND)
 ################################################################################################################
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_lot_status(request, lot_id):
-    """
-    Get current status of a lot including current bid, next required bid, etc.
-    """
-    try:
-        lot = Inventory.objects.get(id=lot_id, deleted_at__isnull=True)
-        latest_bid = lot.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
-        current_bid = latest_bid.bid_amount if latest_bid else lot.starting_bid
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_lot_status(request, lot_id):
+#     """
+#     Get current status of a lot including current bid, next required bid, etc.
+#     """
+#     try:
+#         lot = Inventory.objects.get(id=lot_id, deleted_at__isnull=True)
+#         latest_bid = lot.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+#         current_bid = latest_bid.bid_amount if latest_bid else lot.starting_bid
         
-        return Response({
-            'lot_id': lot.id,
-            'title': lot.title,
-            'current_bid': str(current_bid),
-            'next_required_bid': str(current_bid + lot.auction.bid_increment),
-            'high_bidder': latest_bid.user.username if latest_bid else None,
-            'reserve_met': current_bid >= lot.reserve_price,
-            'reserve_price': str(lot.reserve_price),
-            'starting_bid': str(lot.starting_bid),
-            'bid_increment': str(lot.auction.bid_increment),
-            'lot_start_time': lot.lot_start_time.isoformat() if lot.lot_start_time else None,
-            'lot_end_time': lot.lot_end_time.isoformat() if lot.lot_end_time else None,
-            'is_active': (
-                lot.lot_start_time <= timezone.now() <= lot.lot_end_time 
-                if lot.lot_start_time and lot.lot_end_time else False
-            )
-        }, status=status.HTTP_200_OK)
+#         return Response({
+#             'lot_id': lot.id,
+#             'title': lot.title,
+#             'current_bid': str(current_bid),
+#             'next_required_bid': str(current_bid + lot.auction.bid_increment),
+#             'high_bidder': latest_bid.user.username if latest_bid else None,
+#             'reserve_met': current_bid >= lot.reserve_price,
+#             'reserve_price': str(lot.reserve_price),
+#             'starting_bid': str(lot.starting_bid),
+#             'bid_increment': str(lot.auction.bid_increment),
+#             'lot_start_time': lot.lot_start_time.isoformat() if lot.lot_start_time else None,
+#             'lot_end_time': lot.lot_end_time.isoformat() if lot.lot_end_time else None,
+#             'is_active': (
+#                 lot.lot_start_time <= timezone.now() <= lot.lot_end_time 
+#                 if lot.lot_start_time and lot.lot_end_time else False
+#             )
+#         }, status=status.HTTP_200_OK)
         
-    except Inventory.DoesNotExist:
-        return Response({
-            'error': 'Lot not found'
-        }, status=status.HTTP_404_NOT_FOUND)
+#     except Inventory.DoesNotExist:
+#         return Response({
+#             'error': 'Lot not found'
+#         }, status=status.HTTP_404_NOT_FOUND)
 ################################################################################################################
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -818,8 +776,6 @@ def user_bidding_history(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 ################################################################################################################
 #PAYMENT HISTORY FOR PARTICULER USERS
 @api_view(['GET'])
@@ -919,7 +875,6 @@ def user_payment_history(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
 ################################################################################################################   
 class CompanyListView(generics.ListAPIView):
     """List all companies with state and country information"""
@@ -965,7 +920,7 @@ class CategoryListView(APIView):
         categories = Category.objects.filter(parent__isnull=True, deleted_at__isnull=True).order_by('order')
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
+################################################################################################################
 class CategoryLotsView(generics.ListAPIView):
     """Updated view for category-based lot listing with optional category filtering"""
     permission_classes = [AllowAny]
@@ -1002,7 +957,7 @@ class CategoryLotsView(generics.ListAPIView):
         
         serializer = self.get_serializer({})
         return Response(serializer.data)
-#######################################
+################################################################################################################
 class ContactFormView(APIView):
     def post(self, request):
         serializer = ContactMessageSerializer(data=request.data)
@@ -1019,7 +974,7 @@ class ContactFormView(APIView):
 
             return Response({'message': 'Message received and email sent!'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+################################################################################################################
 logger = logging.getLogger(__name__)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1097,7 +1052,7 @@ def download_invoice(request, payment_id):
             status=500,
             content_type='text/plain'
         )
-################################################################################
+################################################################################################################
 class WatchlistAPIView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = WatchlistSerializer
@@ -1149,7 +1104,7 @@ class WatchlistAPIView(generics.GenericAPIView):
             {'message': 'Item removed from watchlist'}, 
             status=status.HTTP_200_OK
         )
-#######################################################################    
+################################################################################################################    
 class LotCommentsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1210,8 +1165,7 @@ class LotCommentsView(APIView):
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            
+            )            
 ################################################################################################################
 # SELLER DASHBORD #
 ################################################################################################################          

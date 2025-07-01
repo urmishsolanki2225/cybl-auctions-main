@@ -45,10 +45,10 @@ urlpatterns = [
 
     # Item Transafer to Auction
     path('transfer-inventory', views.transfer_inventory, name='transfer_inventory'),
+    
     # Auction Item Display
     path('auction-inventory/', views.auction_inventory, name='auction-inventory'),
     path('remove_inventory_from_auction/', views.remove_inventory_from_auction, name='remove_inventory_from_auction'),
-
 
     #Inventory
     path('inventory/<int:tabId>', views.all_inventory, name='allinventory'),
@@ -63,7 +63,6 @@ urlpatterns = [
     path('update-image-order/<int:inventory_id>/', views.update_image_order, name='update_image_order'),
     path('inventory/delete-image/<int:inventory_id>/', views.delete_image, name='delete_image'),
 
-
     #Roles url
     path('roles/', views.groups_index, name='groups'),
     path('roles/add/', views.add_group, name='creategroup'),
@@ -75,7 +74,6 @@ urlpatterns = [
     #New permissions
     path('permissions/', views.permissions_management, name='permissions_management'),
     path('update_permissions/', views.update_permissions, name='update_permissions'),
-
 
     # Payment History List/Index
     path('payments/', views.payment_history_index, name='payment_history'),
@@ -102,9 +100,7 @@ urlpatterns = [
     path('payment-charge/delete/', views.delete_payment_charge, name='delete_payment_charge'),
     path('payment/<int:payment_id>/charges/', views.get_payment_charges, name='get_payment_charges'),
 
-
     #__cached__
     path('clear-cache/', views.clear_cache_view, name='clear_cache'),
-
 
 ]

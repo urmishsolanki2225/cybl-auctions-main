@@ -14,7 +14,6 @@ from django.db import models
 from django.utils import timezone
 from rest_framework import serializers
 from adminpanel.models import Inventory, Category
-
 ################################################################################################################
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -501,11 +500,7 @@ class AuctionDetailSerializer(serializers.ModelSerializer):
         """Helper method to get current bid amount for an inventory item"""
         highest_bid = inventory_item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
         return float(highest_bid.bid_amount) if highest_bid else float(inventory_item.starting_bid)
-
-
 ################################################################################################################
-# New serializer for category-based lot listing
-# Updated serializer for category-based lot listing with pagination
 class CategoryLotsSerializer(serializers.Serializer):
     """Serializer for category-based lot listing with pagination"""
     category_info = serializers.SerializerMethodField()
@@ -732,39 +727,6 @@ class CategoryLotsSerializer(serializers.Serializer):
         highest_bid = inventory_item.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
         return float(highest_bid.bid_amount) if highest_bid else float(inventory_item.starting_bid)    
 ################################################################################################################
-# FOR AUCTIOSN DETAILS PAGE 
-# class InventoryBidInfoSerializer(serializers.ModelSerializer):
-#     current_bid = serializers.SerializerMethodField()
-#     next_required_bid = serializers.SerializerMethodField()
-#     high_bidder = serializers.SerializerMethodField()
-#     reserve_met = serializers.SerializerMethodField()
-#     category = CategorySerializer(read_only=True)  # Add this line
-
-#     class Meta:
-#         model = Inventory
-#         fields = [
-#             'id', 'title', 'starting_bid', 'reserve_price', 'lot_start_time', 'lot_end_time',
-#             'current_bid', 'next_required_bid', 'high_bidder', 'reserve_met', 'category'
-#         ]
-
-#     def get_current_bid(self, obj):
-#         latest_bid = obj.bids.filter(deleted_at__isnull=True, auction=obj.auction).order_by('-bid_amount').first()
-#         return latest_bid.bid_amount if latest_bid else obj.starting_bid
-
-#     def get_next_required_bid(self, obj):
-#         latest_bid = obj.bids.filter(deleted_at__isnull=True, auction=obj.auction).order_by('-bid_amount').first()
-#         current = latest_bid.bid_amount if latest_bid else obj.starting_bid
-#         return current + obj.auction.bid_increment
-
-#     def get_high_bidder(self, obj):
-#         latest_bid = obj.bids.filter(deleted_at__isnull=True, auction=obj.auction).order_by('-bid_amount').first()
-#         return latest_bid.user.username if latest_bid else None
-
-#     def get_reserve_met(self, obj):
-#         latest_bid = obj.bids.filter(deleted_at__isnull=True, auction=obj.auction).order_by('-bid_amount').first()
-#         return (latest_bid.bid_amount >= obj.reserve_price) if latest_bid else False    
-################################################################################################################
-# FOR ITEM DETAILS PAGE
 class InventoryDetailSerializer(serializers.ModelSerializer):
     media_items = MediaSerializer(many=True, read_only=True)
     current_bid = serializers.SerializerMethodField()
@@ -849,130 +811,11 @@ class InventoryDetailSerializer(serializers.ModelSerializer):
             for lot in remaining_lots
         ]
 ################################################################################################################
-# class BiddingHistorySerializer(serializers.ModelSerializer):
-#     """Updated serializer for user's bidding history"""
-    
-#     # Inventory details
-#     inventory_id = serializers.IntegerField(source='inventory.id', read_only=True)
-#     inventory_title = serializers.CharField(source='inventory.title', read_only=True)
-#     inventory_first_image = serializers.SerializerMethodField()
-    
-#     # Auction details
-#     auction_name = serializers.CharField(source='inventory.auction.name', read_only=True)
-    
-#     # Bid details
-#     highest_bid = serializers.SerializerMethodField()
-#     my_last_bid = serializers.SerializerMethodField()
-#     lot_end_time = serializers.DateTimeField(source='inventory.lot_end_time', read_only=True)
-    
-#     # Status information
-#     bid_status = serializers.SerializerMethodField()
-#     is_winning = serializers.SerializerMethodField()
-#     reserve_met = serializers.SerializerMethodField()
-    
-#     # Additional fields
-#     total_bids_by_me = serializers.SerializerMethodField()
-#     last_bid_time = serializers.SerializerMethodField()
-#     starting_bid = serializers.CharField(source='inventory.starting_bid', read_only=True)
-#     reserve_price = serializers.CharField(source='inventory.reserve_price', read_only=True)
-#     winning_user_id = serializers.IntegerField(source='inventory.winning_user.id', read_only=True)
-#     winning_bid_amount = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = Bid
-#         fields = [
-#             'inventory_id', 'inventory_title', 'inventory_first_image', 'auction_name',
-#             'highest_bid', 'my_last_bid', 'lot_end_time', 'bid_status',
-#             'is_winning', 'reserve_met', 'total_bids_by_me', 'last_bid_time',
-#             'starting_bid', 'reserve_price', 'winning_user_id', 'winning_bid_amount'
-#         ]
-
-#     def get_inventory_first_image(self, obj):
-#         """Get the first image of the inventory item"""
-#         first_media = obj.inventory.media_items.first()
-#         if first_media:
-#             if hasattr(first_media, 'media_file') and first_media.media_file:
-#                 request = self.context.get('request')
-#                 if request:
-#                     return request.build_absolute_uri(first_media.media_file.url)
-#             elif hasattr(first_media, 'path') and first_media.path:
-#                 return first_media.path
-#         return None
-
-#     def get_highest_bid(self, obj):
-#         """Get the current highest bid for this inventory"""
-#         highest_bid = obj.inventory.bids.filter(auction=obj.auction).order_by('-bid_amount').first()
-#         return str(highest_bid.bid_amount) if highest_bid else str(obj.inventory.starting_bid)
-
-#     def get_my_last_bid(self, obj):
-#         """Get user's last bid for this inventory"""
-#         user = self.context.get('request').user
-#         last_bid = obj.inventory.bids.filter(
-#             user=user, deleted_at__isnull=True, auction=obj.auction
-#         ).order_by('-created_at').first()
-#         return str(last_bid.bid_amount) if last_bid else None
-
-#     def get_bid_status(self, obj):
-#         """Determine the status of the bid (active, won, lost)"""
-#         now = timezone.now()
-#         inventory = obj.inventory
-#         user = self.context.get('request').user
-        
-#         # Check if lot has ended
-#         if inventory.lot_end_time and inventory.lot_end_time <= now:
-#             # Lot has ended - check winning_user field
-#             if inventory.winning_user and inventory.winning_user == user:
-#                 return 'won'
-#             else:
-#                 return 'lost'
-#         else:
-#             # Lot is still active
-#             return 'active'
-
-#     def get_is_winning(self, obj):
-#         """Check if user is currently winning this lot"""
-#         user = self.context.get('request').user
-#         inventory = obj.inventory
-        
-#         # If lot ended, check winning_user
-#         if inventory.lot_end_time and inventory.lot_end_time <= timezone.now():
-#             return inventory.winning_user == user
-#         else:
-#             # For active lots, check if user has highest bid
-#             highest_bid = inventory.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
-#             return highest_bid and highest_bid.user == user
-
-#     def get_reserve_met(self, obj):
-#         """Check if reserve price is met"""
-#         highest_bid = obj.inventory.bids.filter(deleted_at__isnull=True, auction=obj.auction).order_by('-bid_amount').first()
-#         current_bid = highest_bid.bid_amount if highest_bid else obj.inventory.starting_bid
-#         return current_bid >= obj.inventory.reserve_price
-
-#     def get_total_bids_by_me(self, obj):
-#         """Get total number of bids by this user on this inventory"""
-#         user = self.context.get('request').user
-#         return obj.inventory.bids.filter(user=user, deleted_at__isnull=True, auction=obj.auction).count()
-
-#     def get_last_bid_time(self, obj):
-#         """Get the time of user's last bid"""
-#         user = self.context.get('request').user
-#         last_bid = obj.inventory.bids.filter(
-#             user=user, deleted_at__isnull=True, auction=obj.auction
-#         ).order_by('-created_at').first()
-#         return last_bid.created_at if last_bid else None
-
-#     def get_winning_bid_amount(self, obj):
-#         """Get the winning bid amount if available"""
-#         if obj.inventory.winning_bid:
-#             return str(obj.inventory.winning_bid.bid_amount, auction=obj.auction)
-#         return None
-################################################################################################################
 class PaymentChargeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentChargeDetail
         fields = ['charge_type', 'description', 'per_day_amount', 'days', 'total_amount']
-
-# PAYMENT HISTORY
+################################################################################################################
 class PaymentHistorySerializer(serializers.ModelSerializer):
     """Serializer for user's payment history"""
 
@@ -1076,7 +919,7 @@ class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = '__all__' 
-
+################################################################################################################
 class WatchlistSerializer(serializers.ModelSerializer):
     inventory_details = serializers.SerializerMethodField()
     current_bid = serializers.SerializerMethodField()
@@ -1101,9 +944,8 @@ class WatchlistSerializer(serializers.ModelSerializer):
         highest_bid = obj.inventory.bids.filter(deleted_at__isnull=True) \
                                       .order_by('-bid_amount') \
                                       .first()
-        return float(highest_bid.bid_amount) if highest_bid else float(obj.inventory.starting_bid)
-    
-###################################################################################
+        return float(highest_bid.bid_amount) if highest_bid else float(obj.inventory.starting_bid)    
+################################################################################################################
 class CommentSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     profile_photo = serializers.SerializerMethodField()
@@ -1119,10 +961,7 @@ class CommentSerializer(serializers.ModelSerializer):
         if photo and hasattr(photo, 'url'):
             return f"/media/{photo.name}"  # Ensures /media/ prefix
         else:
-            return "/media/defaults/user-default.png"  # Fallback default
-        
-        
-        
+            return "/media/defaults/user-default.png"  # Fallback default           
 ################################################################################################################
 # SELLER DASHBORD #
 ################################################################################################################

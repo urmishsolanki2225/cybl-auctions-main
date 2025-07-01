@@ -1,6 +1,5 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from adminpanel.models import Inventory, Category, Auctions 
+from adminpanel.models import Inventory
 
 class InventoryForm(forms.ModelForm):
     class Meta:
@@ -14,7 +13,6 @@ class InventoryForm(forms.ModelForm):
         auction = cleaned_data.get('auction')
         starting_bid = cleaned_data.get('starting_bid')
         reserve_price = cleaned_data.get('reserve_price')
-
 
         # Validation based on the status
         if status == 'pending':

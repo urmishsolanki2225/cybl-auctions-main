@@ -4,8 +4,6 @@ from django.forms import ValidationError
 from adminpanel.models import Category, Auctions
 from django.utils.translation import gettext_lazy as _
 from datetime import timedelta
-from django.utils import timezone
-
 
 class Inventory(models.Model):
     STATUS_CHOICES = [
