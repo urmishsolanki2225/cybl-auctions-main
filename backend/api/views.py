@@ -38,6 +38,8 @@ from io import BytesIO
 from xhtml2pdf import pisa
 from django.shortcuts import get_object_or_404
 from django.conf import settings
+from django.contrib.auth import update_session_auth_hash
+
 
 
 ################################################################################################################

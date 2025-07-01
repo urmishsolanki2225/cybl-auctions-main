@@ -174,16 +174,17 @@ def transfer_inventory(request):
         newly_assigned = []
 
         for inventory in inventory_items:
+            inventory.status = 'auction'
             if inventory.auction_id == auction.id:
                 if inventory.status != 'auction':
-                    inventory.status = 'auction'
                     inventory.save(update_fields=['status'])
                     updated_status.append(inventory.id)
                 already_assigned.append(inventory.id)
             else:
                 inventory.auction = auction
-                inventory.status = 'auction'
-                inventory.save(update_fields=['auction', 'status'])
+                inventory.lot_start_time = None
+                inventory.lot_end_time = None
+                inventory.save()  # Save all fields
                 newly_assigned.append(inventory.id)
 
         # Construct message

@@ -36,7 +36,7 @@ const Login = () => {
 
    useEffect(() => {
     if (isAuthenticated) {
-      navigate('/', { replace: true }); // Redirect to home if already logged in
+      navigate('/account', { replace: true }); // Redirect to home if already logged in
     }
   }, [isAuthenticated, navigate]);
 
@@ -208,22 +208,7 @@ const Login = () => {
              {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
-
-          {/*<div className="auth-divider">
-            <span>or</span>
-          </div>
-
-          <div className="social-login">
-            <button className="btn btn-social google">
-              <span className="social-icon">G</span>
-              Continue with Google
-            </button>
-            <button className="btn btn-social facebook">
-              <span className="social-icon">f</span>
-              Continue with Facebook
-            </button>
-          </div>*/}
-
+          
           <div className="auth-footer">
             <p>
               Don't have an account?{' '}

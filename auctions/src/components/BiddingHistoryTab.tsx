@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 interface BiddingHistoryItem {
   inventory_id: number;
+  auction_id: number; // Added auction_id field
   inventory_title: string;
   inventory_first_image: string;
   auction_name: string;
@@ -248,7 +249,10 @@ const BiddingHistoryTab = () => {
                 (biddingHistory.length > 0 ? (
                   <div className="bidding-grid">
                     {biddingHistory.map((item) => (
-                      <BiddingCard key={item.inventory_id} item={item} />
+                      <BiddingCard 
+                        key={`${item.inventory_id}-${item.auction_id}`} 
+                        item={item} 
+                      />
                     ))}
                   </div>
                 ) : (
@@ -259,7 +263,10 @@ const BiddingHistoryTab = () => {
                 (filteredHistory("active").length > 0 ? (
                   <div className="bidding-grid">
                     {filteredHistory("active").map((item) => (
-                      <BiddingCard key={item.inventory_id} item={item} />
+                      <BiddingCard 
+                        key={`${item.inventory_id}-${item.auction_id}`} 
+                        item={item} 
+                      />
                     ))}
                   </div>
                 ) : (
@@ -270,7 +277,10 @@ const BiddingHistoryTab = () => {
                 (filteredHistory("won").length > 0 ? (
                   <div className="bidding-grid">
                     {filteredHistory("won").map((item) => (
-                      <BiddingCard key={item.inventory_id} item={item} />
+                      <BiddingCard 
+                        key={`${item.inventory_id}-${item.auction_id}`} 
+                        item={item} 
+                      />
                     ))}
                   </div>
                 ) : (
@@ -281,7 +291,10 @@ const BiddingHistoryTab = () => {
                 (filteredHistory("lost").length > 0 ? (
                   <div className="bidding-grid">
                     {filteredHistory("lost").map((item) => (
-                      <BiddingCard key={item.inventory_id} item={item} />
+                      <BiddingCard 
+                        key={`${item.inventory_id}-${item.auction_id}`} 
+                        item={item} 
+                      />
                     ))}
                   </div>
                 ) : (

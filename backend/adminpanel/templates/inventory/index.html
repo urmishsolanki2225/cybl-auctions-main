@@ -363,6 +363,7 @@ function fetchBiddingHistory(url) {
             },
             traditional: true, // Ensure array is sent correctly
             success: function(response) {
+                console.log("response",response)
                 if (response.status === 'success') {
                     Swal.fire('Success!', 'Items have been transferred successfully.', 'success');
                 } else {
