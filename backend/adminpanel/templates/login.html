@@ -79,7 +79,7 @@
                                 <p class="text-muted mb-4 error-message" id="password-error" style="color: red;"></p>
                             </div>                            
                             <button type="submit"
-                                class="btn btn-outline-primary btn-block text-white mt-30">Login</button>
+                                class="btn btn-outline-primary btn-block text-white mt-30" id="login-btn">Login</button>
                             <div class="d-flex justify-content-between mt-15">
                                 <label class="ckbox">
                                     <input type="checkbox" name="remember">
@@ -126,6 +126,9 @@
                 // ✅ Show the preloader immediately on login click
                 $('#preloader').fadeIn(200);
 
+                const loginBtn = $('#login-btn');
+                loginBtn.prop('disabled', true).html('Logging in...');
+
                 $.ajax({
                     type: 'POST',
                     url: '{% url "login" %}',
@@ -149,6 +152,7 @@
                     error: function (xhr, status, error) {
                         console.error(error);
                         $('#preloader').fadeOut(200);
+                        loginBtn.prop('disabled', false).html(loginBtn.data('text'));
                         $('#email-error').html('An unexpected error occurred. Please try again.');
                     }
                 });

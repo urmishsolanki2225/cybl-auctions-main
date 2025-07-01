@@ -679,7 +679,6 @@ def get_lot_status(request, lot_id):
             'error': 'Lot not found'
         }, status=status.HTTP_404_NOT_FOUND)
 ################################################################################################################
-# BID HISTORY FOR PARTICULER USERS
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_bidding_history(request):
@@ -690,110 +689,117 @@ def user_bidding_history(request):
         user = request.user
         tab = request.query_params.get('tab', 'all')  # all, won, lost, active
         now = timezone.now()
-        
-        # Get all unique inventory items the user has bid on
-        user_inventory_ids = Bid.objects.filter(
-            user=user, 
+
+        # Get all relevant bids for the user
+        user_bids = Bid.objects.filter(
+            user=user,
             deleted_at__isnull=True
-        ).values_list('inventory_id', flat=True).distinct()
-        
-        # Get inventory items with related data
-        inventories = Inventory.objects.filter(
-            id__in=user_inventory_ids,
-            deleted_at__isnull=True
-        ).select_related(
-            'auction', 'category', 'winning_user', 'winning_bid'
-        ).prefetch_related(
-            Prefetch('media_items', queryset=Media.objects.all()), 
-            Prefetch('bids', queryset=Bid.objects.filter(deleted_at__isnull=True).order_by('-bid_amount'))
-        )
-        
-        # Organize data by inventory
+        ).select_related('inventory', 'auction') \
+         .prefetch_related('inventory__media_items') \
+         .order_by('-created_at')
+
+        # Optional: auction filter
+        auction_id = request.query_params.get('auction_id')
+        if auction_id:
+            user_bids = user_bids.filter(auction_id=auction_id)
+
+        seen_keys = set()
         bidding_history = []
-        
-        for inventory in inventories:
-            # Get user's bids for this inventory
-            user_bids = inventory.bids.filter(user=user)
-            if not user_bids.exists():
+
+        for bid in user_bids:
+            key = (bid.inventory_id, bid.auction_id)
+            if key in seen_keys:
                 continue
-                
-            # Get highest bid overall
-            highest_bid = inventory.bids.first()  # Already ordered by -bid_amount
-            
-            # Get user's last bid
-            user_last_bid = user_bids.order_by('-created_at').first()
-            
-            # Determine status based on lot end time and winning_user
-            bid_status = None
-            is_winning = False
-            
-            if inventory.lot_end_time and inventory.lot_end_time <= now:
-                # Lot has ended
-                if inventory.winning_user and inventory.winning_user == user:
-                    # User is marked as winner in inventory
-                    bid_status = 'won'
-                    is_winning = True
-                else:
-                    # User placed bids but didn't win
-                    bid_status = 'lost'
-                    is_winning = False
-            else:
-                # Lot is still active
-                bid_status = 'active'
-                # Check if user is currently winning (highest bidder)
-                is_winning = highest_bid and highest_bid.user == user
-            
-            # Check if reserve is met
+            seen_keys.add(key)
+
+            inventory = bid.inventory
+            auction = bid.auction
+
+            # Fetch all bids for this inventory in this auction
+            all_bids = Bid.objects.filter(
+                inventory=inventory,
+                auction=auction,
+                deleted_at__isnull=True
+            ).order_by('-bid_amount')
+
+            highest_bid = all_bids.first()
+            user_last_bid = Bid.objects.filter(
+                user=user,
+                inventory=inventory,
+                auction=auction,
+                deleted_at__isnull=True
+            ).order_by('-created_at').first()
+
+            is_lot_active = inventory.lot_end_time and inventory.lot_end_time > now
+            is_reserve_met = highest_bid and highest_bid.bid_amount >= inventory.reserve_price
+            reserve_met = is_reserve_met
+            # Only mark as 'won' if auction ended AND user is highest bidder AND reserve met
+            is_winner = (
+                not is_lot_active and
+                highest_bid and
+                highest_bid.user == user and
+                is_reserve_met
+            )
+
+
+            bid_status = (
+                'active' if is_lot_active  else
+                'won' if is_winner else
+                'lost'
+            )
+
             current_bid = highest_bid.bid_amount if highest_bid else inventory.starting_bid
             reserve_met = current_bid >= inventory.reserve_price
-            
-            # Get first image
+
             first_image = None
             first_media = inventory.media_items.first()
-            if first_media and hasattr(first_media, 'media_file') and first_media.media_file:
-                first_image = request.build_absolute_uri(first_media.media_file.url)
-            elif first_media and hasattr(first_media, 'path') and first_media.path:
-                first_image = first_media.path
-            
+            if first_media:
+                if hasattr(first_media, 'media_file') and first_media.media_file:
+                    first_image = request.build_absolute_uri(first_media.media_file.url)
+                elif hasattr(first_media, 'path') and first_media.path:
+                    first_image = first_media.path
+
             history_item = {
                 'inventory_id': inventory.id,
                 'inventory_title': inventory.title,
                 'inventory_first_image': first_image,
-                'auction_name': inventory.auction.name if inventory.auction else None,
+                'auction_id': auction.id,
+                'auction_name': auction.name,
                 'highest_bid': str(highest_bid.bid_amount) if highest_bid else str(inventory.starting_bid),
-                'my_last_bid': str(user_last_bid.bid_amount),
+                'my_last_bid': str(user_last_bid.bid_amount) if user_last_bid else None,
                 'lot_end_time': inventory.lot_end_time,
                 'bid_status': bid_status,
-                'is_winning': is_winning,
+                'is_winning': is_winner,
                 'reserve_met': reserve_met,
-                'total_bids_by_me': user_bids.count(),
-                'last_bid_time': user_last_bid.created_at,
+                'total_bids_by_me': Bid.objects.filter(
+                    user=user, inventory=inventory, auction=auction, deleted_at__isnull=True
+                ).count(),
+                'last_bid_time': user_last_bid.created_at if user_last_bid else None,
                 'starting_bid': str(inventory.starting_bid),
                 'reserve_price': str(inventory.reserve_price),
-                'winning_user_id': inventory.winning_user.id if inventory.winning_user else None,
-                'winning_bid_amount': str(inventory.winning_bid.bid_amount) if inventory.winning_bid else None,
+                'winning_user_id': highest_bid.user.id if not is_auction_active and highest_bid else None,
+                'winning_bid_amount': str(highest_bid.bid_amount) if highest_bid else None,
             }
-            
+
             bidding_history.append(history_item)
-        
-        # Sort by last bid time (most recent first)
-        bidding_history.sort(key=lambda x: x['last_bid_time'], reverse=True)
-        
-        # Calculate counts for all tabs
+
+        # Sort by last bid time
+        bidding_history.sort(key=lambda x: x['last_bid_time'] or timezone.datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+
+        # Tab filters
         all_items = bidding_history.copy()
         won_items = [item for item in all_items if item['bid_status'] == 'won']
         lost_items = [item for item in all_items if item['bid_status'] == 'lost']
         active_items = [item for item in all_items if item['bid_status'] == 'active']
-        
-        # Filter based on tab
+
         if tab == 'won':
             bidding_history = won_items
         elif tab == 'lost':
             bidding_history = lost_items
         elif tab == 'active':
             bidding_history = active_items
-        # 'all' tab shows everything, so no filtering needed
-        
+        # else 'all' => no filtering
+
         return Response({
             'success': True,
             'data': bidding_history,
@@ -806,12 +812,13 @@ def user_bidding_history(request):
             'current_tab': tab,
             'total_items': len(bidding_history)
         }, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
         return Response({
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 ################################################################################################################
 #PAYMENT HISTORY FOR PARTICULER USERS

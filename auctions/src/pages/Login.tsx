@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authApi, ApiError } from '../api/apiUtils';
+import { authApi } from '../api/apiUtils';
 import '../styles/Auth.css';
 import { useAuth } from '../context/AuthContext';
+import { toast } from "react-toastify";
 
 interface ValidationErrors {
   email?: string[];
@@ -89,6 +90,8 @@ const Login = () => {
       } else {
         localStorage.removeItem('userEmail');
       }
+
+      toast.success("Login successfully!");
 
       login(response.authToken, response.user);
 

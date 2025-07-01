@@ -85,7 +85,7 @@ const Index = () => {
             {category.map((subcat: any) => (
               <div
                 key={subcat.id}
-                className="subcategory-card"
+                className="cat-card"
                 onClick={() =>
                   navigate("/category/lots", {
                     state: { categoryId: subcat.id },
