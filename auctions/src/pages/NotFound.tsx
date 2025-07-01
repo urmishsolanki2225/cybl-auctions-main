@@ -1,46 +1,34 @@
-import { useParams } from 'react-router-dom';
-import '../styles/Category.css';
+import { useNavigate } from 'react-router-dom';
 
-const NotFound   = () => {
-  const { categoryId } = useParams();
-  
-  const categoryData = {
-    art: {
-      title: "Art & Collectibles",
-      description: "Discover rare artworks, vintage collectibles, and unique pieces from renowned artists and collectors worldwide.",
-      icon: "🎨"
-    },
-    jewelry: {
-      title: "Jewelry & Watches",
-      description: "Exquisite jewelry pieces, luxury timepieces, and precious gemstones from top brands and designers.",
-      icon: "💎"
-    },
-    electronics: {
-      title: "Electronics",
-      description: "Cutting-edge gadgets, vintage electronics, and rare tech collectibles for enthusiasts and collectors.",
-      icon: "📱"
-    },
-    vehicles: {
-      title: "Vehicles",
-      description: "Classic cars, vintage motorcycles, and rare automotive collectibles from every era.",
-      icon: "🚗"
-    }
-  };
-
-  const currentCategory = categoryData[categoryId as keyof typeof categoryData] || categoryData.art;
+const NotFound = () => {
+  const navigate = useNavigate();
 
   return (
-    <div className="category-page">
-      <div className="container">
-        <div className="category-header">
-          <div className="category-icon">{currentCategory.icon}</div>
-          <h1 className="category-title">{currentCategory.title}</h1>
-          <p className="category-description">{currentCategory.description}</p>
-        </div>
-        
+    <div >
+      <div className="container" style={{ textAlign: 'center', padding: '50px 0' }}>
         <div className="category-content">
-          <h2>Coming Soon</h2>
-          <p>Category-specific auctions will be available here. Stay tuned for amazing {currentCategory.title.toLowerCase()} auctions!</p>
+          <h1 style={{ fontSize: '120px', fontWeight: 'bold', margin: '0', color: '#ff6b6b' }}>404</h1>
+          <h2 style={{ fontSize: '32px', margin: '20px 0' }}>Oops! Page Not Found</h2>
+          <p style={{ fontSize: '18px', marginBottom: '30px' }}>
+            The page you're looking for doesn't exist or has been moved.
+          </p>
+          <button 
+            onClick={() => navigate('/')}
+            style={{
+              padding: '12px 30px',
+              backgroundColor: '#4a6cf7',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#3a5be8'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#4a6cf7'}
+          >
+            Go Back Home
+          </button>
         </div>
       </div>
     </div>

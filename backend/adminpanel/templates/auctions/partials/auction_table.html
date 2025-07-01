@@ -32,7 +32,7 @@
                     <a class="btn btn-primary btn-sm mr-1 disabled" href="#" tabindex="-1" aria-disabled="true">Edit</a>
                     <button type="button" class="btn btn-danger btn-sm mr-1" disabled>Delete</button>
                 {% else %}
-                    <a href="{% url 'editauction' auction.id %}?tabId={{ tabId }}" class="btn btn-primary btn-sm">Edit</a>
+                    <a href="{% url 'editauction' auction.id %}" class="btn btn-primary btn-sm">Edit</a>
                     <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete({{ auction.id }})">Delete</button>
                 {% endif %}
                 <button type="button" class="btn btn-info btn-sm" onclick="showInventory({{ auction.id }})">View Inventory</button>

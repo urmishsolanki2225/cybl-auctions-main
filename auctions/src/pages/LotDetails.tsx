@@ -498,7 +498,7 @@ const LotDetails = () => {
                             >
                               <img
                                 src={
-                                  BASE_URL + bid.profile ||
+                                  BASE_URL + bid?.profile ||
                                   BASE_URL + "../assets/default-avatar.png"
                                 }
                                 alt={bid.bidder}
