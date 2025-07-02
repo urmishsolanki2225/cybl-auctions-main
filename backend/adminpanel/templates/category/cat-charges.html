@@ -1,0 +1,139 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'admin/css/default-assets/new/sweetalert-2.min.css' %}">
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 height-card box-margin">
+            <div class="card">
+                <div class="card-body pb-0">
+                    <div class="d-flex justify-content-between align-items-center pb-2">
+                        <h6 class="card-title mb-0">Categories Charges</h6>
+                        <div>
+                            <button class="btn btn-primary" id="save-all-charges">Save All Changes</button>
+                            <a href="{% url 'manage_charge_types' %}" class="btn btn-primary">Manage Charges Type</a>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered" id="category-charges-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    {% for charge_type in charge_types %}
+                                        <th><b>{{ charge_type.name }}</b></th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category_data in categories_data %}
+                                    <tr data-category-id="{{ category_data.category.id }}">
+                                        <td>{{ category_data.category.name }}</td>
+                                        {% for charge_value in category_data.charge_values %}
+                                            <td>
+                                                <input type="number" step="0.01" 
+                                                       class="form-control charge-input" 
+                                                       data-charge-type="{{ charge_value.code }}"
+                                                       value="{{ charge_value.value }}">
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include SweetAlert for notifications -->
+<script src="{% static 'admin/js/default-assets/new/sweetalert-2.min.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    // Save all charges button click handler
+    $('#save-all-charges').click(function() {
+        const changes = [];
+        
+        $('#category-charges-table tbody tr').each(function() {
+            const categoryId = $(this).data('category-id');
+            
+            $(this).find('.charge-input').each(function() {
+                const chargeType = $(this).data('charge-type');
+                const amount = parseFloat($(this).val()) || 0;
+                
+                changes.push({
+                    category_id: categoryId,
+                    charge_type: chargeType,
+                    amount: amount
+                });
+            });
+        });
+        
+        // Send data via AJAX
+        $.ajax({
+            url: '{% url "save_category_charges" %}',
+            type: 'POST',
+            data: {
+                charges: JSON.stringify(changes),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if(response.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'All charges have been saved successfully.',
+                        icon: 'success'
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: response.message || 'Failed to save charges.',
+                        icon: 'error'
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while saving charges.',
+                    icon: 'error'
+                });
+            }
+        });
+    });
+    
+    // Individual input change handler (optional)
+    $('.charge-input').change(function() {
+        const row = $(this).closest('tr');
+        const categoryId = row.data('category-id');
+        const chargeType = $(this).data('charge-type');
+        const amount = parseFloat($(this).val()) || 0;
+        
+        $.ajax({
+            url: '{% url "save_single_charge" %}',
+            type: 'POST',
+            data: {
+                category_id: categoryId,
+                charge_type: chargeType,
+                amount: amount,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if(!response.success) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: response.message || 'Failed to save charge.',
+                        icon: 'error'
+                    });
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock content %}

@@ -33,6 +33,17 @@ urlpatterns = [
     path('get_category', views.get_category, name='get_category'),
     path('fetch_categories', views.fetch_categories, name='fetch_categories'),
     path('update_category_order', views.update_category_order, name='update_category_order'),
+    
+    #category-wise charges.
+    
+    path('category-charges/', views.category_charges_view, name='category_charges'),
+    path('save-category-charges/', views.save_category_charges, name='save_category_charges'),
+    path('save-single-charge/', views.save_single_charge, name='save_single_charge'),
+    
+    path('manage-charge-types/', views.manage_charge_types, name='manage_charge_types'),
+    path('toggle-charge-type/<int:pk>/', views.toggle_charge_type, name='toggle_charge_type'),
+    path('delete-charge-type/<int:pk>/', views.delete_charge_type, name='delete_charge_type'),
+    path('update-charge-type-name/<int:pk>/', views.update_charge_type_name, name='update_charge_type_name'),
 
     # Auctions
     path('auctions/<int:tabId>/', views.all_auctions, name='allauctions'),

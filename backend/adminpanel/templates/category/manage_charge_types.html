@@ -1,0 +1,411 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Manage Charge Types</h4>
+                    
+                    <!-- Add New Charge Type Form -->
+                    <div class="mb-4">
+                        <h5>Add New Charge Type</h5>
+                        <form method="post" id="chargeTypeForm">
+                            {% csrf_token %}
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label>Name</label>
+                                    <input type="text" name="name" class="form-control">
+                                    <div class="invalid-feedback" id="name-error"></div>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Code (unique identifier)</label>
+                                    <input type="text" name="code" class="form-control">
+                                    <div class="invalid-feedback" id="code-error"></div>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Description</label>
+                                    <input type="text" name="description" class="form-control">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add Charge Type</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Existing Charge Types -->
+                    <h5>Existing Charge Types</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="chargeTypesTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Code</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for charge_type in charge_types %}
+                                <tr id="charge-type-{{ charge_type.id }}">
+                                    <td class="editable-name" data-id="{{ charge_type.id }}" data-field="name">
+                                        <span class="name-display">{{ charge_type.name }}</span>
+                                        <input type="text" class="form-control name-input d-none" value="{{ charge_type.name }}">
+                                    </td>
+                                    <td>{{ charge_type.code }}</td>
+                                    <td>{{ charge_type.description }}</td>
+                                    <td>
+                                        <span class="badge badge-{% if charge_type.is_active %}success{% else %}danger{% endif %}">
+                                            {% if charge_type.is_active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm {% if charge_type.is_active %}btn-danger{% else %}btn-info{% endif %} toggle-charge-type" 
+                                                data-id="{{ charge_type.id }}">
+                                            {% if charge_type.is_active %}Deactivate{% else %}Activate{% endif %}
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-charge-type ml-1" 
+                                                data-id="{{ charge_type.id }}"
+                                                data-name="{{ charge_type.name }}">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'admin/js/default-assets/new/sweetalert-2.min.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    // Toggle charge type status
+    $(document).on('click', '.toggle-charge-type', function() {
+        const btn = $(this);
+        const chargeTypeId = btn.data('id');
+        
+        $.ajax({
+            url: `/superadmin/toggle-charge-type/${chargeTypeId}/`,
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if(response.success) {
+                    if(response.is_active) {
+                        // Now active - show red "Deactivate" button
+                        btn.removeClass('btn-info').addClass('btn-danger').text('Deactivate');
+                        btn.closest('tr').find('.badge').removeClass('badge-danger').addClass('badge-success').text('Active');
+                    } else {
+                        // Now inactive - show blue "Activate" button
+                        btn.removeClass('btn-danger').addClass('btn-info').text('Activate');
+                        btn.closest('tr').find('.badge').removeClass('badge-success').addClass('badge-danger').text('Inactive');
+                    }
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while updating the status',
+                    icon: 'error'
+                });
+            }
+        });
+    });
+
+    // Delete charge type
+    $(document).on('click', '.delete-charge-type', function() {
+        const btn = $(this);
+        const chargeTypeId = btn.data('id');
+        const chargeName = btn.data('name');
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: `Do you want to delete "${chargeName}"? This action cannot be undone!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/superadmin/delete-charge-type/${chargeTypeId}/`,
+                    type: 'POST',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if(response.success) {
+                            $(`#charge-type-${chargeTypeId}`).fadeOut(300, function() {
+                                $(this).remove();
+                            });
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: 'Charge type has been deleted.',
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: response.message || 'Failed to delete charge type',
+                                icon: 'error'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'An error occurred while deleting the charge type',
+                            icon: 'error'
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    // Inline editing for name field
+    $(document).on('dblclick', '.editable-name', function() {
+        const cell = $(this);
+        const display = cell.find('.name-display');
+        const input = cell.find('.name-input');
+        
+        if (!input.hasClass('d-none')) return; // Already editing
+        
+        display.addClass('d-none');
+        input.removeClass('d-none').focus().select();
+    });
+
+    // Handle input blur (save changes)
+    $(document).on('blur', '.name-input', function() {
+        const input = $(this);
+        const cell = input.closest('.editable-name');
+        const display = cell.find('.name-display');
+        const chargeTypeId = cell.data('id');
+        const newName = input.val().trim();
+        const originalName = display.text().trim();
+        
+        if (newName === '' || newName === originalName) {
+            // No change or empty value, revert
+            input.val(originalName);
+            display.removeClass('d-none');
+            input.addClass('d-none');
+            return;
+        }
+        
+        // Save the change
+        $.ajax({
+            url: `/superadmin/update-charge-type-name/${chargeTypeId}/`,
+            type: 'POST',
+            data: {
+                name: newName,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    display.text(newName);
+                    display.removeClass('d-none');
+                    input.addClass('d-none');
+                    
+                    // Update delete button data
+                    cell.closest('tr').find('.delete-charge-type').data('name', newName);
+                    
+                    // Show success message
+                    Swal.fire({
+                        title: 'Updated!',
+                        text: 'Name updated successfully',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    // Show error and revert
+                    input.val(originalName);
+                    display.removeClass('d-none');
+                    input.addClass('d-none');
+                    
+                    Swal.fire({
+                        title: 'Error!',
+                        text: response.message || 'Failed to update name',
+                        icon: 'error'
+                    });
+                }
+            },
+            error: function(xhr) {
+                // Revert changes
+                input.val(originalName);
+                display.removeClass('d-none');
+                input.addClass('d-none');
+                
+                let errorMessage = 'An error occurred while updating the name';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                
+                Swal.fire({
+                    title: 'Error!',
+                    text: errorMessage,
+                    icon: 'error'
+                });
+            }
+        });
+    });
+
+    // Handle Enter key press in name input
+    $(document).on('keypress', '.name-input', function(e) {
+        if (e.which === 13) { // Enter key
+            $(this).blur();
+        }
+    });
+
+    // Handle Escape key press in name input
+    $(document).on('keyup', '.name-input', function(e) {
+        if (e.which === 27) { // Escape key
+            const input = $(this);
+            const cell = input.closest('.editable-name');
+            const display = cell.find('.name-display');
+            
+            // Revert to original value
+            input.val(display.text().trim());
+            display.removeClass('d-none');
+            input.addClass('d-none');
+        }
+    });
+
+    // AJAX form submission
+    $('#chargeTypeForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Clear previous errors
+        $('.invalid-feedback').text('');
+        $('.form-control').removeClass('is-invalid');
+        
+        // Get form data
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: '{% url "manage_charge_types" %}',
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    // Add new charge type to table
+                    const newRow = `
+                        <tr id="charge-type-${response.charge_type.id}">
+                            <td class="editable-name" data-id="${response.charge_type.id}" data-field="name">
+                                <span class="name-display">${response.charge_type.name}</span>
+                                <input type="text" class="form-control name-input d-none" value="${response.charge_type.name}">
+                            </td>
+                            <td>${response.charge_type.code}</td>
+                            <td>${response.charge_type.description}</td>
+                            <td>
+                                <span class="badge badge-success">Active</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-danger toggle-charge-type" 
+                                        data-id="${response.charge_type.id}">
+                                    Deactivate
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-charge-type ml-1" 
+                                        data-id="${response.charge_type.id}"
+                                        data-name="${response.charge_type.name}">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    $('#chargeTypesTable tbody').prepend(newRow);
+                    
+                    // Reset form
+                    $('#chargeTypeForm')[0].reset();
+                    
+                    // Show success message
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Charge type added successfully',
+                        icon: 'success'
+                    });
+                }
+            },
+            error: function(xhr) {
+                if (xhr.status === 400) {
+                    // Form validation errors
+                    const errors = xhr.responseJSON.errors;
+                    for (const field in errors) {
+                        $(`#${field}-error`).text(errors[field]);
+                        $(`[name="${field}"]`).addClass('is-invalid');
+                    }
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while saving the charge type',
+                        icon: 'error'
+                    });
+                }
+            }
+        });
+    });
+
+    // Real-time validation
+    $('input[name="name"], input[name="code"]').on('blur', function() {
+        const field = $(this);
+        const fieldName = field.attr('name');
+        const errorElement = $(`#${fieldName}-error`);
+        
+        if (field.val().trim() === '') {
+            field.addClass('is-invalid');
+            errorElement.text(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+        } else {
+            field.removeClass('is-invalid');
+            errorElement.text('');
+        }
+    });
+});
+</script>
+
+<style>
+.editable-name {
+    cursor: pointer;
+    position: relative;
+}
+
+.editable-name:hover {
+    background-color: #f8f9fa;
+}
+
+.editable-name .name-display {
+    display: block;
+    padding: 2px;
+    min-height: 20px;
+}
+
+.editable-name .name-input {
+    font-size: 14px;
+    padding: 2px 6px;
+    border: 1px solid #007bff;
+    border-radius: 3px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+    margin-right: 5px;
+}
+
+.btn-sm:last-child {
+    margin-right: 0;
+}
+</style>
+{% endblock %}

@@ -10,4 +10,5 @@ from adminpanel.models.contact import *
 from adminpanel.models.payment_charges import * 
 from adminpanel.models.watchlist import * 
 from adminpanel.models.comment import * 
+from adminpanel.models.category_charge import *
 
