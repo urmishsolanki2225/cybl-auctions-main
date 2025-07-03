@@ -79,6 +79,9 @@ urlpatterns = [
     #LOT COMMENTS
     path('lots/<int:lot_id>/comments/', views.LotCommentsView.as_view(), name='lot-comments'),
     
+    #Active Lots
+    path('lots/active/', views.ActiveLotsView.as_view(), name='active-lots'),
+    
     
     
     ###########################################################################################################

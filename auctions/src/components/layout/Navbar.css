@@ -1,6 +1,6 @@
 /* General Styling */
 .navbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: white;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
   position: fixed;
   width: 100%;
@@ -23,7 +23,7 @@
   align-items: center;
   font-size: 24px;
   font-weight: 700;
-  color: white;
+  color: rgb(0, 0, 0);
   text-decoration: none;
   transition: transform 0.3s ease;
 }
@@ -47,7 +47,7 @@
 
 .navbar-link,
 .nav-link {
-  color: white;
+  color: rgb(0, 0, 0);
   text-decoration: none;
   font-weight: 500;
   padding: 8px 16px;
@@ -63,7 +63,7 @@
 }
 
 .navbar-link.active {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgb(233, 205, 205);
 }
 
 /* Logout Button */

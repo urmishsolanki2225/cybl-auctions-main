@@ -7,7 +7,7 @@ from datetime import datetime, time, timedelta
 from rest_framework.pagination import PageNumberPagination
 from django.db.models.functions import TruncDate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, WatchlistSerializer, CountrySerializer, CommentSerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer, InventorySerializerForSeller, BidHistorySerializerForSeller
+from .serializers import CategoryLotsSerializer, ContactMessageSerializer, LoginSerializer, ActiveLotSerializer, WatchlistSerializer, CountrySerializer, CommentSerializer, PasswordUpdateSerializer,AuctionDetailSerializer, CategorySerializer, StateSerializer, CompanyListingSerializer, InventoryDetailSerializer, RegisterSerializer, ProfileUpdateSerializer, AuctionSerializer, PaymentHistorySerializer, InventorySerializerForSeller, BidHistorySerializerForSeller
 from adminpanel.models import Group, Category, Watchlist, Country, State, Inventory, User, Comment, Profile, Auctions, Media, Payment_History, Company
 from rest_framework import generics 
 from django.utils import timezone
@@ -416,9 +416,22 @@ class ClosingSoonAuctionsView(APIView):
         auctions = Auctions.objects.filter(
             status='current',
             end_date__gt=now
-        ).order_by('end_date').values('id', 'name', 'end_date')[:5]
+        ).select_related(
+            'user', 'user__profile', 'user__profile__company',
+            'user__profile__company__country', 'user__profile__company__state'
+        ).prefetch_related('inventory_set__media_items', 'inventory_set__category') \
+         .order_by('end_date')[:5]
 
-        return Response(auctions)
+        serializer = AuctionSerializer(auctions, many=True)
+        data = serializer.data
+
+        # ✅ Replace inventory_items with inventory_count
+        for auction_data in data:
+            if "inventory_items" in auction_data:
+                auction_data["inventory_count"] = len(auction_data["inventory_items"])
+                del auction_data["inventory_items"]
+
+        return Response(data)
 ################################################################################################################
 class AuctionDetailView(RetrieveAPIView):
     queryset = Auctions.objects.select_related('user__profile__company').prefetch_related(
@@ -1165,7 +1178,48 @@ class LotCommentsView(APIView):
             return Response(
                 {'error': str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )            
+            )  
+            
+class ActiveLotsView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ActiveLotSerializer
+
+    def get_queryset(self):
+        now = timezone.now()
+        
+        # Get only active lots (not deleted, with end time in future)
+        queryset = Inventory.objects.filter(
+            deleted_at__isnull=True,
+            lot_end_time__gt=now
+        ).select_related(
+            'auction', 'category', 'category__parent'
+        ).prefetch_related(
+            'bids'
+        ).order_by('lot_end_time')
+
+        # Optional filters
+        category_id = self.request.query_params.get('category_id')
+        subcategory_id = self.request.query_params.get('subcategory_id')
+        auction_id = self.request.query_params.get('auction_id')
+        search = self.request.query_params.get('search')
+
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        
+        if subcategory_id:
+            queryset = queryset.filter(category__parent_id=subcategory_id)
+        
+        if auction_id:
+            queryset = queryset.filter(auction_id=auction_id)
+        
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(inventory_number__icontains=search)
+            )
+        
+        return queryset[:12]         
 ################################################################################################################
 # SELLER DASHBORD #
 ################################################################################################################          

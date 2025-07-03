@@ -5,11 +5,15 @@ import "../styles/Homepage.css";
 import { useEffect, useState } from "react";
 import { publicApi } from "../api/apiUtils";
 import BASE_URL from "../api/endpoints";
-import Banner from "../components/homepage/Banner";
+import ActiveLots from "../components/ActiveLots";
+import NextToClose from "../components/NextToClose";
+import CategoryAuctions from "../components/CategoryAuctions";
+
 
 const Index = () => {
   const [featuredAuction, SetFeaturedAuction] = useState<[]>([]);
   const [closingSoonAuctions, setClosingSoonAuctions] = useState<[]>([]);
+  const [Activelot, setActivelot] = useState<[]>([]);
   const [category, setCategory] = useState<[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,12 +26,11 @@ const Index = () => {
         const response = await publicApi.getFeaturedAuctions();
         const closedAuctions = await publicApi.getNextToCloseAuctions();
         const categories = await publicApi.getCategories();
-        const allSubcategories = categories.flatMap(
-          (cat: any) => cat.subcategories
-        );
-        setCategory(allSubcategories.slice(0, 6));
+        const lots = await publicApi.getActivelots();
+        setCategory(categories);
         SetFeaturedAuction(response.results);
         setClosingSoonAuctions(closedAuctions);
+        setActivelot(lots);
       } catch (err) {
         console.error("Failed to load bidding history", err);
         setError("Failed to load bidding history");
@@ -41,79 +44,17 @@ const Index = () => {
 
   return (
     <div className="homepage">
-      {/* Hero Section */}
-      <section className="hero">
-        <Banner />
-      </section>
+      <ActiveLots lots={Activelot} />     
+      <div className="container">
+         <NextToClose auctions={closingSoonAuctions} />      
+         <CategoryAuctions categories={category} />     
+      </div>
       <section className="featured-section">
-        <div className="container">
-          <h2>Next Auctions to Close</h2>
-          <div className="featured-auction-combined-card">
-            {closingSoonAuctions?.length > 0 &&
-              closingSoonAuctions.map((auction, index) => {
-                const endDate = new Date(auction.end_date);
-
-                const formattedDate = new Intl.DateTimeFormat("en-US", {
-                  weekday: "long", // e.g., Thursday
-                  year: "numeric", // e.g., 2025
-                  month: "long", // e.g., June
-                  day: "numeric", // e.g., 19
-                }).format(endDate);
-
-                return (
-                  <div key={index} className="auction-card">
-                    <div>
-                      <a
-                        href={`/auction/${auction.id}`}
-                        style={{
-                          fontWeight: "bold",
-                          textDecoration: "none",
-                          color: "#1a0dab",
-                        }}
-                      >
-                        {auction.name}
-                      </a>
-                      <br />
-                      <div>Closing {formattedDate}</div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-          <h2>Auctions by Category</h2>
-          <div className="featured-auction-combined-card">
-            {category.map((subcat: any) => (
-              <div
-                key={subcat.id}
-                className="cat-card"
-                onClick={() =>
-                  navigate("/category/lots", {
-                    state: { categoryId: subcat.id },
-                  })
-                }
-                style={{ cursor: "pointer" }}
-              >
-                {subcat.name}
-              </div>
-            ))}
-            {category.length > 6 && (
-              <div className="view-all-categories">
-                <Link to={`/category`} className="view-all-btn">
-                  View All Categories
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
         <div className="container">
           <h2>Featured Auction</h2>
           {featuredAuction?.length > 0 &&
             featuredAuction.slice(0, 6).map((auctions, index) => (
-              <div
-                className="featured-auction-combined-card"
-                key={index}
-                
-              >
+              <div className="featured-auction-combined-card" key={index}>
                 <div className="auction-header">
                   {/* Left - Company Info */}
                   <div className="company-info">
@@ -145,7 +86,6 @@ const Index = () => {
                       <span>pincode: {auctions.location_details.zipcode}</span>
                     </div>
                     <span>{auctions.lot_count} Lots Open for Bidding </span>
-                                    
                   </div>
 
                   {/* Right - Countdown */}
@@ -159,8 +99,13 @@ const Index = () => {
                       <LiveTimer endTime={auctions.end_date} />
                     </div>
                     <span className="mt-2">
-                       <button className="bid-btn" onClick={() => navigate(`/auction/${auctions.id}`)}>View Details </button> 
-                    </span>   
+                      <button
+                        className="bid-btn"
+                        onClick={() => navigate(`/auction/${auctions.id}`)}
+                      >
+                        View Details{" "}
+                      </button>
+                    </span>
                   </div>
                 </div>
 

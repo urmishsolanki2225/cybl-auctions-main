@@ -124,9 +124,12 @@ async function makeBlobRequest(
 
   try {
     const response = await fetch(url, config);
+   
     
     if (!response.ok) {
+     
       const errorData = await response.json();
+      
       throw {
         message: errorData.message || 'Something went wrong',
         errors: errorData.errors,
@@ -149,7 +152,7 @@ export const authApi = {
 };
 
 // Public API functions (don't require token)
-export const publicApi = {
+export const publicApi = {  
   getCountries: async () => {
     return makeRequest(API_ENDPOINTS.COUNTRIES);
   },  
@@ -250,6 +253,11 @@ export const publicApi = {
     }
     
     return makeRequest(`${API_ENDPOINTS.RUNNING_AUCTIONS}?${params.toString()}`);
+  },
+
+  
+  getActivelots: async () => {
+    return makeRequest(API_ENDPOINTS.ACTIVE_LOTS);
   },
 };
 

@@ -961,7 +961,73 @@ class CommentSerializer(serializers.ModelSerializer):
         if photo and hasattr(photo, 'url'):
             return f"/media/{photo.name}"  # Ensures /media/ prefix
         else:
-            return "/media/defaults/user-default.png"  # Fallback default           
+            return "/media/defaults/user-default.png"  # Fallback default       
+          
+################################################################################################################
+class ActiveLotSerializer(serializers.ModelSerializer):
+    auction_details = serializers.SerializerMethodField()
+    category_details = serializers.SerializerMethodField()
+    current_bid = serializers.SerializerMethodField()
+    next_required_bid = serializers.SerializerMethodField()
+    bid_increment = serializers.SerializerMethodField()
+    time_remaining = serializers.SerializerMethodField()
+    media_items = serializers.SerializerMethodField() 
+    class Meta:
+        model = Inventory
+        fields = [
+            'id', 'title', 'description', 'starting_bid', 'reserve_price',
+            'lot_start_time', 'lot_end_time', 'status', 'condition', 'media_items',
+            'auction_details', 'category_details', 'current_bid',
+            'next_required_bid', 'bid_increment', 'time_remaining'
+        ]
+        
+    def get_media_items(self, obj):
+        # Get just the first media item
+        first_media = obj.media_items.first()
+        if first_media:
+            return MediaSerializer(first_media).data
+        return None
+
+    def get_auction_details(self, obj):
+        return {
+            'id': obj.auction.id,
+            'name': obj.auction.name,
+            'start_date': obj.auction.start_date,
+            'end_date': obj.auction.end_date,
+            'is_featured': obj.auction.is_featured
+        }
+
+    def get_category_details(self, obj):
+        if obj.category.parent:
+            return {
+                'category_id': obj.category.id,
+                'category_name': obj.category.name,
+                'subcategory_id': obj.category.parent.id,
+                'subcategory_name': obj.category.parent.name
+            }
+        return {
+            'category_id': obj.category.id,
+            'category_name': obj.category.name
+        }
+
+    def get_current_bid(self, obj):
+        highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+        return str(highest_bid.bid_amount) if highest_bid else str(obj.starting_bid)
+
+    def get_next_required_bid(self, obj):
+        highest_bid = obj.bids.filter(deleted_at__isnull=True).order_by('-bid_amount').first()
+        current = float(highest_bid.bid_amount) if highest_bid else float(obj.starting_bid)
+        increment = float(obj.auction.bid_increment) if obj.auction.bid_increment else 100.00
+        return str(current + increment)
+
+    def get_bid_increment(self, obj):
+        return str(obj.auction.bid_increment) if obj.auction.bid_increment else "100.00"
+
+    def get_time_remaining(self, obj):
+        if obj.lot_end_time:
+            remaining = obj.lot_end_time - timezone.now()
+            return str(remaining) if remaining.total_seconds() > 0 else "00:00:00"
+        return None  
 ################################################################################################################
 # SELLER DASHBORD #
 ################################################################################################################

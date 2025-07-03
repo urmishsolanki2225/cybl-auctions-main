@@ -27,8 +27,7 @@ export const API_ENDPOINTS = {
   PASSWORD_UPDATE: `${BASE_API_URL}password/update/`,
 
   REGISTRATION: `${BASE_API_URL}register/`,
-  
-  
+
   // Lots
   LOT_DETAILS: (id: number) => `${BASE_API_URL}lots/${id}/`,
   LOTS: (id: number) => `${BASE_API_URL}lots/${id}/bid/`,
@@ -52,4 +51,7 @@ export const API_ENDPOINTS = {
   WATCHLIST_REMOVE: (inventoryId: number) => `${BASE_API_URL}watchlist/remove/${inventoryId}/`,
 
   LOT_COMMENTS: (lotId) => `${BASE_API_URL}lots/${lotId}/comments/`,
+
+
+  ACTIVE_LOTS: `${BASE_API_URL}lots/active/`,
 };
