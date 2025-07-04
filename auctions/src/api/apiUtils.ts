@@ -233,6 +233,11 @@ export const publicApi = {
   getCategories: async () => {
     return makeRequest(API_ENDPOINTS.CATEGORIES);
   },
+
+  getSubCategories: async (id: number) => {
+    return makeRequest(API_ENDPOINTS.SUB_CATEGORIES(id));
+  },
+
   
   // Search/Filter functions
   searchAuctions: async (filters: {

@@ -109,10 +109,10 @@ const Navbar = () => {
                 onClick={closeMenu}
               >
                 <Heart size={20} className="heart-icon" />
-                {watchlistCount > 0 && (
-                  <span className="watchlist-count-badge">
-                    {watchlistCount}
-                  </span>
+                {watchlistCount > 0 && (                                   
+                    <span className="watchlist-count-badge">
+                      {watchlistCount}
+                    </span>
                 )}
               </Link>
             </>

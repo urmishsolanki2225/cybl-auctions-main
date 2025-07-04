@@ -933,6 +933,12 @@ class CategoryListView(APIView):
         categories = Category.objects.filter(parent__isnull=True, deleted_at__isnull=True).order_by('order')
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class SubcategoryListView(APIView):
+    def get(self, request, parent_id):
+        subcategories = Category.objects.filter(parent_id=parent_id, deleted_at__isnull=True).order_by('order')
+        serializer = CategorySerializer(subcategories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 ################################################################################################################
 class CategoryLotsView(generics.ListAPIView):
     """Updated view for category-based lot listing with optional category filtering"""

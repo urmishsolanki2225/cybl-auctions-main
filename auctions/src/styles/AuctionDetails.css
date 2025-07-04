@@ -306,7 +306,6 @@
 }
 
 .toggle-filters-btn {
-  background: transparent;
   border: none;
   color: white;
   cursor: pointer;
@@ -316,7 +315,7 @@
 }
 
 .toggle-filters-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+ 
 }
 
 .filter-content {

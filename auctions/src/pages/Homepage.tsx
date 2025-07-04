@@ -9,7 +9,6 @@ import ActiveLots from "../components/ActiveLots";
 import NextToClose from "../components/NextToClose";
 import CategoryAuctions from "../components/CategoryAuctions";
 
-
 const Index = () => {
   const [featuredAuction, SetFeaturedAuction] = useState<[]>([]);
   const [closingSoonAuctions, setClosingSoonAuctions] = useState<[]>([]);
@@ -42,21 +41,22 @@ const Index = () => {
     fetchAuctions();
   }, []);
 
-  return (
+  return loading ? (
+    <div className="loading-state">Loading...</div>
+  ) : (
     <div className="homepage">
-      <ActiveLots lots={Activelot} />     
+      <ActiveLots lots={Activelot} />
       <div className="container">
-         <NextToClose auctions={closingSoonAuctions} />      
-         <CategoryAuctions categories={category} />     
+        <NextToClose auctions={closingSoonAuctions} />
+        <CategoryAuctions categories={category} />
       </div>
-      <section className="featured-section">
+      {/* <section className="featured-section">
         <div className="container">
           <h2>Featured Auction</h2>
           {featuredAuction?.length > 0 &&
             featuredAuction.slice(0, 6).map((auctions, index) => (
               <div className="featured-auction-combined-card" key={index}>
                 <div className="auction-header">
-                  {/* Left - Company Info */}
                   <div className="company-info">
                     <img
                       src={BASE_URL + auctions.location_details.company_logo}
@@ -72,8 +72,6 @@ const Index = () => {
                       {auctions.location_details.name}
                     </div>
                   </div>
-
-                  {/* Center - Auction Details */}
                   <div className="auction-details">
                     <h3 className="auction-name">{auctions.name}</h3>
                     <div className="auction-location">
@@ -87,8 +85,6 @@ const Index = () => {
                     </div>
                     <span>{auctions.lot_count} Lots Open for Bidding </span>
                   </div>
-
-                  {/* Right - Countdown */}
                   <div className="auction-timer">
                     <div>
                       Begins Closing
@@ -108,11 +104,7 @@ const Index = () => {
                     </span>
                   </div>
                 </div>
-
-                {/* Divider */}
                 <hr className="auction-divider" />
-
-                {/* Carousel of Lots */}
                 <div className="auction-lots">
                   <LotsCarousel
                     lots={auctions.inventory_items}
@@ -122,7 +114,7 @@ const Index = () => {
               </div>
             ))}
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

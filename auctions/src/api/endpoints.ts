@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
   COMPANIES: `${BASE_API_URL}companies/`,
 
   CATEGORIES: `${BASE_API_URL}categories/`,
+  SUB_CATEGORIES: (id: number) => `${BASE_API_URL}categories/${id}`,
   CATEGORY_LOTS: `${BASE_API_URL}lots/`, 
   
   // Search & Filters

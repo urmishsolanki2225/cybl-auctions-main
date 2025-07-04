@@ -2,8 +2,11 @@ import React from 'react';
 import "../styles/ActiveLots.css";
 import BASE_URL from "../api/endpoints";
 import WatchlistButton from './WatchlistButton';
+import { useNavigate } from "react-router-dom";
+
 
 const ActiveLots = ({ lots }) => {
+  const navigate = useNavigate();
   // Function to format time remaining
   const formatTimeRemaining = (timeString) => {
     if (!timeString) return "Time expired";
@@ -114,7 +117,7 @@ const ActiveLots = ({ lots }) => {
                   <div className="current-bid-label">Current Bid</div>
                   <div className="current-bid-amount">${parseFloat(lot.current_bid).toLocaleString()}</div>
                 </div>
-                <button className="place-bid-btn">
+                <button className="place-bid-btn" onClick={()=> navigate(`/lot/${lot.id}`)}>
                   Place Bid
                 </button>
               </div>

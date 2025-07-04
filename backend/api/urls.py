@@ -55,6 +55,8 @@ urlpatterns = [
 
     # CATEGORIES
     path('categories/',  views.CategoryListView.as_view(), name='category-list-create'),
+    path('categories/<int:parent_id>/', views.SubcategoryListView.as_view(), name='subcategory-list'),
+
 
     # COMPANY
     path('companies/', views.CompanyListView.as_view(), name='company-list'),

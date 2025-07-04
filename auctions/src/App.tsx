@@ -9,11 +9,12 @@ import AuctionsListing from "./pages/AuctionsListing";
 import AuctionDetails from "./pages/AuctionDetails";
 import LotDetails from "./pages/LotDetails";
 import Category from "./pages/Category";
+import SubCategory from "./pages/SubCategory";
 import Contact from "./pages/Contact";
 import UserProfile from "./pages/UserProfile";
 import SellerActivity from "./pages/SellerActivity";
 import Watchlist from "./pages/Watchlist"
-import CatLots from "./pages/CatLots.tsx";
+import CatLots from "./pages/CatLots";
 import NotFound from "./pages/NotFound";
 import "./styles/global.css";
 import PrivateRoute from "./routes/PrivateRoute";
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/category/lots" element={<CatLots />} />
               <Route path="/lot/:id" element={<LotDetails />} />
               <Route path="/category" element={<Category />} />
+              <Route path="/category/:id" element={<SubCategory />} />
               <Route path="/contact" element={<Contact />} />      
               <Route path="/watchlist" element={<Watchlist />} />     
               <Route path="/seller/dashbaord" element={<SellerActivity />} />     

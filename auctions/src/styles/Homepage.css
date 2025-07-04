@@ -2,6 +2,14 @@
   min-height: 100vh;
 }
 
+
+.loading-state{
+  text-align: center;
+  padding: 15%;
+  font-size: 20px;
+  font-family: 'Titillium Web';
+  font-weight: bold;
+}
 /* Hero Section */
 .hero {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -347,7 +355,6 @@
 
 .category-card {
   background: white;
-  padding: 40px 30px;
   border-radius: 16px;
   text-align: center;
   text-decoration: none;

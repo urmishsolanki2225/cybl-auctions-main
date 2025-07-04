@@ -1,5 +1,5 @@
 .footer {
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: black;
   color: white;
 }
 
@@ -12,12 +12,16 @@
 .footer-text {
   color: #bdc3c7;
   line-height: 1.6;
-  margin-bottom: 20px;
+  margin-bottom: 20px;  
+  font-family: 'Titillium Web';
+  font-weight: bold;
 }
 @media (max-width: 768px) {
   .footer-content {
     grid-template-columns: repeat(2, 1fr);
     gap: 30px;
+    
+  font-family: 'Titillium Web';
   }
   
   .footer-bottom {
@@ -30,5 +34,7 @@
 @media (max-width: 480px) {
   .footer-content {
     grid-template-columns: 1fr;
+    
+  font-family: 'Titillium Web';
   }
 }
