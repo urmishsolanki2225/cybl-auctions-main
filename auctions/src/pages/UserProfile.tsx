@@ -157,13 +157,10 @@ const UserProfile = () => {
 
   return (
     <div className="profile-page">
-      <div className="container">
-        {/* Profile Header */}
+      <div className="auctions-container">
         <div className="profile-header">
-          <div className="gradient-bg"></div>
           <div className="profile-content">
             <div className="profile-main">
-              {/* Avatar with Upload */}
               <div className="profile-avatar-section">
                 <div 
                   className={`profile-avatar ${isUploading ? 'uploading' : ''}`} 
@@ -220,7 +217,7 @@ const UserProfile = () => {
               <div className="profile-info">
                 <div className="profile-details">
                   <h1 className="profile-name">{userData.name || userData.username}</h1>
-                  {/*<p className="profile-email">{userData.email}</p>*/}
+                  <p className="profile-email">{userData.email}</p>
                   
                 </div>
               </div>

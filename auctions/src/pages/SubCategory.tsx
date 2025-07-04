@@ -61,17 +61,19 @@ const SubCategory = () => {
     <div className="category-page">
       <div className="container">
         {loading ? (
-          <div className="loading-container">
-            <p>Loading categories...</p>
-          </div>
+          <div className="loading-state">Loading...</div>
         ) : error ? (
-          <div className="error-container">
-            <p>{error}</p>
-          </div>
+          <div className="loading-state">{error}</div>
         ) : (
           <div className="categories-grid">
             {subCategories.map((cat) => (
-              <div key={cat.id} className="category-card">
+              <div
+                key={cat.id}
+                className="category-card"
+                onClick={() =>
+                  navigate("/category/lots", { state: { categoryId: cat.id } })
+                }
+              >
                 {cat.image ? (
                   <div
                     className="category-image"

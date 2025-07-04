@@ -233,214 +233,189 @@ const PasswordChangeTab = () => {
   const passwordStrength = getPasswordStrength(formData.newPassword);
  
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
-      <div className="bg-white rounded-lg shadow-md border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <Lock className="w-5 h-5" />
-            Change Password
-          </h2>
-        </div>
-        
-        <div className="p-6">         
-          {errors.general && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              {errors.general}
-            </div>
-          )}
- 
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Current Password <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type={showPasswords.current ? "text" : "password"}
-                  value={formData.currentPassword}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: '50%',
-                    padding: '12px 16px',
-                    border: '2px solid #e9ecef',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    transition: 'border-color 0.3s ease',
-                    borderColor: errors.currentPassword ? 'red' : '#e9ecef',
-                  }}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => togglePasswordVisibility('current')}
-                  aria-label="Toggle password visibility"
-                >
-                  {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.currentPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.currentPassword}</p>
-              )}
-            </div>
- 
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                New Password <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="newPassword"
-                  name="newPassword"
-                  type={showPasswords.new ? "text" : "password"}
-                  value={formData.newPassword}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: '50%',
-                    padding: '12px 16px',
-                    border: '2px solid #e9ecef',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    transition: 'border-color 0.3s ease',
-                    borderColor: errors.currentPassword ? 'red' : '#e9ecef',
-                  }}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => togglePasswordVisibility('new')}
-                  aria-label="Toggle password visibility"
-                >
-                  {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              
-              {errors.newPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
-              )}
- 
-              {/* Password Requirements - Always visible when user starts typing */}
-              {formData.newPassword && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    Password Requirements ({passwordStrength.score}/{passwordStrength.total} met)
-                  </p>
-                  <div className="space-y-1">
-                    {passwordRequirements.map((requirement) => {
-                      const isMet = requirement.test(formData.newPassword);
-                      return (
-                        <div
-                          key={requirement.id}
-                          className={`flex items-center gap-2 text-sm ${
-                            isMet ? 'text-green-600' : 'text-gray-500'
-                          }`}
-                        >
-                          {isMet ? (
-                            <Check className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <X className="w-4 h-4 text-gray-400" />
-                          )}
-                          <span className={isMet ? 'font-medium' : ''}>{requirement.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
- 
-              {/* Static helper text when no password is entered */}
-              {!formData.newPassword && (
-                <p className="text-sm text-gray-500 mt-2">
-                  Must be at least 8 characters with uppercase, lowercase, number, and special character.
-                </p>
-              )}
-            </div>
- 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm New Password <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showPasswords.confirm ? "text" : "password"}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: '50%',
-                    padding: '12px 16px',
-                    border: '2px solid #e9ecef',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    transition: 'border-color 0.3s ease',
-                    borderColor: errors.currentPassword ? 'red' : '#e9ecef',
-                  }}
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => togglePasswordVisibility('confirm')}
-                  aria-label="Toggle password visibility"
-                >
-                  {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-              )}
-              
-              {/* Password match indicator */}
-              {formData.confirmPassword && formData.newPassword && (
-                <div className={`mt-2 flex items-center gap-2 text-sm ${
-                  formData.newPassword === formData.confirmPassword ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formData.newPassword === formData.confirmPassword ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Passwords match</span>
-                    </>
-                  ) : (
-                    <>
-                      <X className="w-4 h-4" />
-                      <span>Passwords do not match</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
- 
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="btn btn-primary w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              disabled={loading}
-              style={{
-
-                marginTop: '20px'
-              }}
-            >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                  </svg>
-                  Updating...
-                </div>
-              ) : (
-                'Update Password'
-              )}
-            </button>
+    <div className="profile-card">
+      <div className="profile-card-header">
+        <h2 className="profile-card-title flex items-center gap-2">
+          <Lock className="w-5 h-5" />
+          Change Password
+        </h2>
+      </div>
+      
+      <div className="profile-card-content">         
+        {errors.general && (
+          <div className="error-message">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            {errors.general}
           </div>
+        )}
+
+        {successMessage && (
+          <div className="success-message">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            {successMessage}
+          </div>
+        )}
+
+        <div className="form-grid">
+          <div className="form-group">
+            <label htmlFor="currentPassword">
+              Current Password <span className="required-field">*</span>
+            </label>
+            <div className="password-input-container">
+              <input
+                id="currentPassword"
+                name="currentPassword"
+                type={showPasswords.current ? "text" : "password"}
+                value={formData.currentPassword}
+                onChange={handleChange}
+                required
+                className={`form-input ${errors.currentPassword ? 'form-input-error' : ''}`}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => togglePasswordVisibility('current')}
+                aria-label="Toggle password visibility"
+              >
+                {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {errors.currentPassword && (
+              <span className="error-text">{errors.currentPassword}</span>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="newPassword">
+              New Password <span className="required-field">*</span>
+            </label>
+            <div className="password-input-container">
+              <input
+                id="newPassword"
+                name="newPassword"
+                type={showPasswords.new ? "text" : "password"}
+                value={formData.newPassword}
+                onChange={handleChange}
+                required
+                className={`form-input ${errors.newPassword ? 'form-input-error' : ''}`}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => togglePasswordVisibility('new')}
+                aria-label="Toggle password visibility"
+              >
+                {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            
+            {errors.newPassword && (
+              <span className="error-text">{errors.newPassword}</span>
+            )}
+
+            {/* Password Requirements */}
+            {formData.newPassword && (
+              <div className="password-requirements">
+                <p className="requirements-title">
+                  Password Requirements ({passwordStrength.score}/{passwordStrength.total} met)
+                </p>
+                <div className="requirements-list">
+                  {passwordRequirements.map((requirement) => {
+                    const isMet = requirement.test(formData.newPassword);
+                    return (
+                      <div
+                        key={requirement.id}
+                        className={`requirement-item ${isMet ? 'met' : ''}`}
+                      >
+                        {isMet ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
+                        <span>{requirement.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Static helper text when no password is entered */}
+            {!formData.newPassword && (
+              <p className="password-hint">
+                Must be at least 8 characters with uppercase, lowercase, number, and special character.
+              </p>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">
+              Confirm New Password <span className="required-field">*</span>
+            </label>
+            <div className="password-input-container">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPasswords.confirm ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                className={`form-input ${errors.confirmPassword ? 'form-input-error' : ''}`}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => togglePasswordVisibility('confirm')}
+                aria-label="Toggle password visibility"
+              >
+                {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {errors.confirmPassword && (
+              <span className="error-text">{errors.confirmPassword}</span>
+            )}
+            
+            {/* Password match indicator */}
+            {formData.confirmPassword && formData.newPassword && (
+              <div className={`password-match ${formData.newPassword === formData.confirmPassword ? 'matched' : 'not-matched'}`}>
+                {formData.newPassword === formData.confirmPassword ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Passwords match</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="w-4 h-4" />
+                    <span>Passwords do not match</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="form-actions">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="btn btn-primary"
+            disabled={loading}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                Updating...
+              </div>
+            ) : (
+              'Update Password'
+            )}
+          </button>
         </div>
       </div>
     </div>
@@ -448,4 +423,3 @@ const PasswordChangeTab = () => {
 };
  
 export default PasswordChangeTab;
- 

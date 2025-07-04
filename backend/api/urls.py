@@ -10,10 +10,12 @@ from api import views
 
 urlpatterns = [
     # USER REGISTER
+    path('register/google/', views.GoogleRegisterView.as_view(), name='google_register'),
     path('register/', views.RegisterView.as_view(), name='register'),
 
     # LOGIN
     path('login/', views.LoginView.as_view(), name='login'),
+    path('login/google/', views.GoogleLoginView.as_view(), name='google_login'),  # Add this lines
 
     # ALL COUNTRY + DETAILS
     path('countries/', views.CountryListCreateView.as_view(), name='country-list-create'),

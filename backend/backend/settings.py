@@ -51,7 +51,17 @@ INSTALLED_APPS = [
     'api',
     'channels',
     'rest_framework_simplejwt.token_blacklist',
+    'social_django',
 ]
+
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+# Google OAuth2 settings
+GOOGLE_CLIENT_ID = "1087829592235-sm0nbsei6bl5jnvrgft26l8ide3sjgbm.apps.googleusercontent.com"
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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' #'your-google-client-secret'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -74,6 +84,7 @@ CORS_ALLOWED_ORIGINS = [
     # "http://127.0.0.1:8000",
     # "http://192.168.98.35:5173",
     # "http://192.168.98.35:8000",
+    "http://localhost:5173",
     "http://192.168.2.108:5173",
     "http://192.168.2.108:8000",
     "http://192.168.201.35:5173",

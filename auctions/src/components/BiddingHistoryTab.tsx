@@ -96,10 +96,20 @@ const BiddingHistoryTab = () => {
   const BiddingCard = ({ item }: { item: BiddingHistoryItem }) => (
     <div className={`bidding-card ${item.bid_status}`}>
       <div className="bidding-image">
-        <img
-          src={BASE_URL + "/media/" + item.inventory_first_image}
-          alt={item.inventory_title}
-        />
+        {item.inventory_first_image ? (
+          <div
+            className="category-image"
+            style={{
+              backgroundImage: `url(${BASE_URL}/media/${encodeURIComponent(item.inventory_first_image)})`
+            }}
+            aria-label={item.inventory_title}
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        ) : (
+          <div className="category-placeholder">
+            {item.inventory_title?.[0]?.toUpperCase() ?? "?"}
+          </div>
+        )}
         <div className={`status-badge ${item.bid_status}`}>
           {getStatusIcon(item.bid_status)}
           {item.bid_status.charAt(0).toUpperCase() + item.bid_status.slice(1)}
@@ -216,32 +226,32 @@ const BiddingHistoryTab = () => {
         <div className="profile-card-content">
           <div className="custom-tabs">
             <div className="tab-list">
-              <button
+              <div
                 className={`tab-button ${activeTab === "all" ? "active" : ""}`}
                 onClick={() => setActiveTab("all")}
               >
                 All ({counts.all})
-              </button>
-              <button
+              </div>
+              <div
                 className={`tab-button ${
                   activeTab === "active" ? "active" : ""
                 }`}
                 onClick={() => setActiveTab("active")}
               >
                 Active ({counts.active})
-              </button>
-              <button
+              </div>
+              <div
                 className={`tab-button ${activeTab === "won" ? "active" : ""}`}
                 onClick={() => setActiveTab("won")}
               >
                 Won ({counts.won})
-              </button>
-              <button
+              </div>
+              <div
                 className={`tab-button ${activeTab === "lost" ? "active" : ""}`}
                 onClick={() => setActiveTab("lost")}
               >
                 Lost ({counts.lost})
-              </button>
+              </div>
             </div>
 
             <div className="tab-content">

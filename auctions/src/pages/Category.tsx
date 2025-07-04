@@ -49,63 +49,30 @@ const Category = () => {
       }));
   };
 
-  const handleSubcategoryClick = (subcategoryId: number) => {
-    navigate("/category/lots", {
-      state: {
-        categoryId: subcategoryId,
-      },
-    });
-  };
-
   return (
     <div className="category-page">
       <div className="container">
         {loading ? (
-          <div className="loading-container">
-            <p>Loading categories...</p>
-          </div>
+          <div className="loading-state">Loading...</div>
         ) : error ? (
-          <div className="error-container">
-            <p>{error}</p>
-          </div>
+          <div className="loading-state">{error}</div>
         ) : (
           <div className="categories-grid">
             {categories.map((cat) => (
-              <div key={cat.id} className="category-card">
-                {cat.image && (
+              <div key={cat.id} className="category-card" onClick={() => navigate(`/category/${cat.id}`)}>
+                {cat.image ? (
                   <div
                     className="category-image"
-                    style={{ backgroundImage: `url(${BASE_URL}${cat?.image ?? ""})` }}
+                    style={{ backgroundImage: `url(${BASE_URL}${cat.image})` }}
                     aria-label={cat.name}
+                    onError={(e) => (e.currentTarget.style.display = "none")}
                   />
+                ) : (
+                  <div className="category-placeholder">
+                    {cat.name?.[0]?.toUpperCase() ?? "?"}
+                  </div>
                 )}
                 <h2 className="category-title">{cat.name}</h2>
-                <div className="subcategories-list">
-                  {cat.subcategories.map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="subcategory-card"
-                      onClick={() => handleSubcategoryClick(sub.id)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          handleSubcategoryClick(sub.id);
-                        }
-                      }}
-                    >
-                      {sub.image && (
-                        <div
-                          className="subcategory-image"
-                          style={{ backgroundImage: `url(${sub.image})` }}
-                          aria-label={sub.name}
-                        />
-                      )}
-                      <span className="subcategory-name">{sub.name}</span>
-                      <span className="subcategory-arrow">→</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             ))}
           </div>

@@ -46,7 +46,7 @@ const Index = () => {
   ) : (
     <div className="homepage">
       <ActiveLots lots={Activelot} />
-      <div className="container">
+      <div className="auctions-container">
         <NextToClose auctions={closingSoonAuctions} />
         <CategoryAuctions categories={category} />
       </div>

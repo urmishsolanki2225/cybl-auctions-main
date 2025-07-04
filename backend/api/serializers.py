@@ -14,6 +14,9 @@ from django.db import models
 from django.utils import timezone
 from rest_framework import serializers
 from adminpanel.models import Inventory, Category
+from social_core.exceptions import AuthForbidden
+from google.oauth2 import id_token
+
 ################################################################################################################
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -194,6 +197,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         
         return user 
+################################################################################################################
+
 ################################################################################################################
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = serializers.SerializerMethodField()

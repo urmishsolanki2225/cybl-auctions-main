@@ -39,7 +39,7 @@ const ActiveLots = ({ lots }) => {
 
   return (
     <div className="auctions-container">
-      <h1 className="auctions-title">Auctions</h1>    
+      <h1 className="auctions-title">Running lots</h1>    
       {/* Lots grid */}
       <div className="lots-grid">
         {lots?.map((lot, index) => (

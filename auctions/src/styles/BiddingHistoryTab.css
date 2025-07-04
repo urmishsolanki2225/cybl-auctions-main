@@ -2,78 +2,57 @@
   width: 100%;
 }
 
-.custom-tabs {
-  margin-top: 1.5rem;
-}
-
 .tab-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.25rem;
-  background: #f1f5f9;
-  padding: 0.25rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1.5rem;
+  display: flex;
+      margin-bottom: 20px;
+
+}
+.tab-button.active {
+    text-align: center;
+    font-weight: 500;
+    font-family: 'Titillium Web';
+    color: #000;
+    border-bottom: 1px solid #000000;
+    border-width: 5px;
+        width: 100px;
+        font-weight: bold;
+}
+.tab-button {
+  text-align: center;
+  font-family: 'Titillium Web';
+      width: 100px;
+      font-weight: bold;
 }
 
-.tab-button {
-  padding: 0.75rem 1rem;
-  border: none;
-  background: transparent;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 500;
-  color: #64748b;
-  transition: all 0.2s ease;
-}
+
 
 .tab-button:hover {
   background: rgba(255, 255, 255, 0.5);
   color: #334155;
 }
 
-.tab-button.active {
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
-  color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 .bidding-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 10px;
 }
 
 .bidding-card {
   background: white;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   overflow: hidden;
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.bidding-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.bidding-card.active {
-  border-color: #3b82f6;
-}
-
-.bidding-card.won {
-  border-color: #10b981;
-}
-
-.bidding-card.lost {
-  border-color: #ef4444;
+  transition: 0.2s ease-in-out;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
 }
 
 .bidding-image {
   position: relative;
-  height: 200px;
+  height: 160px;
   overflow: hidden;
+  border-bottom: 1px solid #eee;
 }
 
 .bidding-image img {
@@ -84,68 +63,71 @@
 
 .status-badge {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 10px;
+  right: 10px;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: white;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  gap: 4px;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: white;
 }
 
 .status-badge.active {
-  background: #3b82f6;
+  background-color: #3b82f6;
 }
-
 .status-badge.won {
-  background: #10b981;
+  background-color: #10b981;
 }
-
 .status-badge.lost {
-  background: #ef4444;
+  background-color: #ef4444;
 }
 
 .bidding-content {
-  padding: 1.5rem;
+  padding: 1rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .bidding-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 1rem;
-  line-height: 1.4;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+}
+
+.auction-name {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
 }
 
 .bidding-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
 }
 
 .bid-info {
-  display: flex;
-  flex-direction: column;
+  text-align: left;
 }
 
 .bid-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
+  font-size: 0.7rem;
   font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.2rem;
 }
 
 .bid-amount {
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #1f2937;
 }
 
@@ -154,115 +136,40 @@
 }
 
 .end-time {
-  display: flex;
-  flex-direction: column;
   margin-bottom: 1rem;
 }
 
 .end-time-value {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  color: #374151;
   font-weight: 500;
-  color: #1f2937;
 }
 
-.bidding-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  border: none;
+.btn.btn-outline {
+  border: 1px solid #3b82f6;
+  background: transparent;
+  color: #3b82f6;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  border-radius: 4px;
   cursor: pointer;
-  font-weight: 500;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  flex: 1;
-  justify-content: center;
+  transition: 0.2s;
 }
 
-.btn:hover {
-  transform: translateY(-1px);
-}
-
-.btn-primary {
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+.btn.btn-outline:hover {
+  background-color: #3b82f6;
   color: white;
 }
 
-.btn-primary:hover {
-  background: linear-gradient(to right, #2563eb, #7c3aed);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  flex: 0 0 auto;
-}
-
-.btn-outline:hover {
-  background: #f9fafb;
-  border-color: #9ca3af;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6b7280;
-}
-
-.empty-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-  font-size: 1.25rem;
+.winning-badge {
+  background-color: #10b981;
+  color: white;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #1f2937;
-}
-
-.empty-state p {
-  font-size: 1rem;
-  line-height: 1.5;
-  margin: 0;
-}
-
-@media (max-width: 768px) {
-  .tab-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .bidding-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .bidding-details {
-    grid-template-columns: 1fr;
-  }
-  
-  .bidding-actions {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 480px) {
-  .tab-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .bidding-content {
-    padding: 1rem;
-  }
-  
-  .bidding-title {
-    font-size: 1rem;
-  }
+  padding: 6px 10px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
 }

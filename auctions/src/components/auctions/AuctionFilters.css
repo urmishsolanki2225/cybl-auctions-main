@@ -1,11 +1,7 @@
 /* AuctionFilters.css */
 
 .auction-filters {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 2rem;
+  padding: 10px 20px 0px 20px;
 }
 
 .filters-header {
@@ -213,7 +209,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
 }
 
 .clear-filters-btn {

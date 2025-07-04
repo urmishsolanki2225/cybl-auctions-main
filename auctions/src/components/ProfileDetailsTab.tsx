@@ -289,7 +289,6 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
             {saveError}
           </div>
         )}
-
         <div className="form-grid">
           <div className="form-group">
             <label htmlFor="title">
@@ -413,7 +412,6 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
             )}
           </div>
         </div>
-
         <div className="form-group form-group-full">
           <label htmlFor="address">
             Address <span style={{ color: '#dc3545' }}>*</span>
@@ -432,7 +430,6 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
             </span>
           )}
         </div>
-
         <div className="form-grid">
           <div className="form-group">
             <label htmlFor="country">
@@ -473,7 +470,6 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
               </span>
             )}
           </div>
-
           <div className="form-group">
             <label htmlFor="state">
               State <span style={{ color: '#dc3545' }}>*</span>
@@ -498,9 +494,6 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
               </span>
             )}
           </div>
-        </div>
-
-        <div className="form-grid">
           <div className="form-group">
             <label htmlFor="city">
               City <span style={{ color: '#dc3545' }}>*</span>
@@ -519,7 +512,6 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
               </span>
             )}
           </div>
-
           <div className="form-group">
             <label htmlFor="zipcode">
               Zipcode <span style={{ color: '#dc3545' }}>*</span>
@@ -539,7 +531,6 @@ const ProfileDetailsTab = ({ userData, setUserData }: ProfileDetailsTabProps) =>
             )}
           </div>
         </div>
-
         {isEditing && (
           <div className="form-actions">
             <button 

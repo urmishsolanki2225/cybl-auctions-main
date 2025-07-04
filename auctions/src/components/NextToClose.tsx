@@ -66,7 +66,7 @@ const NextToClose = ({ auctions }) => {
 
   return (
     <div className="next-to-close-container">
-      <h1 className="auctions-title">Next to Close Auctions</h1>
+      <h1 className="auctions-title">Closing soon</h1>
       
       <div className="auctions-grid">
         {auctions?.map((auction, index) => (

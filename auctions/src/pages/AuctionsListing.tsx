@@ -76,7 +76,7 @@ const Index = () => {
     <div className="homepage">
       {/* Filters Section */}
       <section className="filters-section">
-        <div className="container">
+        <div className="">
           <AuctionFilters
             filters={filters}
             onFilterChange={updateFilters}
@@ -87,7 +87,7 @@ const Index = () => {
 
       {/* Featured Section */}
       <section className="featured-section">
-        <div className="container">
+        <div className="auctions-container">
           <div className="section-header">
             <div className="section-title-area">
               <h2>Running Auctions</h2>
@@ -149,7 +149,7 @@ const Index = () => {
               {featuredAuction.map((auction: any, index:any) => (
                 <div
                   key={index}
-                  className="bg-blue-600 rounded-md px-4 py-2 text-center font-medium shadow-md hover:bg-blue-700 transition-colors cursor-pointer"
+                 
                   
                 >
                   <div className="featured-auction-combined-card">
@@ -226,7 +226,7 @@ const Index = () => {
                     <hr className="auction-divider" />
 
                     {/* Carousel of Lots */}
-                    <div className="auction-lots">
+                    <div className="auction-lotss">
                       <LotsCarousel lots={auction.inventory_items} auctionId={auction.id} />
                     </div>
                   </div>

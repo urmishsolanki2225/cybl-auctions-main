@@ -8,11 +8,9 @@ import BASE_URL from "../api/endpoints";
 
 const CategoryAuctions = ({ categories }) => {
   const navigate = useNavigate();
- {console.log("Urmsih", categories)}
   return (
     <div className="category-auctions-container">
-      <h2>Auctions by Category</h2>
-      
+      <h2>Category</h2>      
       <Swiper
         slidesPerView={3}
         spaceBetween={20}

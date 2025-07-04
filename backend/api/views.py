@@ -39,6 +39,228 @@ from xhtml2pdf import pisa
 from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.contrib.auth import update_session_auth_hash
+from google.oauth2 import id_token
+from google.auth.transport.requests import Request
+import re
+################################################################################################################
+class GoogleRegisterView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the Google auth token from the request
+            auth_token = request.data.get('auth_token')
+            
+            if not auth_token:
+                return Response({
+                    "success": False,
+                    "message": "No authentication token provided",
+                    "errors": {"auth_token": ["Authentication token is required"]}
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Verify the Google token
+            try:
+                idinfo = id_token.verify_oauth2_token(
+                    auth_token, 
+                    Request(), 
+                    settings.GOOGLE_CLIENT_ID
+                )
+                
+                # Extract user information from Google
+                email = idinfo.get('email')
+                first_name = idinfo.get('given_name', '')
+                last_name = idinfo.get('family_name', '')
+                google_id = idinfo.get('sub')
+                
+                if not email:
+                    return Response({
+                        "success": False,
+                        "message": "Unable to get email from Google account",
+                        "errors": {"email": ["Email is required"]}
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                    
+            except ValueError as e:
+                return Response({
+                    "success": False,
+                    "message": "Invalid Google token",
+                    "errors": {"auth_token": [str(e)]}
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if user already exists
+            try:
+                user = User.objects.get(email=email)
+                
+                # User exists, return success (this is login, not registration)
+                return Response({
+                    "success": True,
+                    "message": "User already exists. Please use login instead.",
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "full_name": f"{user.first_name} {user.last_name}",
+                        "date_joined": user.date_joined.isoformat()
+                    }
+                }, status=status.HTTP_200_OK)
+                
+            except User.DoesNotExist:
+                # User doesn't exist, create new user
+                pass
+            
+            # Generate unique username
+            username = self.generate_unique_username(first_name, last_name)
+            
+            # Create the user
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                password=None  # No password for Google users
+            )
+            
+            # Set unusable password (Google users don't need password)
+            user.set_unusable_password()
+            user.save()
+            
+            # Assign "Buyer" group to the user
+            try:
+                buyer_group = Group.objects.get(name="Buyer")
+                user.groups.add(buyer_group)
+            except Group.DoesNotExist:
+                return Response({
+                    "success": False,
+                    "message": "Buyer group does not exist. Please create it in admin.",
+                    "errors": {"group": ["Buyer group not found"]}
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            return Response({
+                "success": True,
+                "message": "User registered successfully with Google",
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "full_name": f"{user.first_name} {user.last_name}",
+                    "date_joined": user.date_joined.isoformat()
+                }
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": "Google registration failed",
+                "errors": {"general": [str(e)]}
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def generate_unique_username(self, first_name, last_name):
+        """Generate a unique username from first and last name"""
+        first_clean = re.sub(r'[^a-zA-Z0-9]', '', first_name).lower()
+        last_clean = re.sub(r'[^a-zA-Z0-9]', '', last_name).lower()
+        base_username = f"{first_clean}_{last_clean}"
+        
+        if len(base_username) < 4:
+            base_username = (first_clean[:3] + last_clean[:3]).ljust(4, '0')
+        
+        base_username = base_username[:30]
+        
+        if not User.objects.filter(username=base_username).exists():
+            return base_username
+        
+        counter = 1
+        while True:
+            new_username = f"{base_username[:27]}{counter:03d}"
+            if not User.objects.filter(username=new_username).exists():
+                return new_username
+            counter += 1
+            
+            if counter > 999:
+                import time
+                timestamp = str(int(time.time()))[-6:]
+                return f"user_{timestamp}"
+
+##########
+class GoogleLoginView(APIView):
+    def post(self, request, *args, **kwargs):
+        auth_token = request.data.get('auth_token')
+        
+        if not auth_token:
+            return Response({
+                "message": "Authentication token is required",
+                "errors": {"auth_token": ["This field is required"]}
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Verify the Google token
+            idinfo = id_token.verify_oauth2_token(
+                auth_token, 
+                Request(),  # This is the correct import
+                settings.GOOGLE_CLIENT_ID
+            )
+            
+            if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+                raise ValueError('Wrong issuer.')
+            
+            # Extract user information
+            email = idinfo.get('email')
+            first_name = idinfo.get('given_name', '')
+            last_name = idinfo.get('family_name', '')
+            
+            if not email:
+                return Response({
+                    "message": "Email not provided by Google",
+                    "errors": {"email": ["Email is required"]}
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if user exists
+            try:
+                user = User.objects.get(email=email)
+                logger.info(f"Existing user found: {user.email}")
+            except User.DoesNotExist:
+                # User doesn't exist, redirect to registration
+                return Response({
+                    "message": "Account not found. Please register first.",
+                    "errors": {"email": ["No account found with this email. Please register first."]},
+                    "redirect_to_register": True
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            
+            # Get user groups
+            groups = list(user.groups.values_list('name', flat=True))
+            
+            return Response({
+                "message": "Login successful",
+                "authToken": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "username": user.username,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "groups": groups
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError as e:
+            logger.error(f"Google token validation error: {str(e)}")
+            return Response({
+                "message": "Invalid Google token",
+                "errors": {"auth_token": ["Invalid authentication token"]}
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            logger.error(f"Google login error: {str(e)}")
+            return Response({
+                "message": "Google login failed",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 ################################################################################################################
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
