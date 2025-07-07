@@ -105,10 +105,7 @@ const Index = () => {
           </div>
 
           {loading && featuredAuction.length === 0 && (
-            <div className="loading">
-              <div className="loading-spinner"></div>
-              <p>Loading auctions...</p>
-            </div>
+               <div className="loading-state">Loading...</div>
           )}
 
           {error && (

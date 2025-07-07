@@ -38,13 +38,7 @@ const Contact = () => {
 
   return (
     <div className="contact-page">
-      <div className="container">
-        <div className="contact-header">
-          <h1 className="contact-title">Get in Touch</h1>
-          <p className="contact-subtitle">
-            Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-          </p>
-        </div>
+      <div className="auctions-container">     
 
         <div className="contact-content">
           <div className="contact-info">

@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Search, Filter, X, ChevronDown, ChevronUp } from "lucide-react";
-import LiveTimer from "../components/LiveTimer";
+import SmallTimer from "../components/SmallTimer";
 import "../styles/AuctionDetails.css";
 import { publicApi } from "../api/apiUtils";
 import BASE_URL from "../api/endpoints";
@@ -173,11 +173,7 @@ const CatLots = () => {
 
   if (loading) {
     return (
-      <div className="auction-details-page">
-        <div className="loading-container">
-          <p>Loading...</p>
-        </div>
-      </div>
+      <div className="loading-state">Loading...</div>
     );
   }
 
@@ -213,8 +209,22 @@ const CatLots = () => {
     return "Lots";
   };
 
+  // Function to get image URL or placeholder
+  const getImageUrl = (mediaItem) => {
+    if (mediaItem && mediaItem.path) {
+      // Assuming you have a base URL for images
+      return `${BASE_URL}/media/${mediaItem.path}`;
+    }
+    return null;
+  };
+
+  // Function to determine if reserve is met
+  const isReserveMet = (currentBid, reservePrice) => {
+    return parseFloat(currentBid) >= parseFloat(reservePrice);
+  };
+
   return (
-    <div className="auction-details-page">
+    <div className="auction-details-page auctions-container">
       <div className="auction-layout-page">
         {/* Left-side filter or info section */}
         <aside className="left-panel">
@@ -367,83 +377,85 @@ const CatLots = () => {
         <section className="right-panel">
           <div className="lots-container">
             {lotsLoading ? (
-              <div className="loading-spinner"></div>
+              <div className="loading-state"></div>
             ) : (
               <div className="lots-grid">
-                {lots?.map((lot) => (
-                  <div className="lot-card" key={lot.id}>
-                    {/* Image with watchlist button */}
-                    <div className="lot-image-container">
-                      <img
-                        src={`${BASE_URL}/media/${lot.media_items?.[0]?.path}`}
-                        alt={lot.title}
-                        className="lot-image"
-                      />
-                      <div className="watchlist-button-container">
-                        <WatchlistButton
-                          inventoryId={lot.id}
-                          size="small"                          
+                {lots?.map((lot, index) => (
+                  <div key={lot.id || index} className="lot-cards">
+                    {/* Car Image Section */}
+                    <div className="car-image-container">
+                    <div className="watchlist-button-container">
+                    <WatchlistButton
+                        inventoryId={lot?.id}
+                        size="small"
+                        //onWatchlistChange={handleWatchlistChange}
+                    />
+                    </div>
+                      {getImageUrl(lot.media_items) ? (
+                        <img 
+                          src={getImageUrl(lot.media_items)} 
+                          alt={lot.title}
+                          className="car-image"
                         />
+                      ) : (
+                        <div className="no-image-placeholder">
+                          🚗
+                        </div>
+                      )}
+                      
+                      {/* Featured badge */}
+                      {lot.auction_details?.is_featured && (
+                        <div className="featured-badge">Featured</div>
+                      )}
+                      
+                      {/* Condition badge */}
+                      <div className={`condition-badge ${lot.condition === 'new' ? 'condition-new' : 'condition-used'}`}>
+                        {lot.condition}
+                      </div>
+                      {/* Timer overlay */}
+                      <div className="timer-overlay">
+                        <div className="timer-info">
+                          <div className="timer-icon">⏱</div>
+                          <div className="timer-text"><SmallTimer endTime={lot.lot_end_time} /></div>
+                        </div>
+                        <div className="bid-info">
+                          <div className="bid-label">Bid</div>
+                          <div className="bid-amount">${parseFloat(lot.next_required_bid).toLocaleString()}</div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Lot content */}
-                    <div className="lot-content">
-                      <div className="lot-header">
-                        <h5 className="lot-title">{lot.title}</h5>
-                        <div className="lot-category">
-                          {lot?.category?.name}
-                        </div>
+                    {/* Card Content */}
+                    <div className="card-content">
+                      <h2 className="car-title">{lot.title}</h2>
+                      
+                      {/* Car details */}
+                      <div className="car-details">
+                        {/* <div className="car-detail">
+                          <span>Category:</span>
+                          <span>{lot.category_details?.category_name}</span>
+                        </div> */}
+                        {/* <div className="car-detail">
+                          <span>Reserve:</span>
+                          <span>${parseFloat(lot.reserve_price).toLocaleString()}</span>
+                        </div> */}
+                      </div>
+                      
+                      {/* <div className="car-spec">
+                        {lot.description?.replace(/<[^>]*>/g, '') || 'No description available'}
+                      </div> */}
+                      
+                      <div className="car-location">
+                        {lot.auction_details?.name}
                       </div>
 
-                      <div className="lot-details">
-                        <div className="lot-detail-row">
-                          <span className="lot-detail-label">Current Bid:</span>
-                          <span className="lot-detail-value">
-                            ${lot.current_bid || lot.starting_bid}
-                          </span>
+                      {/* Bid section */}
+                      <div className="bid-section">
+                        <div className="current-bid">
+                          <div className="current-bid-label">Current Bid</div>
+                          <div className="current-bid-amount">${parseFloat(lot.current_bid).toLocaleString()}</div>
                         </div>
-
-                        <div className="lot-detail-row">
-                          <span className="lot-detail-label">Next Bid:</span>
-                          <span className="lot-detail-value">
-                            $
-                            {lot.next_required_bid ||
-                              (lot.current_bid
-                                ? lot.current_bid + 1
-                                : lot.starting_bid)}
-                          </span>
-                        </div>
-
-                        <div className="lot-detail-row">
-                          <span className="lot-detail-label">High Bidder:</span>
-                          <span className="lot-detail-value">
-                            {lot.highest_bidder?.username || "None"}
-                          </span>
-                        </div>
-
-                        <div className="lot-detail-row">
-                          <span className="lot-detail-label">Reserve:</span>
-                          <span
-                            className={`lot-reserve ${
-                              lot.reserve_met
-                                ? "reserve-met"
-                                : "reserve-not-met"
-                            }`}
-                          >
-                            {lot.reserve_met ? "Met" : "Not Met"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="lot-footer">
-                        <div className="lot-timer">
-                          <LiveTimer endTime={lot.lot_end_time} />
-                        </div>
-                        <button
-                          className="lot-bid-button"
-                          onClick={() => handlePlaceBidClick(lot)}
-                        >
+                        <button className="place-bid-btn" onClick={()=> navigate(`/lot/${lot.id}`)}>
                           Place Bid
                         </button>
                       </div>

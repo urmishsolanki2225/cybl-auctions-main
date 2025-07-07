@@ -123,12 +123,14 @@
   font-weight: 500;
   color: #6b7280;
   margin-bottom: 0.2rem;
+  color: white;
 }
 
 .bid-amount {
   font-size: 0.9rem;
   font-weight: 600;
   color: #1f2937;
+   color: white;
 }
 
 .bid-amount.my-bid {

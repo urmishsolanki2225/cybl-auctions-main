@@ -1,14 +1,7 @@
-/* AuctionDetails.css */
-.auction-details-page {
-  padding: 20px ;
-  min-height: 100vh;
-  background: #f8f9fa;
-}
 
 .auction-layout-page {
   display: flex;
   gap: 30px;
-  padding: 20px;
   max-width: 1600px;
   margin: 0 auto;
 }
@@ -274,7 +267,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
+   background: black;
   color: white;
 }
 
@@ -309,13 +302,14 @@
   border: none;
   color: white;
   cursor: pointer;
+  background: black;
   padding: 4px;
   border-radius: 4px;
   transition: background 0.2s;
 }
 
 .toggle-filters-btn:hover {
- 
+ background: black;
 }
 
 .filter-content {

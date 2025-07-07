@@ -93,7 +93,7 @@ const WatchlistButton: React.FC<WatchlistButtonProps> = ({
         </span>
       )}
 
-      {(loading || isLoading) && <span className="loading-spinner"></span>}
+      {(loading || isLoading) && <div className="loading-state">Loading...</div>}
     </button>
   );
 };

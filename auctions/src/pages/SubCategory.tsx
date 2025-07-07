@@ -59,7 +59,7 @@ const SubCategory = () => {
 
   return (
     <div className="category-page">
-      <div className="container">
+      <div className="auctions-container">
         {loading ? (
           <div className="loading-state">Loading...</div>
         ) : error ? (

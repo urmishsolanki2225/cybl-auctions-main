@@ -398,7 +398,7 @@ const LotDetails = () => {
 
   return (
     <div className="lot-details-page">
-      <div className="container">
+      <div className="auctions-container">
         <div className="lot-details-header">
           <div className="breadcrumb">
             <strong>{lot?.title} --- </strong>
@@ -410,82 +410,75 @@ const LotDetails = () => {
         </div>
 
         <div className="lot-main">
-          <div className="lot-left">
-            <div
-              className="image-gallery"
-              style={{ width: "737px", height: "557px" }}
-            >
-              {lot?.media_items && lot.media_items.length > 0 ? (
-                <>
-                  {/* Main Image Swiper */}
+          <div className="lot-left">            
+            {lot?.media_items && lot.media_items.length > 0 && (
+              <div className="image-gallery">
+                {/* Main Image Swiper */}
+                <Swiper
+                  style={{ width: "100%", height: "400px" }}
+                  spaceBetween={10}
+                  thumbs={{ swiper: thumbsSwiper }}
+                  modules={[Thumbs, Navigation]} // ✅ Add Navigation here
+                  navigation={true} // ✅ Enable arrows
+                  className="main-image-swiper"
+                >
+                  {lot.media_items.map((image, index) => (
+                    <SwiperSlide key={index}>
+                      <img
+                        src={
+                          BASE_URL +
+                          `/media/` +
+                          image.path?.replace(/\\/g, "/")
+                        }
+                        alt={lot?.title || `Image ${index + 1}`}
+                        onError={(e) => {
+                          e.target.src = "/placeholder-image.jpg";
+                        }}
+                        style={{
+                          height: "500px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+
+                {/* Thumbnail Swiper */}
+                {lot.media_items.length > 1 && (
                   <Swiper
-                    style={{ width: "100%", height: "400px" }}
+                    onSwiper={setThumbsSwiper}
                     spaceBetween={10}
-                    thumbs={{ swiper: thumbsSwiper }}
-                    modules={[Thumbs, Navigation]} // ✅ Add Navigation here
-                    navigation={true} // ✅ Enable arrows
-                    className="main-image-swiper"
+                    slidesPerView={5}
+                    watchSlidesProgress={true}
+                    modules={[Thumbs]}
+                    className="thumbnail-swiper"
+                    style={{ marginTop: "10px" }}
                   >
                     {lot.media_items.map((image, index) => (
-                      <SwiperSlide key={index}>
+                      <SwiperSlide key={`thumb-${index}`}>
                         <img
                           src={
                             BASE_URL +
                             `/media/` +
                             image.path?.replace(/\\/g, "/")
                           }
-                          alt={lot?.title || `Image ${index + 1}`}
+                          alt={`Thumb ${index + 1}`}
                           onError={(e) => {
                             e.target.src = "/placeholder-image.jpg";
                           }}
                           style={{
-                            height: "500px",
+                            width: "100px",
+                            height: "100px",
                             objectFit: "cover",
+                            borderRadius: "8px",
                           }}
                         />
                       </SwiperSlide>
                     ))}
                   </Swiper>
-
-                  {/* Thumbnail Swiper */}
-                  {lot.media_items.length > 1 && (
-                    <Swiper
-                      onSwiper={setThumbsSwiper}
-                      spaceBetween={10}
-                      slidesPerView={5}
-                      watchSlidesProgress={true}
-                      modules={[Thumbs]}
-                      className="thumbnail-swiper"
-                      style={{ marginTop: "10px" }}
-                    >
-                      {lot.media_items.map((image, index) => (
-                        <SwiperSlide key={`thumb-${index}`}>
-                          <img
-                            src={
-                              BASE_URL +
-                              `/media/` +
-                              image.path?.replace(/\\/g, "/")
-                            }
-                            alt={`Thumb ${index + 1}`}
-                            onError={(e) => {
-                              e.target.src = "/placeholder-image.jpg";
-                            }}
-                            style={{
-                              width: "100px",
-                              height: "100px",
-                              objectFit: "cover",
-                              borderRadius: "8px",
-                            }}
-                          />
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
-                  )}
-                </>
-              ) : (
-                <div className="no-image">No Image Available</div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
             <div className="lot-description">
               <h1 className="lot-title">{lot?.title}</h1>
               <div className="lot-meta">
@@ -496,30 +489,30 @@ const LotDetails = () => {
               </div>
               <div className="tab-container">
                 <div className="tab-buttons">
-                  <button
+                  <div
                     className={`tab-button ${
                       activeTab === "description" ? "active" : ""
                     }`}
                     onClick={() => setActiveTab("description")}
                   >
                     Description
-                  </button>
-                  <button
+                  </div>
+                  <div
                     className={`tab-button ${
                       activeTab === "bids" ? "active" : ""
                     }`}
                     onClick={() => setActiveTab("bids")}
                   >
                     Bid History
-                  </button>
-                  <button
+                  </div>
+                  <div
                     className={`tab-button ${
                       activeTab === "comments" ? "active" : ""
                     }`}
                     onClick={() => setActiveTab("comments")}
                   >
                     Comments ({comments?.length})
-                  </button>
+                  </div>
                 </div>
 
                 <div className="tab-content">
