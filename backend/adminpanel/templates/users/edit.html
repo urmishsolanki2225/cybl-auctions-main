@@ -260,7 +260,7 @@ Dropzone.options.myAwesomeDropzone = {
     url: "#",
     autoProcessQueue: false,
     uploadMultiple: false,
-    maxFilesize: 1,
+    maxFilesize: 10,
     maxFiles: 1,
     acceptedFiles: ".jpeg,.jpg,.png",
     addRemoveLinks: true,
@@ -273,7 +273,7 @@ Dropzone.options.myAwesomeDropzone = {
             }
         });
         {% if form.photo.value %}
-            var mockFile = { name: "{{ form.photo.value }}", size: 12345 };
+            var mockFile = { name: "{{ form.photo.value }}", size: 5242880  };
             var imageUrl = "{{ MEDIA_URL }}{{ form.photo.value }}";
             this.emit("addedfile", mockFile);
             this.emit("thumbnail", mockFile, imageUrl);
@@ -288,7 +288,7 @@ Dropzone.options.myCompanyDropzone = {
     url: "#",
     autoProcessQueue: false,
     uploadMultiple: false,
-    maxFilesize: 1,
+    maxFilesize: 10,
     maxFiles: 1,
     acceptedFiles: ".jpeg,.jpg,.png",
     addRemoveLinks: true,
@@ -301,7 +301,7 @@ Dropzone.options.myCompanyDropzone = {
             }
         });
         {% if form.company_logo.value %}
-            var mockFile = { name: "{{ form.company_logo.value }}", size: 12345 };
+            var mockFile = { name: "{{ form.company_logo.value }}", size: 5242880  };
             var imageUrl = "{{ MEDIA_URL }}{{ form.company_logo.value }}";
             this.emit("addedfile", mockFile);
             this.emit("thumbnail", mockFile, imageUrl);
