@@ -150,27 +150,27 @@ const PaymentHistoryTab = () => {
           <div className="payment-buttons">
             {payment.payment_status_filter === "pending" ? (
               <div>
-                <button className="btn btn-primary">
+                <div className="btn btn-primary">
                   <CreditCard className="w-4 h-4" />
                   Pay Now
-                </button>
-                <button
+                </div>
+                <div
                   className="btn btn-outline"
                   onClick={() => downloadInvoice(payment.payment_id)}
                 >
                   <Download className="w-4 h-4" />
                   Invoice
-                </button>
+                </div>
               </div>
             ) : (
               <>
-                <button
+                <div
                   className="btn btn-outline"
                   onClick={() => downloadInvoice(payment.payment_id)}
                 >
                   <Download className="w-4 h-4" />
                   Invoice
-                </button>
+                </div>
               </>
             )}
           </div>
@@ -248,26 +248,26 @@ const PaymentHistoryTab = () => {
         <div className="profile-card-content">
           <div className="custom-tabs">
             <div className="tab-list">
-              <button
+              <div
                 className={`tab-button ${activeTab === "all" ? "active" : ""}`}
                 onClick={() => setActiveTab("all")}
               >
                 All ({counts.all})
-              </button>
-              <button
+              </div>
+              <div
                 className={`tab-button ${
                   activeTab === "pending" ? "active" : ""
                 }`}
                 onClick={() => setActiveTab("pending")}
               >
                 Pending ({counts.pending})
-              </button>
-              <button
+              </div>
+              <div
                 className={`tab-button ${activeTab === "paid" ? "active" : ""}`}
                 onClick={() => setActiveTab("paid")}
               >
                 Paid ({counts.paid})
-              </button>
+              </div>
             </div>
 
             <div className="tab-content">
