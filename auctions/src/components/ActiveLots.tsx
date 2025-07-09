@@ -15,7 +15,6 @@ const ActiveLots = () => {
       try {
         setLoading(true);        
         const lots = await publicApi.getActivelots();
-        const filtered = await publicApi.getActiveFiltered();
         setActivelot(lots);
       } catch (err) {
         console.error("Failed to load bidding history", err);

@@ -1,8 +1,8 @@
 // src/api/endpoints.ts
-const BASE_URL = 'http://localhost:8000/';
+const BASE_URL = 'http://192.168.2.108:8000/';
 export default BASE_URL;
 
-const BASE_API_URL = 'http://localhost:8000/api/';
+const BASE_API_URL = 'http://192.168.2.108:8000/api/';
 
 export const API_ENDPOINTS = {
   // Authentication

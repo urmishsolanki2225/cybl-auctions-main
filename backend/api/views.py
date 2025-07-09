@@ -1152,7 +1152,7 @@ class CompanyListView(generics.ListAPIView):
 class CategoryListView(APIView):
     def get(self, request):
         # Get only top-level categories (assuming top-level has no parent)
-        categories = Category.objects.filter(parent__isnull=True, deleted_at__isnull=True).order_by('order')
+        categories = Category.objects.filter(parent__isnull=True, deleted_at__isnull=True, is_active=True).order_by('order')
         serializer = CategorySerializer(categories, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     

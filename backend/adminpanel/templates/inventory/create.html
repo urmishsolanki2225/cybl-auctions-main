@@ -34,6 +34,10 @@
                                     <div class="text-danger" id="error_title"></div>
                                 </div>
                                 <!-- Category / Subcategory -->
+                                {% if categories|length == 1 %}
+                                    <!-- Only one category, use hidden input -->
+                                    <input type="hidden" name="category" value="{{ categories.0.id }}">
+                                {% else %}
                                 <div class="col-md-6 form-group">
                                     <label for="category">Category / Subcategory<span class="text-danger">*</span></label>
                                     <select id="category" class="form-control" name="category">
@@ -47,7 +51,8 @@
                                         {% endfor %}
                                     </select>
                                     <div class="text-danger" id="error_category"></div>
-                                </div>                                
+                                </div>  
+                                {% endif %}                                         
                                 <!-- Description -->
                                 <div class="col-md-12 form-group">
                                     <label for="description">Description<span class="text-danger">*</span></label>
