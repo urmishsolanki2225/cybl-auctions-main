@@ -40,15 +40,9 @@
                                         <option value="" selected>Choose Category</option>
                                         {% for category in categories %}
                                             {% if not category.parent %}
-                                                <optgroup label="{{ category.name }}">
-                                                    {% for subcategory in categories %}
-                                                        {% if subcategory.parent and subcategory.parent.id == category.id %}
-                                                            <option value="{{ subcategory.id }}" {% if form.category.value == subcategory.id %}selected{% endif %}>
-                                                                &nbsp;&nbsp;&nbsp;{{ subcategory.name }}
-                                                            </option>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </optgroup>
+                                                <option value="{{ category.id }}">
+                                                    &nbsp;&nbsp;&nbsp;{{ category.name }}                                                   
+                                                </option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
@@ -62,6 +56,69 @@
                                 </div>
                             </div>
                         </fieldset>
+
+                        <!-- Meta Fields Section -->
+                        {% for category in active_categories %}
+                        <fieldset class="meta-fields-section" id="meta-fields-{{ category.id }}">
+                            <legend>{{ category.name }} Details</legend>
+                            <div class="row">
+                                {% for meta_field in category.meta_fields.all %}
+                                <div class="col-md-6 form-group meta-field-group">
+                                    <label for="meta_{{ meta_field.id }}">
+                                        {{ meta_field.name }}
+                                        {% if meta_field.is_required %}<span class="text-danger">*</span>{% endif %}
+                                    </label>
+                                    
+                                    {% if meta_field.field_type == 'input' %}
+                                        <input id="meta_{{ meta_field.id }}" class="form-control" name="meta_{{ meta_field.id }}" type="text" placeholder="Enter {{ meta_field.name }}">
+                                    
+                                    {% elif meta_field.field_type == 'textarea' %}
+                                        <textarea id="meta_{{ meta_field.id }}" class="form-control" name="meta_{{ meta_field.id }}" placeholder="Enter {{ meta_field.name }}"></textarea>
+                                    
+                                    {% elif meta_field.field_type == 'select' %}
+                                        <select id="meta_{{ meta_field.id }}" class="form-control" name="meta_{{ meta_field.id }}">
+                                            <option value="">Select {{ meta_field.name }}</option>
+                                            {% for option in meta_field.get_options_list %}
+                                                <option value="{{ option }}">{{ option }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    
+                                    {% elif meta_field.field_type == 'radio' %}
+                                        {% for option in meta_field.get_options_list %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="meta_{{ meta_field.id }}" id="meta_{{ meta_field.id }}_{{ forloop.counter }}" value="{{ option }}" >
+                                            <label class="form-check-label  ml-4" for="meta_{{ meta_field.id }}_{{ forloop.counter }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    
+                                    {% elif meta_field.field_type == 'checkbox' %}
+                                        <input type="hidden" name="meta_{{ meta_field.id }}" value="">
+                                        {% for option in meta_field.get_options_list %}                                       
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="meta_{{ meta_field.id }}" id="meta_{{ meta_field.id }}_{{ forloop.counter }}" value="">
+                                            <label class="form-check-label  ml-4" for="meta_{{ meta_field.id }}_{{ forloop.counter }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    
+                                    {% elif meta_field.field_type == 'toggle' %}
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="meta_{{ meta_field.id }}" id="meta_{{ meta_field.id }}" value="Yes">
+                                            <label class="form-check-label ml-4" for="meta_{{ meta_field.id }}">
+                                                {{ meta_field.name }}
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="text-danger" id="error_meta_{{ meta_field.id }}"></div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </fieldset>
+                        {% endfor %}
                         <!-- Status and Pricing Section -->
                         <fieldset>
                             <legend>Status and Pricing</legend>
@@ -198,6 +255,41 @@
         }
     }
 
+    function showMetaFields(categoryId) {
+        console.log("categoryId", categoryId)
+        // Hide all meta field sections
+        $('.meta-fields-section').hide();
+        
+        // Show meta fields for selected category
+        if (categoryId) {
+            $('#meta-fields-' + categoryId).show();
+            console.log('#meta-fields-' + categoryId)
+        }
+    }
+
+    function validateMetaFields() {
+        let isValid = true;
+        const selectedCategory = $('#category').val();
+        
+        if (selectedCategory) {
+            $('#meta-fields-' + selectedCategory + ' [required]').each(function() {
+                const $field = $(this);
+                const fieldName = $field.attr('name');
+                const fieldValue = $field.val();
+                
+                if (!fieldValue || fieldValue.trim() === '') {
+                    $('#error_' + fieldName).text('This field is required.');
+                    isValid = false;
+                } else {
+                    $('#error_' + fieldName).text('');
+                }
+            });
+        }
+        
+        return isValid;
+    }
+
+
     $(document).ready(function() {
 
         // Initialize CKEditor
@@ -231,6 +323,13 @@
                 console.error(error);
             });
 
+        // Handle category change
+        $("#category").change(function() {
+            const selectedCategory = $(this).val();
+            console.log("selectedCategory", selectedCategory)
+            showMetaFields(selectedCategory);
+        });
+
         $("#status").change(function() {
             if ($(this).val() == "in_transit") {
                 $("#inTransitStatusDiv").show();
@@ -257,6 +356,11 @@
             
             $(".text-danger").text("");
 
+            // Validate meta fields
+            if (!validateMetaFields()) {
+                return false;
+            }
+
             var myDropzone = Dropzone.forElement("#myAwesomeDropzone");
             var formData = new FormData(this);
 
@@ -280,6 +384,7 @@
                     if (response.success) {
                         myDropzone.removeAllFiles(); 
                         $("#InventoryForm")[0].reset();  // ✅ Correct form ID
+                        $('.meta-fields-section').hide(); 
                         showToast("success", "Inventory created successfully.");  
                     } else {
                         $.each(response.errors, function(key, value) {

@@ -1,7 +1,7 @@
 from pyexpat.errors import messages
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse
-from adminpanel.models import Category, Auctions, Inventory, Media, Bid
+from adminpanel.models import Category, Auctions, Inventory, Media, Bid, CategoryMetaField, InventoryMetaValue
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -66,9 +66,73 @@ def generate_inventory_number():
         if not Inventory.objects.filter(inventory_number=inventory_number).exists():
             return inventory_number
         
+# Add this method to your view class or as a separate function
+# Add this method to your view class or as a separate function
+def validate_meta_fields(request, category_id):
+    """
+    Validate meta fields for a given category
+    Returns a dictionary of errors if any, empty dict if all valid
+    """
+    errors = {}
+    
+    if not category_id:
+        return errors
+    
+    try:
+        category = Category.objects.get(id=category_id)
+        
+        # Debug: Check all meta fields first
+        all_meta_fields = CategoryMetaField.objects.filter(category=category)
+        print(f"Debug - All meta fields for category {category_id}:")
+        for field in all_meta_fields:
+            print(f"  Field ID: {field.id}, Name: {field.name}, Type: {field.field_type}, Required: {field.is_required}")
+        
+        # Now check only required fields
+        meta_fields = CategoryMetaField.objects.filter(category=category, is_required=True)
+        print(f"Debug - Required meta fields count: {meta_fields.count()}")
+        
+        for meta_field in meta_fields:
+            field_name = f'meta_{meta_field.id}'
+            
+            if meta_field.field_type == 'checkbox':
+                # For checkboxes, check if any values are selected
+                field_values = request.POST.getlist(field_name)
+                print(f"Debug - Checkbox {field_name}: {field_values}")
+                # Treat empty list or list of empty strings as invalid
+                if not field_values or all(v.strip() == '' for v in field_values):
+                    errors[field_name] = [f'{meta_field.name} is required.']
+                    
+            elif meta_field.field_type == 'toggle':
+                # For toggle, check if it's checked (value will be 'Yes' if checked)
+                field_value = request.POST.get(field_name)
+                print(f"Debug - Toggle {field_name}: {field_value}")
+                if not field_value:
+                    errors[field_name] = [f'{meta_field.name} is required.']
+                    
+            elif meta_field.field_type == 'radio':
+                # For radio buttons
+                field_value = request.POST.get(field_name)
+                print(f"Debug - Radio {field_name}: {field_value}")
+                if not field_value:
+                    errors[field_name] = [f'{meta_field.name} is required.']
+                    
+            else:
+                # For input, textarea, select field types
+                field_value = request.POST.get(field_name)
+                print(f"Debug - Other {field_name}: {field_value}")
+                if not field_value or field_value.strip() == '':
+                    errors[field_name] = [f'{meta_field.name} is required.']
+    
+    except Category.DoesNotExist:
+        print(f"Debug - Category {category_id} does not exist")
+        pass
+    
+    return errors
+
+# Update your create_inventory view
 @login_required(login_url='login')
 def create_inventory(request):
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True).order_by('id')
     current_date = timezone.now()
     upcoming_auctions = Auctions.objects.filter(start_date__gt=current_date).order_by('start_date')
 
@@ -76,10 +140,18 @@ def create_inventory(request):
         [i for i in range(50, 1001, 50)] +
         [i for i in range(1100, 2001, 100)]
     )
-
+    
+    # Get active categories with their meta fields
+    active_categories = Category.objects.filter(is_active=True).prefetch_related('meta_fields')
+   
     if request.method == 'POST':
         form = InventoryForm(request.POST)
-        if form.is_valid():
+        
+        # Validate meta fields
+        category_id = request.POST.get('category')
+        meta_errors = validate_meta_fields(request, category_id)
+        
+        if form.is_valid() and not meta_errors:
             inventory_item = form.save(commit=False)
             inventory_item.inventory_number = generate_inventory_number()
 
@@ -87,82 +159,161 @@ def create_inventory(request):
                 inventory_item.reserve_price = 0
 
             inventory_item.save()
-
-            # Handle media file uploads
+            
+            # Handle meta field values (existing code)
+            if category_id:
+                category = Category.objects.get(id=category_id)
+                meta_fields = CategoryMetaField.objects.filter(category=category)
+                
+                for meta_field in meta_fields:
+                    field_name = f'meta_{meta_field.id}'
+                    
+                    if meta_field.field_type == 'checkbox':
+                        field_values = request.POST.getlist(field_name)
+                        if field_values:
+                            field_value = ','.join(field_values)
+                            InventoryMetaValue.objects.create(
+                                inventory=inventory_item,
+                                meta_field=meta_field,
+                                value=field_value
+                            )
+                    else:
+                        field_value = request.POST.get(field_name)
+                        if field_value:
+                            InventoryMetaValue.objects.create(
+                                inventory=inventory_item,
+                                meta_field=meta_field,
+                                value=field_value
+                            )
+                            
+            # Handle media file uploads (existing code)
             files = request.FILES.getlist('images[]')
             for uploaded_file in files:
-                # Create directory: media/inventory/<ItemID>/
                 folder_path = os.path.join(settings.MEDIA_ROOT, 'inventory', str(inventory_item.id))
                 os.makedirs(folder_path, exist_ok=True)
 
-                # Generate a unique filename
                 unique_filename = f"{uuid.uuid4()}_{uploaded_file.name}"
                 file_path = os.path.join(folder_path, unique_filename)
 
-                # Save file to disk
                 with open(file_path, 'wb+') as destination:
                     for chunk in uploaded_file.chunks():
                         destination.write(chunk)
 
-                # Save media record
                 Media.objects.create(
                     inventory=inventory_item,
-                    name=unique_filename,  # Store unique filename, not original
-                    path=os.path.join('inventory', str(inventory_item.id), unique_filename),  # Consistent path
+                    name=unique_filename,
+                    path=os.path.join('inventory', str(inventory_item.id), unique_filename),
                     size=uploaded_file.size,
                     entity='inventory',
                     type='IMAGE'
                 )
-
 
             return JsonResponse({
                 'success': True,
                 'inventory_id': inventory_item.id
             })
 
-        return JsonResponse({'success': False, 'errors': form.errors})
+        # Merge form errors with meta field errors
+        all_errors = dict(form.errors)
+        all_errors.update(meta_errors)
+        
+        return JsonResponse({'success': False, 'errors': all_errors})
 
     return render(request, 'inventory/create.html', {
         'auctions': upcoming_auctions,
         'starting_bid_amounts': starting_bid_amounts,
         'categories': categories,
+        'active_categories': active_categories,
     })
 
+# Update your edit_inventory view
 @login_required(login_url='login')
 def edit_inventory(request, inventory_id):
     inventory_item = get_object_or_404(Inventory, id=inventory_id)
     images = Media.objects.filter(inventory=inventory_item).order_by('order')
-    categories = Category.objects.all()
+    categories = Category.objects.filter(is_active=True).order_by('id')
     current_date = timezone.now()
+    
+    # Get active categories with their meta fields
+    active_categories = Category.objects.filter(is_active=True).prefetch_related('meta_fields')
+    
+    # Get existing meta values for this inventory
+    existing_meta_values = {}
+    if inventory_item.category:
+        meta_values = InventoryMetaValue.objects.filter(inventory=inventory_item)
+        for meta_value in meta_values:
+            if meta_value.meta_field.field_type == 'checkbox':
+                existing_meta_values[meta_value.meta_field.id] = {
+                    'value': meta_value.value.split(','),
+                    'field_type': meta_value.meta_field.field_type
+                }
+            else:
+                existing_meta_values[meta_value.meta_field.id] = {
+                    'value': meta_value.value,
+                    'field_type': meta_value.meta_field.field_type
+                }
 
     # Include both running and upcoming auctions
     auctions = Auctions.objects.filter(
-        Q(start_date__gt=current_date) |  # future auctions
-        Q(start_date__lte=current_date)  # currently running
+        Q(start_date__gt=current_date) |
+        Q(start_date__lte=current_date)
     ).order_by('start_date')
 
     starting_bid_amounts = (
-        [i for i in range(50, 1001, 50)] +  # 50 to 1000 in increments of 50
-        [i for i in range(1100, 2001, 100)]  # 1100 to 2000 in increments of 100
+        [i for i in range(50, 1001, 50)] +
+        [i for i in range(1100, 2001, 100)]
     )
 
     if request.method == 'POST':
-        form = InventoryForm(request.POST, instance=inventory_item)  # Bind the form to the existing instance
-        if form.is_valid():
-            # No need to generate a new inventory number if you're updating
-            # inventory_item.inventory_number = generate_inventory_number()  # Only for new items
-
-            # Ensure to validate or set defaults for any fields that may be None
+        form = InventoryForm(request.POST, instance=inventory_item)
+        
+        # Validate meta fields
+        category_id = request.POST.get('category')
+        meta_errors = validate_meta_fields(request, category_id)
+        
+        if form.is_valid() and not meta_errors:
             if form.cleaned_data.get('reserve_price') is None:
-                inventory_item.reserve_price = 0  # or any default value you deem appropriate
+                inventory_item.reserve_price = 0
             else:
                 inventory_item.reserve_price = form.cleaned_data.get('reserve_price')
 
-            # Save the updated instance
             form.save()
+            
+            # Handle meta field values update (existing code)
+            if category_id:
+                InventoryMetaValue.objects.filter(inventory=inventory_item).delete()
+                
+                category = Category.objects.get(id=category_id)
+                meta_fields = CategoryMetaField.objects.filter(category=category)
+                
+                for meta_field in meta_fields:
+                    field_name = f'meta_{meta_field.id}'
+                    
+                    if meta_field.field_type == 'checkbox':
+                        field_values = request.POST.getlist(field_name)
+                        if field_values:
+                            field_value = ','.join(field_values)
+                            InventoryMetaValue.objects.create(
+                                inventory=inventory_item,
+                                meta_field=meta_field,
+                                value=field_value
+                            )
+                    else:
+                        field_value = request.POST.get(field_name)
+                        if field_value:
+                            InventoryMetaValue.objects.create(
+                                inventory=inventory_item,
+                                meta_field=meta_field,
+                                value=field_value
+                            )
+                        
             return JsonResponse({'success': True})
 
-        return JsonResponse({'success': False, 'errors': form.errors})
+        # Merge form errors with meta field errors
+        all_errors = dict(form.errors)
+        all_errors.update(meta_errors)
+        
+        return JsonResponse({'success': False, 'errors': all_errors})
 
     # Pre-fill the form with the existing instance data
     inventory_form = InventoryForm(instance=inventory_item)
@@ -171,10 +322,12 @@ def edit_inventory(request, inventory_id):
         'auctions': auctions,
         'starting_bid_amounts': starting_bid_amounts,
         'categories': categories,
+        'active_categories': active_categories,
         'form': inventory_form,
         'inventory_item': inventory_item,
         'images': images,
-        'MEDIA_URL': settings.MEDIA_URL
+        'MEDIA_URL': settings.MEDIA_URL,
+        'existing_meta_values': existing_meta_values,
     })
 
 @login_required(login_url='login')
@@ -311,38 +464,3 @@ def bidding_history(request, inventory_id):
     } for bid in bids]
 
     return JsonResponse({'bids': bidding_data})
-
-
-
-# # to remove item from auction
-# def remove_items_from_auction(request):
-#     inventory_ids = request.POST.get('itemId')
-
-#     if not inventory_ids:
-#         return JsonResponse({'status': 'error', 'message': 'Invalid request: No items provided'}, status=400)
-
-#     try:
-#         items = Inventory.objects.filter(id__in=inventory_ids)
-#         for item in items:
-#             item.auctions.clear()
-#             item.status = "Ready"
-#             item.save()
-
-#         return JsonResponse({'status': 'success'})
-
-#     except Exception as e:
-#         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-# def view_Items_Details(request, itemId):
-#     item = get_object_or_404(Inventory, id=itemId)
-#     media_list = Media.objects.filter(item=item)
-#     custom_fields = Item_Custom_Field.objects.filter(item=item).exclude(value='')
-#     print(custom_fields.count())
-
-#     return render(request, 'items/details.html', {
-#         'item': item,
-#         'media_list': media_list,
-#         'custom_fields': custom_fields,
-#         'MEDIA_URL': settings.MEDIA_URL,
-#         'active_tab': 'allitems',
-#     })

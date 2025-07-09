@@ -72,7 +72,6 @@ urlpatterns = [
     path('inventory/create', views.create_inventory, name='createinventory'),
     path('inventory/edit/<int:inventory_id>/', views.edit_inventory, name='editinventory'),
     path('inventory/delete', views.delete_inventory, name='deleteinventory'),
-    path('inventory/meta/fields', views.get_category_meta_fields, name='get_category_meta_fields'),
     
     # In auction Bidding History Fetch    
     path('inventory/bidding-history/<int:inventory_id>', views.bidding_history, name='biddinghistory'),
