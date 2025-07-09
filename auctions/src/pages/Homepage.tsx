@@ -12,7 +12,6 @@ import CategoryAuctions from "../components/CategoryAuctions";
 const Index = () => {
   const [featuredAuction, SetFeaturedAuction] = useState<[]>([]);
   const [closingSoonAuctions, setClosingSoonAuctions] = useState<[]>([]);
-  const [Activelot, setActivelot] = useState<[]>([]);
   const [category, setCategory] = useState<[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,12 +24,11 @@ const Index = () => {
         const response = await publicApi.getFeaturedAuctions();
         const closedAuctions = await publicApi.getNextToCloseAuctions();
         const categories = await publicApi.getCategories();
-        const lots = await publicApi.getActivelots();
         setCategory(categories);
         SetFeaturedAuction(response.results);
         setClosingSoonAuctions(closedAuctions);
-        setActivelot(lots);
       } catch (err) {
+        setLoading(false);
         console.error("Failed to load bidding history", err);
         setError("Failed to load bidding history");
       } finally {
@@ -45,10 +43,11 @@ const Index = () => {
     <div className="loading-state">Loading...</div>
   ) : (
     <div className="homepage">
-      <ActiveLots lots={Activelot} />
+      <ActiveLots />
       <div className="auctions-container">
         <NextToClose auctions={closingSoonAuctions} />
-        <CategoryAuctions categories={category} />
+        {category.length > 1 && <CategoryAuctions categories={category} /> }
+        
       </div>
       {/* <section className="featured-section">
         <div className="container">

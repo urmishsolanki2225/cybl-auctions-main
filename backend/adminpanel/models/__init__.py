@@ -11,4 +11,5 @@ from adminpanel.models.payment_charges import *
 from adminpanel.models.watchlist import * 
 from adminpanel.models.comment import * 
 from adminpanel.models.category_charge import *
-
+from adminpanel.models.category_meta_field import *
+from adminpanel.models.inventory_meta_value import *

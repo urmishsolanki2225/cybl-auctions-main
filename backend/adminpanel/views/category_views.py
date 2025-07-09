@@ -2,16 +2,19 @@ import os
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
-from adminpanel.models import Category,CategoryCharge, ChargeType
+from adminpanel.models import Category,CategoryCharge, ChargeType, CategoryMetaField
 from adminpanel.forms import CategoryForm
 from django.contrib.auth.decorators import login_required
 import json
+from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, redirect  
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+
 
 @login_required(login_url='login')
 def all_category(request):
-    categories = Category.objects.filter(parent__isnull=True).prefetch_related('subcategories').order_by('order')  # nulls last by default in PostgreSQL
+    categories = Category.objects.filter(parent__isnull=True, is_active=True).prefetch_related('subcategories').order_by('order')  # nulls last by default in PostgreSQL
     return render(request, 'category/index.html', {'categories': categories, 'active_tab': 'allcategory'})
 
 @login_required(login_url='login')
@@ -85,7 +88,7 @@ def get_category(request):
 
 @login_required(login_url='login')
 def fetch_categories(request):
-    categories = Category.objects.filter(parent=None).order_by('order')
+    categories = Category.objects.filter(parent=None, is_active=True).order_by('order')
     categories_data = []
 
     for category in categories:
@@ -215,62 +218,6 @@ def update_category(request):
             '__all__': ['Only POST requests are allowed.']
         }
     })
-# def update_category(request):
-#     if request.method == 'POST':
-#         category_id = request.POST.get('categoryID')
-#         new_name = request.POST.get('name', '').strip()
-#         new_parent_id = request.POST.get('parentID')
-#         new_image = request.POST.get('image', '').strip()
- 
-#         if not category_id or not new_name:
-#             return JsonResponse({'status': 'error', 'message': 'Missing category ID or name.'})
-
-#         if not category_id or not new_image:
-#             return JsonResponse({'status': 'error', 'message': 'Missing image.'})
- 
-#         category = get_object_or_404(Category, id=category_id)
-#         old_image = category.image   
- 
-#         if 'parentID' in request.POST:
-#             if new_parent_id in [None, '', 'null']:
-#                 category.parent = None
-#             elif str(category.id) != new_parent_id:
-#                 category.parent_id = new_parent_id  
-#             else:
-#                 return JsonResponse({'status': 'error', 'message': 'Category cannot be its own parent.'})
- 
-#         category.name = new_name
-
-#         # Handle image upload - only if new image is provided
-#         if 'image' in request.FILES and request.FILES['image']:
-#             # Delete old image if exists
-#             if old_image:
-#                 if os.path.isfile(old_image.path):
-#                     os.remove(old_image.path)
-            
-#             # Save new image with proper naming
-#             ext = request.FILES['image'].name.split('.')[-1]
-#             if category.parent:
-#                 filename = f"{category.parent.name}_{category.id}.{ext}"
-#             else:
-#                 filename = f"{category.name}_{category.id}.{ext}"
-            
-#             category.image.save(filename, request.FILES['image'])
-        
-#         category.save()
- 
-#         data = {
-#             'id': category.id,
-#             'name': category.name,
-#             'image': category.image.url if category.image else None,
-#             'parent_id': category.parent.id if category.parent else None,
-#             'parent_name': category.parent.name if category.parent else None,
-#         }
- 
-#         message = 'Subcategory Updated successfully.' if category.parent else 'Category Updated successfully.'
-#         return JsonResponse({'status': 'success', 'message': message, 'category': data})
-    
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
     
 @login_required(login_url='login')
 def update_category_order(request):
@@ -461,7 +408,7 @@ def update_charge_type_name(request, pk):
 #charges add
 def category_charges_view(request):
     # Get all active parent categories only
-    categories = Category.objects.filter(deleted_at__isnull=True, parent__isnull=True)
+    categories = Category.objects.filter(deleted_at__isnull=True, parent__isnull=True, is_active=True)
     
     # Get all active charge types
     charge_types = ChargeType.objects.filter(is_active=True).order_by('name')
@@ -572,3 +519,4 @@ def save_single_charge(request):
             'success': False,
             'message': str(e)
         })
+        

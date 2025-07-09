@@ -1,0 +1,341 @@
+{% extends 'layouts/default.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'admin/css/default-assets/new/sweetalert-2.min.css' %}">
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-xl-12 height-card box-margin">
+            <div class="card">
+                <div class="card-body pb-0">
+                    <div class="d-flex justify-content-between align-items-center pb-2">
+                        <h6 class="card-title mb-0">Category Meta Fields</h6>
+                        <a href="#" class="btn btn-primary" onclick="openModal(null, 'Add Meta Field')">Add Meta Field</a>
+                    </div>
+                    <div class="input-group mt-4">
+                        <input type="text" class="form-control" id="metaFieldSearch" placeholder="Search here">
+                    </div>
+                    <div id="metaFieldsTable" class="pt-2">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Name</th>
+                                    <th>Field Type</th>
+                                    <th>Options</th>
+                                    <th>Is Filter</th>
+                                    <th>Required</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metaFieldsList">
+                                <!-- Dynamically loaded content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for adding/editing meta field -->
+<div class="modal fade" id="metaFieldModal" tabindex="-1" aria-labelledby="metaFieldModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="metaFieldModalLabel"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="metaFieldForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="metaFieldId" name="meta_field_id">
+                    
+                    <div class="form-group">
+                        <label>Active Category: <strong>{{ active_category.name }}</strong></label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="metaFieldName">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="metaFieldName" name="name" >
+                        <span id="nameError" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fieldType">Field Type <span class="text-danger">*</span></label>
+                        <select class="form-control" id="fieldType" name="field_type" >
+                            <option value="">Select Field Type</option>
+                            <option value="input">Input Box</option>
+                            <option value="radio">Radio Button</option>
+                            <option value="checkbox">Checkbox</option>
+                            <option value="textarea">Textarea</option>
+                            <option value="toggle">Toggle</option>
+                            <option value="select">Select Box</option>
+                        </select>
+                        <span id="field_typeError" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="form-group" id="fieldOptionsGroup" style="display: none;">
+                        <label for="fieldOptions">Field Options <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="fieldOptions" name="field_options" rows="3" 
+                                  placeholder="Enter comma-separated options (e.g., Option1, Option2, Option3)"></textarea>
+                        <small class="form-text text-muted">
+                            Enter options separated by commas. At least 2 options are required.
+                        </small>
+                        <span id="field_optionsError" class="text-danger"></span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="isFilter" name="is_filter">
+                                    <label class="form-check-label ml-4" for="isFilter">Use as filter</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="isRequired" name="is_required">
+                                    <label class="form-check-label ml-4" for="isRequired">Required field</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load meta fields on page load
+$(document).ready(function() {
+    loadMetaFields();
+    
+    // Search functionality
+    $('#metaFieldSearch').on('input', function() {
+        var searchTerm = $(this).val().toLowerCase();
+        $('#metaFieldsList tr').each(function() {
+            var rowText = $(this).text().toLowerCase();
+            $(this).toggle(rowText.includes(searchTerm));
+        });
+    });
+    
+    // Form submission
+    $('#metaFieldForm').on('submit', function(e) {
+        e.preventDefault();
+        saveMetaField();
+    });
+    
+    // Field type change event
+    $('#fieldType').on('change', function() {
+        var fieldType = $(this).val();
+        var optionsGroup = $('#fieldOptionsGroup');
+        var fieldOptions = $('#fieldOptions');
+        
+        if (fieldType === 'radio' || fieldType === 'checkbox' || fieldType === 'select') {
+            optionsGroup.show();
+            fieldOptions.prop('required', true);
+        } else {
+            optionsGroup.hide();
+            fieldOptions.prop('required', false);
+            fieldOptions.val('');
+        }
+    });
+});
+
+// Load meta fields function
+function loadMetaFields() {
+    $.ajax({
+        url: '{% url "fetch_meta_fields" %}',
+        type: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                var html = response.meta_fields.map(function(field) {
+                    var optionsDisplay = '';
+                    if (field.options_list && field.options_list.length > 0) {
+                        optionsDisplay = field.options_list.join(', ');
+                        if (optionsDisplay.length > 50) {
+                            optionsDisplay = optionsDisplay.substring(0, 50) + '...';
+                        }
+                    } else {
+                        optionsDisplay = '-';
+                    }
+                    
+                    return `
+                        <tr>
+                            <td>${field.category_name}</td>
+                            <td>${field.name}</td>
+                            <td>
+                                <span class="badge badge-info">${field.field_type_display}</span>
+                            </td>
+                            <td title="${field.field_options || ''}">${optionsDisplay}</td>
+                            <td>
+                                ${field.is_filter ? 
+                                    '<span class="badge badge-success">Yes</span>' : 
+                                    '<span class="badge badge-secondary">No</span>'}
+                            </td>
+                            <td>
+                                ${field.is_required ? 
+                                    '<span class="badge badge-warning">Yes</span>' : 
+                                    '<span class="badge badge-secondary">No</span>'}
+                            </td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-primary" onclick="openModal(${field.id}, 'Edit Meta Field')">
+                                    <i class="fa fa-edit"></i>
+                                </a>
+                                <a href="#" class="btn btn-sm btn-danger" onclick="deleteMetaField(${field.id})">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                $('#metaFieldsList').html(html || '<tr><td colspan="7">No meta fields available.</td></tr>');
+            }
+        },
+        error: function() {
+            console.log('Error loading meta fields');
+        }
+    });
+}
+
+// Open modal for add/edit
+function openModal(id, title) {
+    $('#metaFieldModalLabel').text(title);
+    $('#metaFieldId').val(id || '');
+    $('#metaFieldForm')[0].reset();
+    $('.text-danger').text('');
+    $('#fieldOptionsGroup').hide();
+    $('#fieldOptions').prop('required', false);
+    
+    // If editing, load the data
+    if (id) {
+        $.ajax({
+            url: '{% url "fetch_meta_fields" %}',
+            type: 'GET',
+            success: function(response) {
+                if (response.status === 'success') {
+                    var field = response.meta_fields.find(f => f.id == id);
+                    if (field) {
+                        $('#metaFieldName').val(field.name);
+                        $('#fieldType').val(field.field_type);
+                        $('#fieldOptions').val(field.field_options || '');
+                        $('#isFilter').prop('checked', field.is_filter);
+                        $('#isRequired').prop('checked', field.is_required);
+                        
+                        // Show/hide options based on field type
+                        if (field.field_type === 'radio' || field.field_type === 'checkbox' || field.field_type === 'select') {
+                            $('#fieldOptionsGroup').show();
+                            $('#fieldOptions').prop('required', true);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    $('#metaFieldModal').modal('show');
+}
+
+// Save meta field (create or update)
+function saveMetaField() {
+    $('.text-danger').text('');
+    
+    var formData = {
+        'meta_field_id': $('#metaFieldId').val(),
+        'name': $('#metaFieldName').val().trim(),
+        'field_type': $('#fieldType').val(),
+        'field_options': $('#fieldOptions').val().trim(),
+        'is_filter': $('#isFilter').is(':checked') ? 'on' : '',
+        'is_required': $('#isRequired').is(':checked') ? 'on' : '',
+        'csrfmiddlewaretoken': '{{ csrf_token }}'
+    };
+    
+    $.ajax({
+        type: 'POST',
+        url: '{% url "save_meta_field" %}',
+        data: formData,
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#metaFieldModal').modal('hide');
+                loadMetaFields();
+                showToast('success', response.message);
+            } else {
+                // Display field errors
+                if (response.errors) {
+                    for (var field in response.errors) {
+                        $('#' + field + 'Error').text(response.errors[field][0]);
+                    }
+                }
+            }
+        },
+        error: function(xhr) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.errors) {
+                    for (var field in response.errors) {
+                        $('#' + field + 'Error').text(response.errors[field][0]);
+                    }
+                } else {
+                    showToast('error', response.message || 'An error occurred');
+                }
+            } catch (e) {
+                showToast('error', 'An unexpected error occurred');
+            }
+        }
+    });
+}
+
+// Delete meta field
+function deleteMetaField(id) {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You want to delete this meta field!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#1a83bf',
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "No, keep it!"
+    }).then((result) => {
+        if (result.value) {
+            $.ajax({
+                url: '{% url "delete_meta_field" %}',
+                type: 'POST',
+                data: {
+                    'meta_field_id': id,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    loadMetaFields();
+                    Swal.fire(
+                        response.status === 'success' ? 'Deleted!' : 'Error!',
+                        response.message,
+                        response.status === 'success' ? 'success' : 'error'
+                    );
+                },
+                error: function() {
+                    Swal.fire('Error!', 'There was an error deleting the meta field.', 'error');
+                }
+            });
+        }
+    });
+}
+
+// Show toast notification (you may need to implement this function)
+function showToast(type, message) {
+    // Implement your toast notification here
+    console.log(type + ': ' + message);
+}
+</script>
+{% endblock content %}

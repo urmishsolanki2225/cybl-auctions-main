@@ -34,8 +34,7 @@ urlpatterns = [
     path('fetch_categories', views.fetch_categories, name='fetch_categories'),
     path('update_category_order', views.update_category_order, name='update_category_order'),
     
-    #category-wise charges.
-    
+    #category-wise charges.    
     path('category-charges/', views.category_charges_view, name='category_charges'),
     path('save-category-charges/', views.save_category_charges, name='save_category_charges'),
     path('save-single-charge/', views.save_single_charge, name='save_single_charge'),
@@ -45,6 +44,13 @@ urlpatterns = [
     path('delete-charge-type/<int:pk>/', views.delete_charge_type, name='delete_charge_type'),
     path('update-charge-type-name/<int:pk>/', views.update_charge_type_name, name='update_charge_type_name'),
 
+
+    # META FIELDS - Optimized URLs
+    path('category-meta-fields/', views.meta_fields_view, name='manage_category_meta'),
+    path('meta-fields/', views.fetch_meta_fields, name='fetch_meta_fields'),
+    path('save-meta-field/', views.save_meta_field, name='save_meta_field'),
+    path('delete-meta-field/', views.delete_meta_field, name='delete_meta_field'),
+    
     # Auctions
     path('auctions/<int:tabId>/', views.all_auctions, name='allauctions'),
     path('auctions/create', views.create_auction, name='createauction'),
@@ -66,6 +72,8 @@ urlpatterns = [
     path('inventory/create', views.create_inventory, name='createinventory'),
     path('inventory/edit/<int:inventory_id>/', views.edit_inventory, name='editinventory'),
     path('inventory/delete', views.delete_inventory, name='deleteinventory'),
+    path('inventory/meta/fields', views.get_category_meta_fields, name='get_category_meta_fields'),
+    
     # In auction Bidding History Fetch    
     path('inventory/bidding-history/<int:inventory_id>', views.bidding_history, name='biddinghistory'),
 

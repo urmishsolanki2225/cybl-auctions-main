@@ -1,17 +1,37 @@
-import React from 'react';
+import { useEffect, useState } from "react";
 import "../styles/ActiveLots.css";
 import BASE_URL from "../api/endpoints";
 import WatchlistButton from './WatchlistButton';
 import { useNavigate } from "react-router-dom";
+import { publicApi } from "../api/apiUtils";
 
-
-const ActiveLots = ({ lots }) => {
+const ActiveLots = () => {
   const navigate = useNavigate();
-  // Function to format time remaining
+  const [Activelot, setActivelot] = useState<[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAuctions = async () => {
+      try {
+        setLoading(true);        
+        const lots = await publicApi.getActivelots();
+        const filtered = await publicApi.getActiveFiltered();
+        setActivelot(lots);
+      } catch (err) {
+        console.error("Failed to load bidding history", err);
+        setError("Failed to load bidding history");
+        setLoading(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuctions();
+  }, []);
+
   const formatTimeRemaining = (timeString) => {
     if (!timeString) return "Time expired";
     
-    // Extract days and hours from the time string
     const match = timeString.match(/(\d+)\s*days?,\s*(\d+):(\d+):(\d+)/);
     if (match) {
       const [, days, hours, minutes] = match;
@@ -23,34 +43,30 @@ const ActiveLots = ({ lots }) => {
     return timeString;
   };
 
-  // Function to get image URL or placeholder
   const getImageUrl = (mediaItem) => {
     if (mediaItem && mediaItem.path) {
-      // Assuming you have a base URL for images
       return `${BASE_URL}/media/${mediaItem.path}`;
     }
     return null;
   };
 
-  // Function to determine if reserve is met
   const isReserveMet = (currentBid, reservePrice) => {
     return parseFloat(currentBid) >= parseFloat(reservePrice);
   };
 
-  return (
+ return loading ? (
+    <div className="loading-state">Loading...</div>
+  ) : (
     <div className="auctions-container">
       <h1 className="auctions-title">Running lots</h1>    
-      {/* Lots grid */}
       <div className="lots-grid">
-        {lots?.map((lot, index) => (
+        {Activelot?.map((lot, index) => (
           <div key={lot.id || index} className="lot-cards">
-            {/* Car Image Section */}
             <div className="car-image-container">
             <div className="watchlist-button-container">
             <WatchlistButton
                 inventoryId={lot?.id}
                 size="small"
-                //onWatchlistChange={handleWatchlistChange}
             />
             </div>
               {getImageUrl(lot.media_items) ? (
@@ -64,17 +80,12 @@ const ActiveLots = ({ lots }) => {
                   🚗
                 </div>
               )}
-              
-              {/* Featured badge */}
               {lot.auction_details?.is_featured && (
                 <div className="featured-badge">Featured</div>
-              )}
-              
-              {/* Condition badge */}
+              )}              
               <div className={`condition-badge ${lot.condition === 'new' ? 'condition-new' : 'condition-used'}`}>
                 {lot.condition}
               </div>
-              {/* Timer overlay */}
               <div className="timer-overlay">
                 <div className="timer-info">
                   <div className="timer-icon">⏱</div>
@@ -86,12 +97,8 @@ const ActiveLots = ({ lots }) => {
                 </div>
               </div>
             </div>
-
-            {/* Card Content */}
             <div className="card-content">
-              <h2 className="car-title">{lot.title}</h2>
-              
-              {/* Car details */}
+              <h2 className="car-title">{lot.title}</h2>              
               <div className="car-details">
                 {/* <div className="car-detail">
                   <span>Category:</span>
@@ -110,8 +117,6 @@ const ActiveLots = ({ lots }) => {
               <div className="car-location">
                 {lot.auction_details?.name}
               </div>
-
-              {/* Bid section */}
               <div className="bid-section">
                 <div className="current-bid">
                   <div className="current-bid-label">Current Bid</div>
