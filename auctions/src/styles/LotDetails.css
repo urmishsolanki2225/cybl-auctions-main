@@ -125,14 +125,14 @@
 .condition {
   color: #27ae60;
   font-weight: 600;
-  font-family: 'Titillium Web';s
+  font-family: 'Titillium Web';
 }
 
 .description-text {
   margin-bottom: 30px;
   line-height: 1.6;
   color: black;
-   font-family: 'Titillium Web';s
+   font-family: 'Titillium Web';
 }
 
 
@@ -891,6 +891,16 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.9rem;
+}
+.lot-main{
+  display: flex;
+  gap:10px;
+}
+.lot-left{
+  width: 75%;
+}
+.bid-amount-details{
+  columns: black;
 }
 
 .current-bid {

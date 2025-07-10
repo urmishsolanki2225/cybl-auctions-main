@@ -162,7 +162,7 @@
 
 .lot-timer {
   font-size: 0.85rem;
-  color: #e74c3c;
+  color: #000000;
   font-weight: 600;
   margin-bottom: 12px;
   text-align: center;
@@ -171,7 +171,7 @@
 .lot-bid-button {
   width: 100%;
   padding: 10px;
-  background-color: #3498db;
+  background-color: #000000;
   color: white;
   border: none;
   border-radius: 6px;

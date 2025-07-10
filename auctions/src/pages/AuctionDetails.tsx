@@ -383,36 +383,27 @@ const AuctionDetails = () => {
 
                     {/* Lot content */}
                     <div className="lot-content">
-                      <div className="lot-header">
-                        <h5 className="lot-title">{lot.title}</h5>
-                        <div className="lot-category">
-                          {lot?.category?.name}
-                        </div>
-                      </div>
+                      <h5 className="lot-title">{lot.title}</h5>                     
 
                       <div className="lot-details">
                         <div className="lot-detail-row">
                           <span className="lot-detail-label">Current Bid:</span>
                           <span className="lot-detail-value">
-                            ${lot.current_bid || lot.starting_bid}
+                            ${lot.current_bid}
                           </span>
                         </div>
 
                         <div className="lot-detail-row">
                           <span className="lot-detail-label">Next Bid:</span>
                           <span className="lot-detail-value">
-                            $
-                            {lot.next_required_bid ||
-                              (lot.current_bid
-                                ? lot.current_bid + 1
-                                : lot.starting_bid)}
+                            ${lot.next_required_bid }
                           </span>
                         </div>
 
                         <div className="lot-detail-row">
                           <span className="lot-detail-label">High Bidder:</span>
                           <span className="lot-detail-value">
-                            {lot.highest_bidder?.username || "None"}
+                            {lot.high_bidder}
                           </span>
                         </div>
 

@@ -10,7 +10,7 @@
             <div class="card">
                 <div class="card-body pb-0">
                     <div class="d-flex justify-content-between align-items-center pb-2">
-                        <h6 class="card-title mb-0">Categories Charges</h6>
+                        <h6 class="card-title mb-0">Charges</h6>
                         <div>
                             <button class="btn btn-primary" id="save-all-charges">Save All Changes</button>
                             <a href="{% url 'manage_charge_types' %}" class="btn btn-primary">Manage Charges Type</a>
@@ -21,7 +21,7 @@
                         <table class="table table-bordered" id="category-charges-table">
                             <thead>
                                 <tr>
-                                    <th>Category</th>
+                                    <th style="display: none;">Category</th>
                                     {% for charge_type in charge_types %}
                                         <th><b>{{ charge_type.name }}</b></th>
                                     {% endfor %}
@@ -30,7 +30,7 @@
                             <tbody>
                                 {% for category_data in categories_data %}
                                     <tr data-category-id="{{ category_data.category.id }}">
-                                        <td>{{ category_data.category.name }}</td>
+                                        <td style="display: none;">{{ category_data.category.name }}</td>
                                         {% for charge_value in category_data.charge_values %}
                                             <td>
                                                 <input type="number" step="0.01" 

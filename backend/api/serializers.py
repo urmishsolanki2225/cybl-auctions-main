@@ -208,7 +208,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'subcategories', 'order','image']
 
     def get_subcategories(self, obj):
-        children = obj.subcategories.filter(deleted_at__isnull=True).order_by('order')
+        children = obj.subcategories.filter(deleted_at__isnull=True, is_active=True).order_by('order')
         return CategorySerializer(children, many=True).data
 ################################################################################################################
 class CountrySerializer(serializers.ModelSerializer):
@@ -227,7 +227,7 @@ class MediaSerializer(serializers.ModelSerializer):
         fields = '__all__'  
 ################################################################################################################
 class InventorySerializer(serializers.ModelSerializer):
-    media_items = MediaSerializer(many=True, read_only=True)
+    media_items = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     current_bid = serializers.SerializerMethodField()
     next_required_bid = serializers.SerializerMethodField()

@@ -431,9 +431,7 @@ const LotDetails = () => {
                           image.path?.replace(/\\/g, "/")
                         }
                         alt={lot?.title || `Image ${index + 1}`}
-                        onError={(e) => {
-                          e.target.src = "/placeholder-image.jpg";
-                        }}
+                        
                         style={{
                           height: "500px",
                           objectFit: "cover",
@@ -463,9 +461,7 @@ const LotDetails = () => {
                             image.path?.replace(/\\/g, "/")
                           }
                           alt={`Thumb ${index + 1}`}
-                          onError={(e) => {
-                            e.target.src = "/placeholder-image.jpg";
-                          }}
+                          
                           style={{
                             width: "100px",
                             height: "100px",
@@ -553,7 +549,7 @@ const LotDetails = () => {
                                   )}
                                 </div>
                                 <div className="bid-meta">
-                                  <span className="bid-amount">
+                                  <span className="bid-amount-details">
                                     ${bid.amount}
                                   </span>
                                   <span className="bid-time">
