@@ -39,11 +39,6 @@
   font-family: 'Titillium Web';
 }
 
-.lot-main {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
-}
 
 .image-gallery {
   background: white;
@@ -468,9 +463,6 @@
     text-align: center;
   }
   
-  .lot-main {
-    grid-template-columns: 1fr;
-  }
   
   .current-bid-info {
     grid-template-columns: 1fr;

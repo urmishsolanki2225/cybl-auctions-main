@@ -196,31 +196,6 @@
                     $(".dataTables_paginate > .pagination").addClass("pagination-rounded");
                 }
             });
-
-            // Append category filter
-            const filterContainer = `
-                <div class="categoryFilterContainer">
-                    <label for="${tableId}-categoryFilter"> Category:</label>
-                    <select id="${tableId}-categoryFilter" class="ml-1 w-90 form-control">
-                        <option value="">All Categories</option>
-                        {% for category in categories %}
-                        <option value="{{ category.name }}">{{ category.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            `;
-            $("#" + tableId + "_filter").append(filterContainer);
-
-            // Filter items by category
-            $('#' + tableId + '-categoryFilter').on('change', function() {
-                const selectedCategory = $(this).val();
-                const col = tableId == "in-auction-items-table" ? 2 : 3;
-                if (selectedCategory) {
-                    table.column(col).search('^' + selectedCategory + '$', true, false).draw();
-                } else {
-                    table.column(col).search('').draw();
-                }
-            });
         }
     });
 

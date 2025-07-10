@@ -9,7 +9,6 @@
             {% endif %}
             <th>Inventory Info</th>
             <th>Price</th>
-            <th>Category</th>
             <th>Action</th>
         </tr>
     </thead>
@@ -22,7 +21,7 @@
                 </td>
             {% endif %}          
             <td>
-                <div class="d-flex align-items-center"> <!-- Use flexbox for horizontal alignment -->
+                <div class="d-flex align-items-center">
                     {% if inventory.media_items.first %}
                     <img class="thumb-xl rounded mr-2" 
                         src="{{ MEDIA_URL }}{{ inventory.media_items.first.path }}" 
@@ -46,7 +45,6 @@
                     {{ inventory.reserve_price|floatformat:2 }}
                 </div>
             </td>
-            <td>{{ inventory.category.name }}</td>
             <td class="d-flex align-items-center">                
                 {% if current_tab == 2 %}
                 <a href="#" class="btn btn-primary btn-sm mr-2" onclick="showBiddingHistory({{ inventory.id }}, '{{inventory.title}}')">Bids</a>
