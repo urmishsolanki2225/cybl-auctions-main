@@ -432,7 +432,7 @@ const LotDetails = () => {
                         }
                         alt={lot?.title || `Image ${index + 1}`}
                         onError={(e) => {
-                          e.target.src = "/placeholder-image.jpg";
+                          e.target.src = "https://images.unsplash.com/photo-1568879844413-7827cbf81261?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
                         }}
                         style={{
                           height: "500px",
@@ -464,7 +464,7 @@ const LotDetails = () => {
                           }
                           alt={`Thumb ${index + 1}`}
                           onError={(e) => {
-                            e.target.src = "/placeholder-image.jpg";
+                            e.target.src = "https://images.unsplash.com/photo-1568879844413-7827cbf81261?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D";
                           }}
                           style={{
                             width: "100px",
