@@ -168,7 +168,7 @@ cython_debug/
 #my.cnf
 
 # ignore in the photo
-media/
+#media/
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 

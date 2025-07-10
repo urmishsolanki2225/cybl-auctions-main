@@ -10,6 +10,7 @@ billiard==4.2.1
 bleach==6.2.0
 blinker==1.9.0
 Brotli==1.1.0
+cachetools==5.5.2
 celery==5.5.2
 certifi==2025.4.26
 cffi==1.17.1
@@ -41,6 +42,7 @@ geographiclib==2.0
 geopy==2.4.1
 gevent==25.5.1
 geventhttpclient==2.3.4
+google-auth==2.40.3
 greenlet==3.2.3
 h11==0.16.0
 html5lib==1.1
@@ -84,6 +86,7 @@ redis==6.1.0
 reportlab==4.4.2
 requests==2.32.3
 requests-oauthlib==2.0.0
+rsa==4.9.1
 service-identity==24.2.0
 setuptools==80.8.0
 simple-websocket==1.1.0
