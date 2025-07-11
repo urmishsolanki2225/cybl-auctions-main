@@ -77,14 +77,20 @@
                                                 </svg>
                                                 Change Password
                                             </a>
-                                            <a href="{% url 'allcategory' %}" class="dropdown-item">
+                                            <a href="{% url 'allcategory' %}" class="dropdown-item" style="display: none !important;">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                                class="feather feather-settings profile-icon">
-                                               <path d="M3 12a9 9 0 0 1 17.6-2.1l2.2 2.2a1 1 0 0 1 0 1.4l-2.2 2.2A9 9 0 0 1 12 21a9 9 0 0 1-9-9zm12.4-3.5a1 1 0 0 0-1.6-1.2 5.5 5.5 0 0 0-6.4 0 1 1 0 0 0-1.6 1.2 7.5 7.5 0 0 1 0 6.8 1 1 0 0 0 1.6 1.2 5.5 5.5 0 0 0 6.4 0 1 1 0 0 0 1.6-1.2 7.5 7.5 0 0 1 0-6.8z"/>
-                                               <circle cx="12" cy="12" r="2"/>
-                                           </svg> 
+                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                     class="feather feather-settings profile-icon">
+                                                  <circle cx="12" cy="12" r="3"></circle>
+                                                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33
+                                                           1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06
+                                                           a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09
+                                                           a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0
+                                                           1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0
+                                                           1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21
+                                                           a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                                </svg>
                                                 Settings
                                             </a>
                                             <a href="{% url 'logout' %}" class="dropdown-item"><svg

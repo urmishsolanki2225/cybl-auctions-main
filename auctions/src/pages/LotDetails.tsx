@@ -553,7 +553,7 @@ const LotDetails = () => {
                                   )}
                                 </div>
                                 <div className="bid-meta">
-                                  <span className="bid-amount">
+                                  <span className="bid-amount-details">
                                     ${bid.amount}
                                   </span>
                                   <span className="bid-time">
