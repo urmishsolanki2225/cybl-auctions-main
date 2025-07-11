@@ -18,7 +18,7 @@ export default function useWebSocket({ lotId, onMessage }: WebSocketOptions) {
   useEffect(() => {
     let isMounted = true;
 
-    const ws = new WebSocket(`ws://192.168.2.108:8000/ws/lot/${lotId}/`);
+    const ws = new WebSocket(`ws://auction.cyblance.com:8000/ws/lot/${lotId}/`);
     socketRef.current = ws;
 
     ws.onopen = () => {

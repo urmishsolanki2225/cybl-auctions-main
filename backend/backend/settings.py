@@ -91,6 +91,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.201.35:8000",
     "http://192.168.2.108:5173",
     "http://192.168.2.108:8000",
+    "http://auction.cyblance.com:8000",
+    "http://auction.cyblance.com",
 
 ]
 
